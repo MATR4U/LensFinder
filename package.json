@@ -1,0 +1,30 @@
+{
+  "name": "camera-system-builder",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "kill3000": "lsof -ti tcp:3000 | xargs -r kill -9 || true",
+    "dev": "npm run kill3000 && node --loader ts-node/esm --no-warnings=ExperimentalWarning server/index.ts",
+    "start": "node dist/server/index.js",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "cheerio": "1.0.0",
+    "express": "4.19.2",
+    "node-fetch": "3.3.2",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@types/cheerio": "0.22.35",
+    "@types/express": "4.17.21",
+    "@types/node": "22.5.4",
+    "@types/react": "18.3.3",
+    "@types/react-dom": "18.3.0",
+    "ts-node": "10.9.2",
+    "typescript": "5.5.4"
+  }
+}
+
+
