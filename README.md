@@ -107,6 +107,13 @@ Dev servers:
 - API: `http://localhost:${PORT}` (default 3001)
 - Client: `http://localhost:${CLIENT_PORT}` (default 3000)
 
+### Outage and degraded states (UX)
+
+- Full-screen glass overlay blocks interactions when services are unavailable; background shines through
+- Subtle top banner surfaces partial/degraded availability; includes Retry, Pause/Resume retries, and Copy diagnostics
+- Preview outage overlay without breaking services by setting `VITE_FORCE_OUTAGE=1` for the client build/dev
+- Glass tokens live in `client/src/components/ui/styles.ts` (`GLASS_PANEL`, `AURA_ACCENT`, `GLASS_CARD_SM`)
+
 ### Dev redeploy
 
 - Regenerate manifests from `.env.dev`:
