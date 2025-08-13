@@ -1,5 +1,6 @@
 import React from 'react';
 import { TEXT_XS_MUTED, LINK_HOVER_ACCENT, PANEL_BASE, PANEL_NEUTRAL, TEXT_SM, CARD_PADDED, GRID_LG_TWO_GAP6 } from './ui/styles';
+import BaseReport from './report/BaseReport';
 import LazyPlot from './ui/LazyPlot';
 import { computeParetoFrontier } from '../lib/optics';
 import type { ReportResponse } from '../lib/api';
@@ -57,7 +58,7 @@ export default function Report({ report, camera, selected, goalWeights, topResul
   }));
 
   return (
-    <section className={`${CARD_PADDED} prose-content`}>
+    <BaseReport title="Your personalized lens report">
       {/* Section 1: Personalized summary */}
       <SummaryHeader cameraName={cameraName} goal={goal} onEditPreferences={onEditPreferences} />
 
@@ -154,7 +155,7 @@ export default function Report({ report, camera, selected, goalWeights, topResul
         </div>
       )}
       <p className={`${TEXT_XS_MUTED} mt-4`}>Tip: Click any lens to view prices. The bars reflect key factors; adjust weights to see how recommendations change.</p>
-    </section>
+    </BaseReport>
   );
 }
 

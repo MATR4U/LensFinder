@@ -17,9 +17,12 @@ const root = ReactDOM.createRoot(document.getElementById('root')!);
 async function bootstrap() {
   // Dynamically import App after potential store cleanup to avoid early hydration
   const { default: App } = await import('./pages/App');
+  const { UIProvider } = await import('./components/ui/UIProvider');
   root.render(
     <React.StrictMode>
-      <App />
+      <UIProvider>
+        <App />
+      </UIProvider>
     </React.StrictMode>
   );
 }
