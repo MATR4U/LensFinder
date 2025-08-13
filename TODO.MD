@@ -104,9 +104,9 @@
   - Validate all request payloads and query parameters using a centralized schema (e.g., Zod) and emit RFC7807 problem responses on validation failures. [Partial: `/api/price` query, `/api/report` body, and pagination params on `/api/cameras` and `/api/lenses` validated]
   - Document per-endpoint request/response schemas and align OpenAPI accordingly.
 
-  - **HTTP semantics (Vary/HEAD)** [Status: In Progress]
+- **HTTP semantics (Vary/HEAD)** [Status: Done]
   - Standardize `Vary` headers (`Accept`, `Accept-Encoding`, and `Origin` when CORS is enabled) across cacheable endpoints. [Done]
-  - Support `HEAD` for all `GET` resources returning identical headers and status with an empty body. [Extended: added for `/api`, `/docs`, `/metrics`, `/openapi.json`, `/api/health`, `/api/health/components`, `/api/cameras`, `/api/lenses`, `/api/price`, `/api/events`, `/api/events/token`]
+  - Support `HEAD` for all `GET` resources returning identical headers and status with an empty body. [Done: `/api`, `/docs`, `/metrics`, `/openapi.json`, `/api/health`, `/api/health/components`, `/api/cameras`, `/api/lenses`, `/api/price`, `/api/events`, `/api/events/token`]
 
   - **HATEOAS affordances (beyond links)** [Status: In Progress]
   - Include hypermedia controls for writes (e.g., forms/templates or HAL-FORMS/Collection+JSON affordances) where applicable; document link relations and affordance semantics. [Partial: `_templates.report` added to `/api`]
