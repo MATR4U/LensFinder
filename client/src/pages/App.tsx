@@ -28,18 +28,7 @@ import OutageScreen from '../components/ui/OutageScreen';
 import DebugFilterPanel from '../components/DebugFilterPanel';
 
 export default function App() {
-  const { cameras, lenses, fatalError, setFatalError, degraded, isPaused, pauseRetries, resumeRetries, retryNow, offline, health, lastError, etaSeconds, cacheMeta, cachedSnapshot } = useBootstrap();
-  const [showRecovered, setShowRecovered] = React.useState(false);
-  const prevDegradedRef = React.useRef<string | null>(null);
-  React.useEffect(() => {
-    const prev = prevDegradedRef.current;
-    if (prev && !degraded) {
-      setShowRecovered(true);
-      const t = setTimeout(() => setShowRecovered(false), 2000);
-      return () => clearTimeout(t);
-    }
-    prevDegradedRef.current = degraded || null;
-  }, [degraded]);
+  const { cameras, lenses, fatalError, setFatalError, degraded, isPaused, pauseRetries, resumeRetries, retryNow, offline, health } = useBootstrap();
   const cameraName = useFilterStore(s => s.cameraName);
   const isPro = useFilterStore(s => s.isPro);
   const goalPreset = useFilterStore(s => s.goalPreset);
@@ -278,28 +267,7 @@ export default function App() {
         <OutageScreen title="Service temporarily unavailable" message={fatalError || 'Reconnecting…'} />
       )}
 
-      {showRecovered && (
-        <div className="mb-4">
-          <StatusBanner variant="info" title="Recovered" message="All services are available again." />
-        </div>
-      )}
-
-      {degraded && (
-        <div className="mb-4">
-          <StatusBanner
-            variant="warning"
-            title="Limited availability"
-            message={offline ? "You're offline." : degraded}
-            onRetry={() => retryNow()}
-            pausedControls={{ isPaused, onPause: pauseRetries, onResume: resumeRetries }}
-            copyText={`cameraName=${cameraName}; isPro=${isPro}; brand=${brand}; lensType=${lensType}; sealed=${sealed}; macro=${isMacro}; p=${priceRange.min}-${priceRange.max}; w=${weightRange.min}-${weightRange.max}; coverage=${proCoverage}; focal=${proFocalMin}-${proFocalMax}; ap<=${proMaxApertureF}; ois=${proRequireOIS}; wsealed=${proRequireSealed}; macroReq=${proRequireMacro}; pmax=${proPriceMax}; wmax=${proWeightMax}; dist<=${proDistortionMaxPct}; breath>=${proBreathingMinScore}`}
-            etaStartSeconds={etaSeconds}
-          />
-          {health && (
-            <div className="mt-2 text-xs text-[var(--text-muted)]" aria-live="polite">Health: {Object.entries(health).map(([k, v]) => `${k}:${v}`).join(' • ')}</div>
-          )}
-        </div>
-      )}
+      {/* No main-app retry or recovered banners; overlay handles outage UX */}
 
       <div className={`${ROW_BETWEEN} mb-4`}>
         <span className={BADGE_COUNT}>{resultsCount} results</span>
