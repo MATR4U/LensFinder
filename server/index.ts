@@ -105,6 +105,13 @@ app.get('/api', (_req: Request, res: Response) => {
   });
 });
 
+// HEAD for service index
+app.head('/api', (_req: Request, res: Response) => {
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Vary', 'Accept, Accept-Encoding, Origin');
+  res.status(200).end();
+});
+
 // HEAD variant for service index with identical headers
 app.head('/api', (_req: Request, res: Response) => {
   res.setHeader('Cache-Control', 'no-cache');
