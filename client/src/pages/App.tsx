@@ -3,6 +3,7 @@ import { Camera, Lens, Result } from '../types';
 import Report from '../components/Report';
 import { useDebouncedReport } from '../hooks/useDebouncedReport';
 import type { Availability } from '../lib/availability';
+import { computeGlobalAvailability } from '../lib/availability';
 import { applyFilters } from '../lib/filters';
 import { makeBrandsForCamera, makeAvailabilitySelector, makeResultsSelector } from '../lib/selectors';
 import Card from '../components/ui/Card';
@@ -90,17 +91,11 @@ export default function App() {
   const brandsSelector = useMemo(() => makeBrandsForCamera(), []);
   const brandsForCamera = useMemo(() => brandsSelector(lenses, camera), [brandsSelector, lenses, camera]);
 
-  const availabilitySelector = useMemo(() => makeAvailabilitySelector(), []);
+  // Use global/static availability for slider min/max and ticks to avoid dynamic snapping
   const availability = useMemo<Availability | null>(() => {
-    if (cameras.length === 0 || lenses.length === 0) return null;
-    const filters = {
-      brand, lensType, sealed, isMacro, priceRange, weightRange,
-      proCoverage, proFocalMin, proFocalMax, proMaxApertureF,
-      proRequireOIS, proRequireSealed, proRequireMacro,
-      proPriceMax, proWeightMax, proDistortionMaxPct, proBreathingMinScore,
-    };
-    return availabilitySelector(cameraName, camera, lenses, filters);
-  }, [availabilitySelector, cameras.length, lenses, cameraName, camera, brand, lensType, sealed, isMacro, priceRange, weightRange, proCoverage, proFocalMin, proFocalMax, proMaxApertureF, proRequireOIS, proRequireSealed, proRequireMacro, proPriceMax, proWeightMax, proDistortionMaxPct, proBreathingMinScore]);
+    if (lenses.length === 0) return null;
+    return computeGlobalAvailability(lenses);
+  }, [lenses]);
 
   // reset handled by store.resetFilters
 
@@ -111,8 +106,6 @@ export default function App() {
   const capsSyncTimerRef = React.useRef<number | null>(null);
   useEffect(() => {
     if (!availability) return;
-    // Avoid loops by only updating when caps actually change
-    const capsNow = useFilterStore.getState().availabilityCaps;
     const nextCaps = {
       brands: availability.brands,
       lensTypes: availability.lensTypes,
@@ -126,45 +119,9 @@ export default function App() {
       distortionMaxMax: availability.distortionMaxMax,
       breathingMinMin: availability.breathingMinMin,
     } as const;
-    const arraysEqual = (a: string[], b: string[]) => a.length === b.length && a.every((v, i) => v === b[i]);
-    const rangesEqual = (a: { min: number; max: number }, b: { min: number; max: number }) => a.min === b.min && a.max === b.max;
-    const equal = capsNow &&
-      arraysEqual(capsNow.brands, nextCaps.brands) &&
-      arraysEqual(capsNow.lensTypes, nextCaps.lensTypes) &&
-      arraysEqual(capsNow.coverage, nextCaps.coverage) &&
-      rangesEqual(capsNow.priceBounds, nextCaps.priceBounds) &&
-      rangesEqual(capsNow.weightBounds, nextCaps.weightBounds) &&
-      rangesEqual(capsNow.focalBounds, nextCaps.focalBounds) &&
-      capsNow.apertureMaxMax === nextCaps.apertureMaxMax &&
-      capsNow.distortionMaxMax === nextCaps.distortionMaxMax &&
-      capsNow.breathingMinMin === nextCaps.breathingMinMin;
-    const sig = JSON.stringify(nextCaps);
-    if (equal && lastCapsSigRef.current === sig) return;
-    if (capsSyncTimerRef.current) {
-      clearTimeout(capsSyncTimerRef.current);
-      capsSyncTimerRef.current = null;
-    }
-    capsSyncTimerRef.current = window.setTimeout(() => {
-      // Re-check against latest store caps before applying
-      const latest = useFilterStore.getState().availabilityCaps;
-      const arraysEqual2 = (a: string[], b: string[]) => a.length === b.length && a.every((v, i) => v === b[i]);
-      const rangesEqual2 = (a: { min: number; max: number }, b: { min: number; max: number }) => a.min === b.min && a.max === b.max;
-      const stillEqual = latest &&
-        arraysEqual2(latest.brands, nextCaps.brands) &&
-        arraysEqual2(latest.lensTypes, nextCaps.lensTypes) &&
-        arraysEqual2(latest.coverage, nextCaps.coverage) &&
-        rangesEqual2(latest.priceBounds, nextCaps.priceBounds) &&
-        (!!latest.priceTicks === !!nextCaps.priceTicks) &&
-        rangesEqual2(latest.weightBounds, nextCaps.weightBounds) &&
-        (!!latest.weightTicks === !!nextCaps.weightTicks) &&
-        rangesEqual2(latest.focalBounds, nextCaps.focalBounds) &&
-        latest.apertureMaxMax === nextCaps.apertureMaxMax &&
-        latest.distortionMaxMax === nextCaps.distortionMaxMax &&
-        latest.breathingMinMin === nextCaps.breathingMinMin;
-      if (stillEqual && lastCapsSigRef.current === sig) return;
-      lastCapsSigRef.current = sig;
-      useFilterStore.getState().setBoundsFromAvailability(nextCaps);
-    }, 0);
+    // Set once per availability change; we won't auto-clamp user ranges further
+    lastCapsSigRef.current = JSON.stringify(nextCaps);
+    useFilterStore.getState().setBoundsFromAvailability(nextCaps);
   }, [availability]);
 
   // Keep explicit guided flow: do not auto-advance from mode selection.
@@ -385,16 +342,16 @@ export default function App() {
               perCameraCounts={debugPerCam || undefined}
             />
           )}
-          <AnimatePresence initial={false}>
+          <AnimatePresence initial={false} mode="wait">
             {stage === 0 && (
-              <motion.div key="mode-section" ref={modeRef} initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }}>
+              <motion.div key="mode-section" ref={modeRef} initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }} transition={{ duration: 0.18, ease: 'easeOut' }}>
                 <div className={SECTION_TITLE}>Choose your mode</div>
                 <ModeSelect onContinue={() => continueTo(1)} />
               </motion.div>
             )}
 
             {stage === 1 && (
-              <motion.div key="requirements-section" ref={reqRef} initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }}>
+              <motion.div key="requirements-section" ref={reqRef} initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }} transition={{ duration: 0.18, ease: 'easeOut' }}>
                 <div className={SECTION_TITLE}>Set your filters</div>
                 <React.Suspense fallback={<Loading text="Loading requirements…" />}>
                   {/* Always show mode card here so user can switch modes within the Requirements step */}
@@ -425,7 +382,7 @@ export default function App() {
             )}
 
             {(stage === 2 || stage > 2) && (
-              <motion.div key="compare-or-top" ref={compareRef} initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }} className={STACK_Y}>
+              <motion.div key="compare-or-top" ref={compareRef} initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }} transition={{ duration: 0.18, ease: 'easeOut' }} className={STACK_Y}>
                 <div className="mb-1 text-lg font-semibold text-[var(--text-color)]">Compare</div>
                 <ExploreGrid items={results} />
                 <CompareShowdown
@@ -439,7 +396,7 @@ export default function App() {
             )}
 
             {stage === 3 && (
-              <motion.div key="report-section" ref={reportRef} initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }} className={STACK_Y}>
+              <motion.div key="report-section" ref={reportRef} initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }} transition={{ duration: 0.18, ease: 'easeOut' }} className={STACK_Y}>
                 <div className="mb-1 text-lg font-semibold text-[var(--text-color)]">Summary & decision</div>
                 <CollapsibleMessage variant="info" title="How to make the call" defaultOpen={false}>
                   <ul className="list-disc pl-5 text-sm space-y-1">

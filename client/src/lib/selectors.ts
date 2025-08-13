@@ -58,6 +58,8 @@ export const makeResultsSelector = () =>
       proWeightMax: f.proWeightMax,
       proDistortionMaxPct: f.proDistortionMaxPct,
       proBreathingMinScore: f.proBreathingMinScore,
+      softPrice: f.softPrice,
+      softWeight: f.softWeight,
       softDistortion: f.softDistortion,
       softBreathing: f.softBreathing,
     });

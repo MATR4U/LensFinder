@@ -144,3 +144,64 @@
 - Webhooks and WebSockets
   - Outbound webhooks with HMAC signing, retries, and dead-letter; inbound verification endpoint.
   - Realtime updates over WebSocket with auth (SSE fallback remains available).
+
+### Base components unification (UI, Fields, Pages, Reports)
+
+Design note
+- Goal: Unify cross-cutting behavior via small, composable “base” components so features inherit accessibility, layout, and behavior without duplication.
+
+Key principles
+- Prefer composition over class inheritance (React best practice).
+- Centralize cross-cutting concerns (IDs, a11y, status, theming, error/loading, analytics).
+- Keep bases tiny and focused; thin wrappers per control/page.
+
+What we already have
+- Field bases: `BaseLabeledField` (label/info/hint/status/right, unique ids, idPrefix) and `BaseLabeledSlider` (ticks/snap/soft preference/aria).
+- Design tokens: `client/src/components/ui/styles.ts` (layout, colors, typography, slider tokens).
+
+What to add
+1) FieldBase (complete the field layer) [Status: Open]
+- Add: validation surface (invalid, helpText), disabled/readOnly, required, onFocus/onBlur analytics hook, testId.
+- Implement: extend `BaseLabeledField` props with optional `validationState?: 'none'|'error'|'success'`, `required?: boolean`, `disabled?: boolean`, `readOnly?: boolean`, `testId?: string`, and forward to `FieldContainer` + child.
+- Benefit: every input gets uniform a11y/validation/telemetry without repeating code.
+
+2) UIBase (app-wide) [Status: Open]
+- UIProvider: theme + density + RTL + tokens via React context; expose CSS vars to all components.
+- CardBase: unify card paddings/variants/shadows; wrap tokens in a small component.
+- MessageBase: standard notice patterns (info/warning/error/success) with icon, title, body, action slot.
+- ModalBase/PopoverBase: focus trap, escape-to-close, aria-* wired.
+- Benefit: consistent look/feel and interaction; one place to tweak theme/density.
+
+3) ReportBase [Status: Open]
+- Standard report wrapper with header (title, subtext, share/export), body slot, footer (timestamp, disclaimers).
+- Loading + empty + error states via Suspense; chart theme + LazyPlot wrapper.
+- Hooks: `useReportLifecycle` (start/complete), `useShareableReport` (export JSON/PNG/PDF).
+- Implement: `client/src/components/report/BaseReport.tsx`. Migrate `Report.tsx`, `report/*` to consume.
+- Benefit: consistent behavior and easy enhancements (e.g., export) across all reports.
+
+4) PageBase [Status: Open]
+- Page shell (background, `PAGE_CONTAINER`, `SECTION_STACK`), head/meta (title/description), ErrorBoundary + Suspense, route analytics, keyboard “skip to content”, optional stage guard (no auto-advance).
+- Implement: `client/src/components/pages/PageBase.tsx` with slots: `headerSlot`, `actionsSlot`, `children` and props: `title`, `meta`, `requireExplicitAdvance?`.
+- Migrate: `pages/App.tsx`, flows (`ModeSelect`, `SimpleRequirements`, `ProRequirements`, `ExploreGrid`, `CompareShowdown`).
+- Benefit: uniform navigation semantics and accessibility; one place to enforce “explicit click to advance”.
+
+Cross-cutting utilities [Status: Open]
+- Unique IDs: already solved via `BaseLabeledField`/`BaseLabeledSlider` + `idPrefix`.
+- Accessibility: consistent `aria-labelledby`, required/invalid, keyboard focus rings.
+- Telemetry: optional `onChangeAnalytics?: (name, value, meta) => void` injected by provider; bases call it automatically on commit.
+- Feature flags: UIProvider can expose toggles (e.g., soft-preference default visibility).
+- Theming: single source of CSS vars; dark/light, density.
+
+Migration plan (incremental)
+- Phase 1: Extend FieldBase with validation/disabled/readOnly/testId; no visual changes.
+- Phase 2: Introduce UIProvider, CardBase, MessageBase; migrate callers opportunistically.
+- Phase 3: Add PageBase; migrate flow pages.
+- Phase 4: Add BaseReport; migrate `Report.tsx` and `report/*`.
+- Tests: snapshot bases; integration tests for representative field/page/report covering a11y roles, IDs, focus behavior.
+
+Benefits
+- Less duplication; faster feature work.
+- Consistent a11y and UX across the app.
+- Easier theming and future redesigns.
+- Deterministic IDs for e2e; fewer flaky tests.
+- Centralized analytics/telemetry and loading/error standards.

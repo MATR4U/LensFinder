@@ -172,4 +172,63 @@ export function computeAvailability(args: AvailabilityArgs): Availability {
   return { brands, lensTypes, coverage, priceBounds, weightBounds, focalBounds, priceTicks, weightTicks, focalTicks, apertureMaxMax, distortionMaxMax, breathingMinMin };
 }
 
+// Static/global availability across the entire dataset, independent of current filters.
+// Used to provide stable slider ranges/ticks that do not change as filters are adjusted.
+export function computeGlobalAvailability(lenses: Lens[]): Availability {
+  const base = lenses.slice();
+
+  const brands = ['Any', ...Array.from(new Set(base.map(l => l.brand))).sort()];
+
+  const hasPrime = base.some(l => l.focal_min_mm === l.focal_max_mm);
+  const hasZoom = base.some(l => l.focal_min_mm !== l.focal_max_mm);
+  const lensTypes = ['Any', ...(hasPrime ? ['Prime'] : []), ...(hasZoom ? ['Zoom'] : [])];
+
+  const canonical = (cov?: string) => {
+    const c = (cov || '').toLowerCase();
+    if (c.includes('medium')) return 'Medium Format';
+    if (c.includes('mft') || c.includes('micro')) return 'MFT';
+    if (c.includes('aps')) return 'APS-C';
+    return 'Full Frame';
+  };
+  const coverageSet = Array.from(new Set(base.map(l => canonical(l.coverage)))).sort();
+  const coverage = ['Any', ...coverageSet];
+
+  const priceVals = base.map(l => l.price_chf).filter(v => Number.isFinite(v)) as number[];
+  const rawPriceBounds = { min: priceVals.length ? Math.min(...priceVals) : 0, max: priceVals.length ? Math.max(...priceVals) : 8000 };
+  const priceBounds = { min: Math.floor(Math.max(0, rawPriceBounds.min)), max: Math.ceil(rawPriceBounds.max) };
+
+  const weightVals = base.map(l => l.weight_g).filter(v => Number.isFinite(v)) as number[];
+  const rawWeightBounds = { min: weightVals.length ? Math.min(...weightVals) : 0, max: weightVals.length ? Math.max(...weightVals) : 3000 };
+  const weightBounds = { min: Math.floor(Math.max(0, rawWeightBounds.min)), max: Math.ceil(rawWeightBounds.max) };
+
+  const makeTicks = (minVal: number, maxVal: number, segments = 8) => {
+    if (!Number.isFinite(minVal) || !Number.isFinite(maxVal) || maxVal <= minVal) return [minVal, maxVal];
+    const step = (maxVal - minVal) / segments;
+    const arr: number[] = [];
+    for (let i = 0; i <= segments; i += 1) arr.push(Math.round(minVal + i * step));
+    arr[0] = minVal; arr[arr.length - 1] = maxVal;
+    return Array.from(new Set(arr));
+  };
+  const priceTicks = makeTicks(priceBounds.min, priceBounds.max);
+  const weightTicks = makeTicks(weightBounds.min, weightBounds.max);
+
+  const focalMinVals = base.map(l => l.focal_min_mm ?? 0);
+  const focalMaxVals = base.map(l => l.focal_max_mm ?? 0);
+  const rawFocalBounds = {
+    min: focalMinVals.length ? Math.min(...focalMinVals) : 0,
+    max: focalMaxVals.length ? Math.max(...focalMaxVals) : 9999
+  };
+  const focalBounds = { min: Math.floor(Math.max(0, rawFocalBounds.min)), max: Math.ceil(rawFocalBounds.max) };
+  const focalTicks = makeTicks(focalBounds.min, focalBounds.max);
+
+  const apertureVals = base.map(l => l.aperture_min ?? 99).filter(v => Number.isFinite(v)) as number[];
+  const apertureMaxMax = Math.min(99, (apertureVals.length ? Math.max(...apertureVals) : 99));
+  const distVals = base.map(l => l.distortion_pct ?? 0).filter(v => Number.isFinite(v)) as number[];
+  const distortionMaxMax = (distVals.length ? Math.max(...distVals) : 100);
+  const breathingVals = base.map(l => l.focus_breathing_score ?? 0).filter(v => Number.isFinite(v)) as number[];
+  const breathingMinMin = Math.max(0, (breathingVals.length ? Math.min(...breathingVals) : 0));
+
+  return { brands, lensTypes, coverage, priceBounds, weightBounds, focalBounds, priceTicks, weightTicks, focalTicks, apertureMaxMax, distortionMaxMax, breathingMinMin };
+}
+
 

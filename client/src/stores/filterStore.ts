@@ -328,116 +328,12 @@ export const useFilterStore = createWithEqualityFn<FilterState>()(persist((set, 
 
   setAvailabilityCaps: (caps) => set({ availabilityCaps: caps }),
   setBoundsFromAvailability: (a) => {
-    const updates: Partial<FilterState> = {};
-
-    // Update caps only if changed to avoid redundant updates
+    // Replace with a minimal, non-snapping update: set availability caps, do not
+    // modify user selections (no auto-expand/clamp behavior).
     const currentCaps = get().availabilityCaps;
     if (!currentCaps || !availabilityCapsEqual(currentCaps, a)) {
-      updates.availabilityCaps = a;
+      set({ availabilityCaps: a });
     }
-
-    // Read current state
-    const s = get();
-    // Hidden keys for last-known bounds/caps to detect user overrides
-    const lastPBKey = '__lastPriceBounds__' as unknown as keyof FilterState;
-    const lastWBKey = '__lastWeightBounds__' as unknown as keyof FilterState;
-    const lastFBKey = '__lastFocalBounds__' as unknown as keyof FilterState;
-    const lastCapsKey = '__lastCaps__' as unknown as keyof FilterState;
-    const anyState = get() as unknown as Record<string, any>;
-    const lastPB = anyState[lastPBKey] as Range | undefined;
-    const lastWB = anyState[lastWBKey] as Range | undefined;
-    const lastFB = anyState[lastFBKey] as Range | undefined;
-    const lastCaps = anyState[lastCapsKey] as { apMax: number; distMax: number; breathMin: number } | undefined;
-
-    // Brand/lensType/coverage coercion
-    if (!a.brands.includes(s.brand)) updates.brand = 'Any';
-    if (!a.lensTypes.includes(s.lensType)) updates.lensType = 'Any';
-    if (!a.coverage.includes(s.proCoverage)) updates.proCoverage = 'Any';
-
-    // Price range auto-expand if user hasn't overridden (still equal to last bounds)
-    const pr = s.priceRange;
-    const pb = a.priceBounds;
-    const prMatchesLast = lastPB && pr.min === lastPB.min && pr.max === lastPB.max;
-    if (!lastPB || prMatchesLast) {
-      if (pr.min !== pb.min || pr.max !== pb.max) updates.priceRange = { ...pb };
-    } else if (pr.min < pb.min || pr.max > pb.max || pr.min > pr.max) {
-      updates.priceRange = { min: Math.min(Math.max(pr.min, pb.min), pb.max), max: Math.max(Math.min(pr.max, pb.max), pb.min) };
-    }
-
-    // Weight range
-    const wr = s.weightRange;
-    const wb = a.weightBounds;
-    const wrMatchesLast = lastWB && wr.min === lastWB.min && wr.max === lastWB.max;
-    if (!lastWB || wrMatchesLast) {
-      if (wr.min !== wb.min || wr.max !== wb.max) updates.weightRange = { ...wb };
-    } else if (wr.min < wb.min || wr.max > wb.max || wr.min > wr.max) {
-      updates.weightRange = { min: Math.min(Math.max(wr.min, wb.min), wb.max), max: Math.max(Math.min(wr.max, wb.max), wb.min) };
-    }
-
-    // Focal bounds and pro focal min/max
-    const fb = a.focalBounds;
-    const userUntouchedFocal = (!lastFB && s.proFocalMin === 0 && s.proFocalMax === 9999) || (lastFB && s.proFocalMin === lastFB.min && s.proFocalMax === lastFB.max);
-    if (userUntouchedFocal) {
-      // Do NOT auto-apply focal bounds to avoid activating the focal-range filter implicitly.
-      // Leave defaults (0, 9999). Only clamp if current values are out-of-order/pathological.
-      const needsClamp = s.proFocalMin > s.proFocalMax;
-      if (needsClamp) {
-        updates.proFocalMin = Math.min(fb.min, fb.max);
-        updates.proFocalMax = Math.max(fb.min, fb.max);
-      }
-    } else {
-      const newMin = Math.min(Math.max(s.proFocalMin, fb.min), fb.max);
-      const newMax = Math.min(Math.max(s.proFocalMax, fb.min), fb.max);
-      const nextMin = Math.min(newMin, newMax);
-      const nextMax = Math.max(newMin, newMax);
-      if (nextMin !== s.proFocalMin) updates.proFocalMin = nextMin;
-      if (nextMax !== s.proFocalMax) updates.proFocalMax = nextMax;
-    }
-
-    // Caps: aperture/distortion/breathing
-    const apMax = a.apertureMaxMax;
-    const distMax = a.distortionMaxMax;
-    const breathMin = a.breathingMinMin;
-    const userUntouchedCaps = (!lastCaps && s.proMaxApertureF === 99 && s.proDistortionMaxPct === 100 && s.proBreathingMinScore === 0)
-      || (lastCaps && s.proMaxApertureF === lastCaps.apMax && s.proDistortionMaxPct === lastCaps.distMax && s.proBreathingMinScore === lastCaps.breathMin);
-    if (userUntouchedCaps) {
-      if (s.proMaxApertureF !== apMax) updates.proMaxApertureF = apMax;
-      if (s.proDistortionMaxPct !== distMax) updates.proDistortionMaxPct = distMax;
-      if (s.proBreathingMinScore !== breathMin) updates.proBreathingMinScore = breathMin;
-    } else {
-      const nextAp = Math.min(Math.max(s.proMaxApertureF, 0.7), apMax);
-      const nextDist = Math.min(Math.max(s.proDistortionMaxPct, 0), distMax);
-      const nextBreath = Math.min(Math.max(s.proBreathingMinScore, breathMin), 10);
-      if (nextAp !== s.proMaxApertureF) updates.proMaxApertureF = nextAp;
-      if (nextDist !== s.proDistortionMaxPct) updates.proDistortionMaxPct = nextDist;
-      if (nextBreath !== s.proBreathingMinScore) updates.proBreathingMinScore = nextBreath;
-    }
-
-    // Pro caps: price/weight max
-    const userUntouchedPriceCap = (!lastPB && s.proPriceMax === 5000) || (lastPB && s.proPriceMax === lastPB.max);
-    if (userUntouchedPriceCap) {
-      if (s.proPriceMax !== pb.max) updates.proPriceMax = pb.max;
-    } else {
-      const nextP = Math.min(Math.max(s.proPriceMax, pb.min), pb.max);
-      if (nextP !== s.proPriceMax) updates.proPriceMax = nextP;
-    }
-
-    const userUntouchedWeightCap = (!lastWB && s.proWeightMax === 2000) || (lastWB && s.proWeightMax === lastWB.max);
-    if (userUntouchedWeightCap) {
-      if (s.proWeightMax !== wb.max) updates.proWeightMax = wb.max;
-    } else {
-      const nextW = Math.min(Math.max(s.proWeightMax, wb.min), wb.max);
-      if (nextW !== s.proWeightMax) updates.proWeightMax = nextW;
-    }
-
-    // Store last bounds/caps
-    if (!lastPB || !rangesEqual(lastPB, pb)) (updates as any)[lastPBKey] = { ...pb };
-    if (!lastWB || !rangesEqual(lastWB, wb)) (updates as any)[lastWBKey] = { ...wb };
-    if (!lastFB || !rangesEqual(lastFB, fb)) (updates as any)[lastFBKey] = { ...fb };
-    const nextCapsSnapshot = { apMax, distMax, breathMin };
-    if (!lastCaps || lastCaps.apMax !== apMax || lastCaps.distMax !== distMax || lastCaps.breathMin !== breathMin) (updates as any)[lastCapsKey] = nextCapsSnapshot;
-
-    if (Object.keys(updates).length > 0) set(updates);
   },
 
   resetFilters: (availability) => {
@@ -637,8 +533,15 @@ export const useFilterStore = createWithEqualityFn<FilterState>()(persist((set, 
   setPriceOverrides: (overrides) => set({ priceOverrides: { ...overrides } }),
 }), {
   name: 'camera-filter-storage',
+  version: 2,
+  migrate: (persisted: any) => {
+    if (persisted && typeof persisted === 'object') {
+      if ('stage' in persisted) delete persisted.stage;
+    }
+    return persisted;
+  },
   partialize: (state) => ({
-    stage: state.stage,
+    // stage intentionally not persisted; always start at 0
     cameraName: state.cameraName,
     isPro: state.isPro,
     brand: state.brand,

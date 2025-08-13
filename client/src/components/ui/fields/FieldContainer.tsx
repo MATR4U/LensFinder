@@ -17,12 +17,28 @@ type Props = {
   htmlFor?: string;
   // Optional inline warning with hover tooltip (exclamation icon)
   warningTip?: string;
+  // Extended a11y/validation attributes (non-visual)
+  required?: boolean;
+  disabled?: boolean;
+  readOnly?: boolean;
+  validationState?: 'none' | 'error' | 'success';
+  testId?: string;
 };
 
-export default function FieldContainer({ label, info, status = 'normal', hint, action, right, children, labelId, htmlFor, warningTip }: Props) {
+export default function FieldContainer({ label, info, status = 'normal', hint, action, right, children, labelId, htmlFor, warningTip, required, disabled, readOnly, validationState = 'none', testId }: Props) {
   const bgCls = status === 'blocking' ? FIELD_CONTAINER_BG_BLOCKING : status === 'limit' ? FIELD_CONTAINER_BG_LIMIT : status === 'warning' ? FIELD_CONTAINER_BG_WARNING : FIELD_CONTAINER_BG_NORMAL;
   return (
-    <div className={`${FIELD_CONTAINER_BASE} ${bgCls}`} role="group" aria-labelledby={labelId}>
+    <div
+      className={`${FIELD_CONTAINER_BASE} ${bgCls}`}
+      role="group"
+      aria-labelledby={labelId}
+      aria-required={required || undefined}
+      aria-disabled={disabled || undefined}
+      aria-readonly={readOnly || undefined}
+      aria-invalid={validationState === 'error' ? true : undefined}
+      data-validation={validationState}
+      data-testid={testId}
+    >
       <div className={`${ROW_BETWEEN} mb-1.5`}>
         <label id={labelId} htmlFor={htmlFor} className={`${FORM_LABEL} flex items-center gap-2`}>
           <span>{label}</span>

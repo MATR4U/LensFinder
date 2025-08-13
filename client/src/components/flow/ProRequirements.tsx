@@ -9,7 +9,7 @@ import Checkbox from '../ui/Checkbox';
 import LabeledRange from '../ui/fields/LabeledRange';
 import LabeledSlider from '../ui/fields/LabeledSlider';
 import Button from '../ui/Button';
-import { TITLE_H2, TEXT_XS_MUTED, CARD_PADDED, GRID_TWO_GAP3, STACK_Y, ROW_BETWEEN, DIVIDER_T, TEXT_2XS_MUTED, INLINE_LABEL_MUTED_XS, BADGE_COUNT, ACTION_ROW } from '../ui/styles';
+import { TITLE_H2, TEXT_XS_MUTED, GRID_TWO_GAP3, STACK_Y, DIVIDER_T, TEXT_2XS_MUTED, INLINE_LABEL_MUTED_XS } from '../ui/styles';
 import { useFilterStore } from '../../stores/filterStore';
 import { PRESETS } from '../../lib/recommender';
 import { shallow } from 'zustand/shallow';
@@ -17,6 +17,7 @@ import { applyFilters } from '../../lib/filters';
 import GoalPresetWeights from '../ui/fields/GoalPresetWeights';
 import { FIELD_HELP } from '../ui/fieldHelp';
 import CollapsibleMessage from '../ui/CollapsibleMessage';
+import BaseRequirements from './BaseRequirements';
 // Inline warnings replace the standalone block; remove NoticeZeroResults usage
 
 type Props = {
@@ -51,6 +52,7 @@ export default function ProRequirements(props: Props) {
     goalWeights, setGoalWeights,
     caps,
     undoLastFilter,
+    continueTo,
     resetFilters,
     softPrice, setSoftPrice,
     softWeight, setSoftWeight,
@@ -91,6 +93,7 @@ export default function ProRequirements(props: Props) {
     setGoalWeights: s.setGoalWeights,
     caps: s.availabilityCaps,
     undoLastFilter: s.undoLastFilter,
+    continueTo: s.continueTo,
     resetFilters: s.resetFilters,
     softPrice: s.softPrice,
     setSoftPrice: s.setSoftPrice,
@@ -102,7 +105,7 @@ export default function ProRequirements(props: Props) {
     setSoftBreathing: s.setSoftBreathing,
   }), shallow);
 
-  const onBack = () => undoLastFilter();
+  const onBack = () => continueTo(0);
   const onReset = () => {
     if (caps) {
       resetFilters({ priceBounds: caps.priceBounds, weightBounds: caps.weightBounds });
@@ -222,7 +225,7 @@ export default function ProRequirements(props: Props) {
   }, [caps, lenses, camera, selectedCameraName, brand, lensType, sealed, isMacro, priceRange, weightRange, coverage, focalMin, focalMax, maxApertureF, requireOIS, distortionMaxPct, breathingMinScore]);
 
   // Density tracks for price and weight
-  const { priceTrackStyle, weightTrackStyle } = useMemo(() => {
+  const { priceTrackStyle, weightTrackStyle, currentPriceBounds, currentWeightBounds } = useMemo(() => {
     if (!caps || lenses.length === 0) return { priceTrackStyle: {} as React.CSSProperties, weightTrackStyle: {} as React.CSSProperties };
     const makeDensity = (vals: number[], minVal: number, maxVal: number, buckets = 24) => {
       if (maxVal <= minVal) return [] as number[];
@@ -283,15 +286,32 @@ export default function ProRequirements(props: Props) {
       ? { backgroundImage: `linear-gradient(90deg, ${weightStops})` }
       : {};
 
-    return { priceTrackStyle, weightTrackStyle };
+    const currentPriceBounds = priceVals.length ? { min: Math.min(...priceVals), max: Math.max(...priceVals) } : { ...caps.priceBounds };
+    const currentWeightBounds = weightVals.length ? { min: Math.min(...weightVals), max: Math.max(...weightVals) } : { ...caps.weightBounds };
+    return { priceTrackStyle, weightTrackStyle, currentPriceBounds, currentWeightBounds };
   }, [caps, lenses, camera, selectedCameraName, brand, lensType, sealed, isMacro, coverage, focalMin, focalMax, maxApertureF, requireOIS, distortionMaxPct, breathingMinScore]);
 
   return (
-    <div className={CARD_PADDED}>
-      <div className={ROW_BETWEEN}>
-        <h2 className={TITLE_H2}>Your requirements</h2>
-        <span className={BADGE_COUNT}>{resultsCount} matches</span>
-      </div>
+    <BaseRequirements
+      title="Your requirements"
+      resultsCount={resultsCount}
+      cameras={cameras}
+      cameraName={cameraName}
+      setCameraName={setCameraName}
+      brandOptions={(caps?.brands || (brandsForCamera || []))}
+      brand={brand}
+      setBrand={setBrand}
+      lensTypeOptions={(caps?.lensTypes || ['Any', 'Prime', 'Zoom'])}
+      lensType={lensType}
+      setLensType={setLensType}
+      sealed={sealed}
+      setSealed={setSealed}
+      isMacro={isMacro}
+      setIsMacro={setIsMacro}
+      onBack={onBack}
+      onReset={onReset}
+      onContinue={onContinue}
+    >
 
       <CollapsibleMessage variant="info" title="How to use hard specs" defaultOpen={false}>
         <ul className="list-disc pl-5 text-sm space-y-1">
@@ -306,31 +326,7 @@ export default function ProRequirements(props: Props) {
 
       {/* No standalone zero-results block; warnings will be integrated inline */}
 
-      {cameras && (
-        <div>
-          <LabeledSelect label="Camera Body" value={cameraName} onChange={setCameraName}>
-            <option key="Any" value="Any">Any</option>
-            {cameras.map((c) => (
-              <option key={c.name} value={c.name}>{c.name}</option>
-            ))}
-          </LabeledSelect>
-        </div>
-      )}
-
-      {brandsForCamera && (
-        <div className={GRID_TWO_GAP3}>
-          <div>
-            <LabeledSelect label="Brand" infoText="Filter by lens manufacturer. Only brands compatible with the selected mount are shown." value={brand} onChange={setBrand}>
-              {(caps?.brands || brandsForCamera).map((b) => <option key={b} value={b}>{b}</option>)}
-            </LabeledSelect>
-          </div>
-          <div>
-            <LabeledSelect label="Lens Type" infoText="Primes have a single focal length (often lighter/faster). Zooms cover a range (more flexible)." value={lensType} onChange={setLensType}>
-              {(caps?.lensTypes || ['Any', 'Prime', 'Zoom']).map((t) => <option key={t} value={t}>{t}</option>)}
-            </LabeledSelect>
-          </div>
-        </div>
-      )}
+      {/* brand/type selectors and camera are handled by BaseRequirements */}
 
       {/* Quick reset limiting filters: pick top 1–3 suggestions when results shrink or hit zero */}
       {/* Optional micro-hint row can remain for positive counts if desired; omit for now */}
@@ -389,7 +385,7 @@ export default function ProRequirements(props: Props) {
         <div>
           <LabeledRange
             label="Price (CHF)"
-            infoText={FIELD_HELP.price}
+            infoText={caps ? `${FIELD_HELP.price} Available now ${currentPriceBounds?.min ?? caps.priceBounds.min}–${currentPriceBounds?.max ?? caps.priceBounds.max}.` : FIELD_HELP.price}
             min={caps?.priceBounds.min ?? 0}
             max={caps?.priceBounds.max ?? 10000}
             step={50}
@@ -419,7 +415,7 @@ export default function ProRequirements(props: Props) {
         <div>
           <LabeledRange
             label="Weight (g)"
-            infoText={FIELD_HELP.weight}
+            infoText={caps ? `${FIELD_HELP.weight} Available now ${currentWeightBounds?.min ?? caps.weightBounds.min}–${currentWeightBounds?.max ?? caps.weightBounds.max}.` : FIELD_HELP.weight}
             min={caps?.weightBounds.min ?? 0}
             max={caps?.weightBounds.max ?? 5000}
             step={10}
@@ -512,14 +508,8 @@ export default function ProRequirements(props: Props) {
         />
       </div>
 
-      <div className={ROW_BETWEEN}>
-        <div className={ACTION_ROW}>
-          <Button variant="secondary" onClick={onBack}>Back</Button>
-          <Button variant="secondary" onClick={onReset}>Reset</Button>
-        </div>
-        <Button onClick={onContinue} aria-label="See results">See results ({resultsCount})</Button>
-      </div>
-    </div>
+      {/* actions rendered by BaseRequirements */}
+    </BaseRequirements>
   );
 }
 
