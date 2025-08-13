@@ -26,6 +26,14 @@
 - Kubernetes Redis persistence (optional) [Status: Open]
 - Add PVC and mount `/data` for `infra/k8s/redis.yaml` if persistence is desired.
 
+- **Client UI and e2e parity** [Status: Open]
+  - Mode screen shows buttons labeled 'Beginner' and 'Pro'; can proceed via 'Continue'.
+  - Requirements include checkboxes labeled exactly 'Weather sealed' and 'Macro'.
+  - Results grid renders cards with `data-testid="lens-card"`; each card has a visible 'Select' button and a `[data-testid="compare-toggle"]` button that toggles to 'Remove'.
+  - Default flow renders results promptly; client does not block UI on server health and fetches in background.
+  - Affected: `client/src/components/flow/*`, `client/src/components/report/LensCard.tsx`, `client/src/pages/App.tsx`, store/selectors.
+  - Tests: Fix failing e2e specs to green across Chromium/Firefox/WebKit/mobile-safari.
+
 - **CORS** [Status: In Progress]
   - Lock `CORS_ALLOWED_ORIGINS` to production domains only. [Plumbed in env/examples/K8s]
 
@@ -38,8 +46,6 @@
 - **Observability** [Status: Open]
 - Ensure `/metrics` is scraped by Prometheus; dashboards in Grafana.
 - Set `LOG_LEVEL` appropriately; keep Pino redaction of auth/cookies.
-
- 
 
 - **Security** [Status: Open]
 - Validate Helmet/CSP settings for production.
