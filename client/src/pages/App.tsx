@@ -28,7 +28,7 @@ import OutageScreen from '../components/ui/OutageScreen';
 import DebugFilterPanel from '../components/DebugFilterPanel';
 
 export default function App() {
-  const { cameras, lenses, fatalError, setFatalError, degraded, isPaused, pauseRetries, resumeRetries, retryNow } = useBootstrap();
+  const { cameras, lenses, fatalError, setFatalError, degraded, isPaused, pauseRetries, resumeRetries, retryNow, offline, health, lastError, etaSeconds, cacheMeta, cachedSnapshot } = useBootstrap();
   const [showRecovered, setShowRecovered] = React.useState(false);
   const prevDegradedRef = React.useRef<string | null>(null);
   React.useEffect(() => {
@@ -289,11 +289,15 @@ export default function App() {
           <StatusBanner
             variant="warning"
             title="Limited availability"
-            message={degraded}
+            message={offline ? "You're offline." : degraded}
             onRetry={() => retryNow()}
             pausedControls={{ isPaused, onPause: pauseRetries, onResume: resumeRetries }}
             copyText={`cameraName=${cameraName}; isPro=${isPro}; brand=${brand}; lensType=${lensType}; sealed=${sealed}; macro=${isMacro}; p=${priceRange.min}-${priceRange.max}; w=${weightRange.min}-${weightRange.max}; coverage=${proCoverage}; focal=${proFocalMin}-${proFocalMax}; ap<=${proMaxApertureF}; ois=${proRequireOIS}; wsealed=${proRequireSealed}; macroReq=${proRequireMacro}; pmax=${proPriceMax}; wmax=${proWeightMax}; dist<=${proDistortionMaxPct}; breath>=${proBreathingMinScore}`}
+            etaStartSeconds={etaSeconds}
           />
+          {health && (
+            <div className="mt-2 text-xs text-[var(--text-muted)]" aria-live="polite">Health: {Object.entries(health).map(([k, v]) => `${k}:${v}`).join(' • ')}</div>
+          )}
         </div>
       )}
 

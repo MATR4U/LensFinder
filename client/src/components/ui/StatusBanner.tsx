@@ -47,7 +47,7 @@ export default function StatusBanner({ variant, title, message, onRetry, details
                 {copyText && (
                   <button
                     className="text-xs px-2 py-1 rounded bg-[var(--control-bg)] border border-[var(--control-border)]"
-                    onClick={async () => { try { await navigator.clipboard.writeText(copyText); } catch {} }}
+                    onClick={async () => { try { await navigator.clipboard.writeText(copyText); } catch { } }}
                     title="Copy diagnostics"
                   >Copy diagnostics</button>
                 )}
