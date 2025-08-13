@@ -178,12 +178,12 @@ What to add
 - ModalBase/PopoverBase: focus trap, escape-to-close, aria-* wired.
 - Benefit: consistent look/feel and interaction; one place to tweak theme/density.
 
-4) PageBase [Status: In Progress]
+4) PageBase [Status: In Progress → partial]
 
-- Page shell (background, `PAGE_CONTAINER`, `SECTION_STACK`), head/meta (title/description), ErrorBoundary + Suspense, route analytics, keyboard “skip to content”, optional stage guard (no auto-advance).
-- Implement: `client/src/components/pages/PageBase.tsx` with slots: `headerSlot`, `actionsSlot`, `children` and props: `title`, `meta`, `requireExplicitAdvance?`.
-- Migrate: `pages/App.tsx`, flows (`ModeSelect`, `SimpleRequirements`, `ProRequirements`, `ExploreGrid`, `CompareShowdown`).
-- Benefit: uniform navigation semantics and accessibility; one place to enforce “explicit click to advance”.
+- Implemented: page shell, head/meta, keyboard "skip to content", ErrorBoundary + Suspense wrapper, optional `onView` analytics hook in `client/src/components/pages/PageBase.tsx`.
+- Next: consider stage guard hook (no auto-advance already enforced at store/flow level), expose `actionsSlot` patterns where needed, and migrate any additional pages if introduced later.
+- Current migration: `pages/App.tsx` uses `PageBase`.
+- Benefit: uniform navigation semantics and accessibility; centralized place to extend page-level behavior.
 
 Cross-cutting utilities [Status: Open]
 

@@ -21,7 +21,7 @@ export default function Card({ title, subtitle, right, className = '', children 
           {right}
         </div>
       )}
-      <div className="prose-content">
+      <div className="prose-content space-y-3">
         {children}
       </div>
     </section>

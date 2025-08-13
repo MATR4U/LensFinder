@@ -74,9 +74,9 @@ export const PANEL_BASE = CARD_BASE;
 export const PANEL_NEUTRAL = CARD_NEUTRAL;
 
 // Layout tokens
-export const GRID_AUTOFILL = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4';
-export const GRID_AUTOFILL_4 = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4';
-export const GRID_TWO_GAP3 = 'grid grid-cols-1 sm:grid-cols-2 gap-3';
+export const GRID_AUTOFILL = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5';
+export const GRID_AUTOFILL_4 = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5';
+export const GRID_TWO_GAP3 = 'grid grid-cols-1 sm:grid-cols-2 gap-4';
 export const GRID_TWO_GAP4 = 'grid grid-cols-1 sm:grid-cols-2 gap-4';
 export const GRID_THREE_GAP4 = 'grid grid-cols-1 sm:grid-cols-3 gap-4';
 export const GRID_LG_TWO_GAP6 = 'grid grid-cols-1 lg:grid-cols-2 gap-6';

@@ -33,6 +33,10 @@ export default defineConfig(({ mode }) => {
           target: apiTarget,
           changeOrigin: true
         },
+        '/ready': {
+          target: apiTarget,
+          changeOrigin: true
+        },
         '/favicon.ico': {
           target: apiTarget,
           changeOrigin: true
