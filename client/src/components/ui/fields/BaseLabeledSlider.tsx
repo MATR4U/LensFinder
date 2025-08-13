@@ -25,6 +25,12 @@ type CommonProps = {
   warningTip?: string;
   // Optional soft preference checkbox shown inline on the right
   softPreference?: { checked: boolean; onChange: (v: boolean) => void; id?: string; label?: string };
+  // Extended a11y/validation and test hooks
+  validationState?: 'none' | 'error' | 'success';
+  required?: boolean;
+  disabled?: boolean;
+  readOnly?: boolean;
+  testId?: string;
 };
 
 type SingleMode = {
@@ -48,6 +54,7 @@ export default function BaseLabeledSlider(props: Props) {
     label, infoText, min, max, step,
     ticks, snap, format, trackStyle,
     right, hint, status, id, warningTip, softPreference, idPrefix,
+    validationState = 'none', required, disabled, readOnly, testId,
   } = props;
 
   const autoLblId = React.useId();
@@ -87,6 +94,11 @@ export default function BaseLabeledSlider(props: Props) {
       labelId={effectiveId}
       htmlFor={effectiveInputId}
       warningTip={warningTip}
+      validationState={validationState}
+      required={required}
+      disabled={disabled}
+      readOnly={readOnly}
+      testId={testId}
     >
       <div className={SLIDER_FIELD_STACK}>
         {isSingle ? (
