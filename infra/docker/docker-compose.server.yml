@@ -1,0 +1,30 @@
+services:
+  server:
+    build:
+      context: ../..
+      dockerfile: server/Dockerfile
+    image: lensfinder-server:latest
+    container_name: lensfinder-server
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      CACHE_TTL_S: ${CACHE_TTL_S}
+      REQUEST_SIGNATURE_SECRET: ${REQUEST_SIGNATURE_SECRET}
+      SIGNATURE_TTL_SECONDS: ${SIGNATURE_TTL_SECONDS}
+      SIGNATURE_EXCLUDE_PATHS: ${SIGNATURE_EXCLUDE_PATHS}
+      API_KEY: ${API_KEY}
+      API_VERSION_CURRENT: ${API_VERSION_CURRENT}
+      API_VERSION_DEPRECATED: ${API_VERSION_DEPRECATED}
+      API_VERSION_POLICY_URL: ${API_VERSION_POLICY_URL}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+      TRUST_PROXY: ${TRUST_PROXY}
+      RATE_LIMIT_GLOBAL_PER_MIN: ${RATE_LIMIT_GLOBAL_PER_MIN}
+      RATE_LIMIT_PRICE_PER_MIN: ${RATE_LIMIT_PRICE_PER_MIN}
+      JSON_BODY_LIMIT: ${JSON_BODY_LIMIT}
+      LOG_LEVEL: ${LOG_LEVEL}
+    ports:
+      - "${PORT:-3001}:3001"
+
+

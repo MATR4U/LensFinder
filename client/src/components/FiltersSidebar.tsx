@@ -1,5 +1,8 @@
 import React from 'react';
+import { CARD_BASE, CARD_NEUTRAL, TEXT_SM, TEXT_XS_MUTED } from './ui/styles';
 import type { Camera } from '../types';
+import Toggle from './ui/Toggle';
+import Select from './ui/Select';
 
 type Props = {
   cameras: Camera[];
@@ -11,23 +14,20 @@ type Props = {
 
 export default function FiltersSidebar({ cameras, cameraName, setCameraName, isPro, setIsPro }: Props) {
   return (
-    <aside className="bg-gray-900/60 rounded-xl border border-gray-800 p-4 space-y-4">
-      <div className="flex items-center justify-center space-x-4 p-2 bg-gray-800 rounded-lg">
-        <span className={!isPro ? 'text-white text-sm' : 'text-gray-400 text-sm'}>Beginner</span>
-        <label className="relative inline-flex items-center cursor-pointer">
-          <input type="checkbox" className="sr-only peer" checked={isPro} onChange={(e) => setIsPro(e.target.checked)} />
-          <div className="w-11 h-6 bg-gray-700 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-800"></div>
-        </label>
-        <span className={isPro ? 'text-white text-sm' : 'text-gray-400 text-sm'}>Professional</span>
+    <aside className={`${CARD_BASE} ${CARD_NEUTRAL} space-y-4`}>
+      <div className="flex items-center justify-center space-x-4 p-2 bg-[var(--control-bg)] rounded-lg border border-[var(--control-border)]">
+        <span className={!isPro ? `${TEXT_SM}` : `${TEXT_SM} text-[var(--text-muted)]`}>Beginner</span>
+        <Toggle checked={isPro} onChange={setIsPro} />
+        <span className={isPro ? `${TEXT_SM}` : `${TEXT_SM} text-[var(--text-muted)]`}>Professional</span>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-400 mb-1">Camera Body</label>
-        <select value={cameraName} onChange={(e) => setCameraName(e.target.value)} className="w-full bg-gray-800 border border-gray-700 text-white rounded-md p-2">
+        <label className={`block ${TEXT_SM} font-medium text-[var(--text-muted)] mb-1`}>Camera Body</label>
+        <Select value={cameraName} onChange={setCameraName}>
           {cameras.map((c) => (
             <option key={c.name} value={c.name}>{c.name}</option>
           ))}
-        </select>
+        </Select>
       </div>
     </aside>
   );

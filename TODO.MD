@@ -105,10 +105,10 @@
 
   - **HTTP semantics (Vary/HEAD)** [Status: In Progress]
   - Standardize `Vary` headers (`Accept`, `Accept-Encoding`, and `Origin` when CORS is enabled) across cacheable endpoints. [Done]
-  - Support `HEAD` for all `GET` resources returning identical headers and status with an empty body. [Partial: implemented for `/api/cameras` and `/api/lenses`]
+  - Support `HEAD` for all `GET` resources returning identical headers and status with an empty body. [Extended: added for `/api`, `/docs`, `/metrics`, `/openapi.json`, `/api/health`, `/api/health/components`, `/api/cameras`, `/api/lenses`, `/api/price`, `/api/events`, `/api/events/token`]
 
-  - **HATEOAS affordances (beyond links)** [Status: Open]
-  - Include hypermedia controls for writes (e.g., forms/templates or HAL-FORMS/Collection+JSON affordances) where applicable; document link relations and affordance semantics.
+  - **HATEOAS affordances (beyond links)** [Status: In Progress]
+  - Include hypermedia controls for writes (e.g., forms/templates or HAL-FORMS/Collection+JSON affordances) where applicable; document link relations and affordance semantics. [Partial: `_templates.report` added to `/api`]
 
 ### Nice-to-haves (post-GA)
 

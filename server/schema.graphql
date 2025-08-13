@@ -1,0 +1,77 @@
+type Query {
+  cameras: [Camera]
+  lenses: [Lens]
+  price(url: String!): String
+}
+
+type Camera {
+  name: String
+  brand: String
+  mount: String
+  sensor: Sensor
+  ibis: Boolean
+  price_chf: Float
+  weight_g: Float
+  source_url: String
+}
+
+type Sensor {
+  name: String
+  width_mm: Float
+  height_mm: Float
+  coc_mm: Float
+  crop: Float
+}
+
+type Lens {
+  name: String
+  brand: String
+  mount: String
+  coverage: String
+  focal_min_mm: Float
+  focal_max_mm: Float
+  aperture_min: Float
+  aperture_max: Float
+  weight_g: Float
+  ois: Boolean
+  price_chf: Float
+  weather_sealed: Boolean
+  is_macro: Boolean
+  distortion_pct: Float
+  focus_breathing_score: Float
+  source_url: String
+}
+
+type Mutation {
+  report(cameraName: String!, goal: String!, top: [ReportItemInput!]!): Report
+}
+
+type Report {
+  cameraName: String
+  goal: String
+  items: [ReportItem]
+  verdicts: [ReportVerdict]
+  summary: String
+}
+
+type ReportItem {
+  rank: Float
+  name: String
+  score: Float
+  type: String
+  weight_g: Float
+  price_chf: Float
+}
+
+type ReportVerdict {
+  label: String
+  name: String
+}
+
+input ReportItemInput {
+  name: String!
+  total: Float!
+  weight_g: Float!
+  price_chf: Float!
+  type: String!
+}

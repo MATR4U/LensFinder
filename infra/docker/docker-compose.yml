@@ -1,0 +1,36 @@
+services:
+  client:
+    extends:
+      file: docker-compose.client.yml
+      service: client
+
+  server:
+    extends:
+      file: docker-compose.server.yml
+      service: server
+    depends_on:
+      - postgres
+      - redis
+
+  postgres:
+    extends:
+      file: docker-compose.db.yml
+      service: postgres
+
+  pgadmin:
+    extends:
+      file: docker-compose.db.yml
+      service: pgadmin
+
+  redis:
+    extends:
+      file: docker-compose.redis.yml
+      service: redis
+
+
+volumes:
+  pgdata:
+  pgadmin:
+  redisdata:
+
+

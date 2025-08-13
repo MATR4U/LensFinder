@@ -1,0 +1,64 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: server-config
+data:
+  NODE_ENV: "production"
+  PORT: "3001"
+  CACHE_TTL_S: "300"
+  REDIS_URL: "redis://redis:6379/0"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: server-secret
+type: Opaque
+stringData:
+  DATABASE_URL: "postgres://lens:lens@postgres:5432/lensfinder"
+  REQUEST_SIGNATURE_SECRET: ""
+  API_KEY: ""
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: server
+  template:
+    metadata:
+      labels:
+        app: server
+    spec:
+      containers:
+        - name: server
+          image: lensfinder-server:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: server-config
+                  key: NODE_ENV
+          envFrom:
+            - configMapRef:
+                name: server-config
+            - secretRef:
+                name: server-secret
+          ports:
+            - name: http
+              containerPort: 3001
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 3001
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3001
+            initialDelaySeconds: 15
+            periodSeconds: 10

@@ -1,11 +1,29 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './pages/App';
+import './index.css';
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+// Ensure deterministic UI for automated e2e: clear persisted store when driven by WebDriver
+if (typeof window !== 'undefined') {
+  try {
+    // Playwright sets navigator.webdriver = true
+    if ((navigator as any).webdriver) {
+      localStorage.removeItem('camera-filter-storage');
+    }
+  } catch { }
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root')!);
+
+async function bootstrap() {
+  // Dynamically import App after potential store cleanup to avoid early hydration
+  const { default: App } = await import('./pages/App');
+  root.render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  );
+}
+
+bootstrap();
 
 

@@ -142,6 +142,11 @@ app.get('/metrics', async (_req: Request, res: Response) => {
   res.set('Content-Type', register.contentType);
   res.end(await register.metrics());
 });
+// HEAD for /metrics
+app.head('/metrics', (_req: Request, res: Response) => {
+  res.set('Content-Type', register.contentType);
+  res.status(200).end();
+});
 
 // GraphQL endpoint mounted alongside REST
 function requireApiKey(req: Request, res: Response, next: Function) {
@@ -256,6 +261,11 @@ app.get('/docs', (req: Request, res: Response) => {
   ].join('');
   res.setHeader('Cache-Control', 'public, max-age=3600, stale-while-revalidate=300');
   res.type('text/html').send(html);
+});
+// HEAD for /docs mirroring headers
+app.head('/docs', (_req: Request, res: Response) => {
+  res.setHeader('Cache-Control', 'public, max-age=3600, stale-while-revalidate=300');
+  res.type('text/html').status(200).end();
 });
 // Readiness endpoint that checks DB connectivity
 app.get('/ready', async (_req: Request, res: Response) => {

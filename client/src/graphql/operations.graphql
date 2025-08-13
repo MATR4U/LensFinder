@@ -1,0 +1,61 @@
+query GetCameras {
+  cameras {
+    name
+    brand
+    mount
+    sensor {
+      name
+      width_mm
+      height_mm
+      coc_mm
+      crop
+    }
+    ibis
+    price_chf
+    weight_g
+    source_url
+  }
+}
+
+query GetLenses {
+  lenses {
+    name
+    brand
+    mount
+    coverage
+    focal_min_mm
+    focal_max_mm
+    aperture_min
+    aperture_max
+    weight_g
+    ois
+    price_chf
+    weather_sealed
+    is_macro
+    distortion_pct
+    focus_breathing_score
+    source_url
+  }
+}
+
+mutation CreateReport($cameraName: String!, $goal: String!, $top: [ReportItemInput!]!) {
+  report(cameraName: $cameraName, goal: $goal, top: $top) {
+    cameraName
+    goal
+    items {
+      rank
+      name
+      score
+      type
+      weight_g
+      price_chf
+    }
+    verdicts {
+      label
+      name
+    }
+    summary
+  }
+}
+
+

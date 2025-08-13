@@ -1,0 +1,15 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "LensFinder Local",
+      "Group": "Servers",
+      "Port": 5432,
+      "Username": "lens",
+      "Host": "postgres",
+      "SSLMode": "prefer",
+      "MaintenanceDB": "lensfinder"
+    }
+  }
+}
+
+

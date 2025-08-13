@@ -51,13 +51,14 @@ export function computeResults(params: {
   goal_weights: Record<string, number>;
   focal_choice: number;
   isProMode: boolean;
+  subject_distance_m?: number;
 }): Result[] {
-  const { lenses, camera, goal_weights, focal_choice, isProMode } = params;
+  const { lenses, camera, goal_weights, focal_choice, isProMode, subject_distance_m = 3.0 } = params;
   return lenses.map((lens) => {
     const fc = isProMode ? Math.max(lens.focal_min_mm, Math.min(focal_choice, lens.focal_max_mm)) : (lens.focal_min_mm + lens.focal_max_mm) / 2;
     const scores = scoreLens(lens, camera, goal_weights, fc);
     const { h } = optics.fovDeg(camera.sensor, fc);
-    const { total } = optics.depthOfFieldMm(fc, maxApertureAt(lens, fc), camera.sensor.coc_mm, 3.0 * 1000);
+    const { total } = optics.depthOfFieldMm(fc, maxApertureAt(lens, fc), camera.sensor.coc_mm, subject_distance_m * 1000);
     return {
       ...lens,
       ...scores,

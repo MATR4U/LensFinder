@@ -1,0 +1,180 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+    env:
+      NODE_ENV: test
+      REDIS_URL: redis://localhost:6379/0
+      API_KEY: test-key
+      VITE_API_KEY: test-key
+      TRUST_PROXY: "true"
+      CACHE_TTL_S: "300"
+      REQUEST_SIGNATURE_SECRET: test-secret
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate contracts (server)
+        run: npm --workspace server run openapi && npm --workspace server run graphql:schema
+
+      - name: Typecheck and unit tests (server)
+        run: npm run test:server
+
+      - name: Typecheck and unit tests (client)
+        run: npm run test:client
+
+      - name: Build server and client
+        run: npm run build
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+
+      - name: Start stack
+        run: npm run start:ordered &
+
+      - name: Wait for stack to be ready
+        run: npx wait-on tcp:3001 tcp:3000
+
+      - name: E2E tests
+        run: npm run test:e2e
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: lensfinder
+          POSTGRES_USER: lens
+          POSTGRES_PASSWORD: lens
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U lens" --health-interval 10s --health-timeout 5s --health-retries 5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+    env:
+      DATABASE_URL: postgres://lens:lens@localhost:5432/lensfinder
+      NODE_ENV: development
+      CI: true
+      # Cache disabled by default in CI unless REDIS_URL provided via secrets
+      CACHE_TTL_S: 300
+      REQUEST_SIGNATURE_SECRET: ''
+      SIGNATURE_TTL_SECONDS: 300
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - name: Install root deps
+        run: npm ci
+      - name: Install server deps
+        run: npm --workspace server ci
+      - name: Install client deps
+        run: npm --workspace client ci
+      - name: DB migrate
+        run: npm run db:migrate
+      - name: Build server
+        run: npm run build:server
+      - name: Test server
+        run: npm run test:server
+      - name: Build client
+        run: npm run build:client
+      - name: Test client
+        run: npm run test:client
+      - name: Generate deploy assets (infra)
+        run: npm run deploy:gen
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: lensfinder
+          POSTGRES_USER: lens
+          POSTGRES_PASSWORD: lens
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U lens" --health-interval 10s --health-timeout 5s --health-retries 5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+    env:
+      DATABASE_URL: postgres://lens:lens@localhost:5432/lensfinder
+      NODE_ENV: development
+      CI: true
+      PORT: 3001
+      CLIENT_PORT: 3000
+      DB_DRIVER: pg
+      PLAYWRIGHT_BASE_URL: http://localhost:3000
+      CACHE_TTL_S: 300
+      REQUEST_SIGNATURE_SECRET: ''
+      SIGNATURE_TTL_SECONDS: 300
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - name: Install deps
+        run: npm ci && npm --workspace server ci && npm --workspace client ci
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium firefox webkit
+      - name: Start stack
+        run: |
+          npm run db:migrate
+          nohup npm run dev:server:pg >/tmp/server.log 2>&1 &
+          npx wait-on tcp:3001
+          nohup npm run dev:client >/tmp/client.log 2>&1 &
+          npx wait-on http://localhost:3000
+      - name: Run Playwright tests
+        run: npx playwright test --reporter=list
+      - name: Upload Playwright artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts
+          path: |
+            test-results/
+            playwright-report/
+            packages/*/test-results/
+            packages/*/playwright-report/
+
+

@@ -1,0 +1,611 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "LensFinder API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api": {
+      "get": {
+        "summary": "Service index",
+        "description": "Top-level API index with links to entry points and a simple report template description.",
+        "responses": {
+          "200": {
+            "description": "Index document"
+          }
+        }
+      }
+    },
+    "/api/health": {
+      "get": {
+        "summary": "Health check",
+        "description": "Lightweight readiness probe that validates database connectivity.",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "503": {
+            "description": "DB unavailable"
+          }
+        }
+      }
+    },
+    "/api/health/components": {
+      "get": {
+        "summary": "Component health",
+        "description": "Reports health for core components: server, database, client (static or dev), GraphQL schema, and OpenAPI presence.",
+        "responses": {
+          "200": {
+            "description": "Component health status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "server": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "db": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "client": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "graphql": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "openapi": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "meta": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cameras": {
+      "get": {
+        "summary": "List cameras",
+        "description": "Returns all cameras from the database. Sensor fields are grouped under the sensor object to mirror the REST response.",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 500
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Required if API_KEY is configured on the server"
+          },
+          {
+            "name": "accept",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Optional versioning header: application/vnd.lensfinder.v1+json"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of cameras",
+            "headers": {
+              "X-Total-Count": {
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Link": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "RFC5988 pagination links"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "number"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "brand": {
+                        "type": "string"
+                      },
+                      "mount": {
+                        "type": "string"
+                      },
+                      "ibis": {
+                        "type": "boolean"
+                      },
+                      "price_chf": {
+                        "type": "number"
+                      },
+                      "weight_g": {
+                        "type": "number"
+                      },
+                      "source_url": {
+                        "type": "string"
+                      },
+                      "sensor": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "width_mm": {
+                            "type": "number"
+                          },
+                          "height_mm": {
+                            "type": "number"
+                          },
+                          "coc_mm": {
+                            "type": "number"
+                          },
+                          "crop": {
+                            "type": "number"
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      "_links": {
+                        "type": "object",
+                        "additionalProperties": true
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/lenses": {
+      "get": {
+        "summary": "List lenses",
+        "description": "Returns all lenses from the database with normalized boolean fields.",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 500
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Required if API_KEY is configured on the server"
+          },
+          {
+            "name": "accept",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Optional versioning header: application/vnd.lensfinder.v1+json"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of lenses",
+            "headers": {
+              "X-Total-Count": {
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "Link": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "RFC5988 pagination links"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "number"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "brand": {
+                        "type": "string"
+                      },
+                      "mount": {
+                        "type": "string"
+                      },
+                      "coverage": {
+                        "type": "string"
+                      },
+                      "focal_min_mm": {
+                        "type": "number"
+                      },
+                      "focal_max_mm": {
+                        "type": "number"
+                      },
+                      "aperture_min": {
+                        "type": "number"
+                      },
+                      "aperture_max": {
+                        "type": "number"
+                      },
+                      "weight_g": {
+                        "type": "number"
+                      },
+                      "ois": {
+                        "type": "boolean"
+                      },
+                      "price_chf": {
+                        "type": "number"
+                      },
+                      "weather_sealed": {
+                        "type": "boolean"
+                      },
+                      "is_macro": {
+                        "type": "boolean"
+                      },
+                      "distortion_pct": {
+                        "type": "number"
+                      },
+                      "focus_breathing_score": {
+                        "type": "number"
+                      },
+                      "source_url": {
+                        "type": "string"
+                      },
+                      "_links": {
+                        "type": "object",
+                        "additionalProperties": true
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cache/purge": {
+      "post": {
+        "summary": "Purge cache keys by prefixes",
+        "description": "Deletes cached responses by key prefix. Requires HMAC signature when REQUEST_SIGNATURE_SECRET is set.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "prefixes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "minItems": 1
+                  }
+                },
+                "required": [
+                  "prefixes"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Purge outcome"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/admin/cache/purge": {
+      "post": {
+        "summary": "Admin purge by prefix",
+        "description": "Deletes cache keys by single prefix. Authorized via API key or HMAC signature.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "prefix": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "prefix"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Purge outcome"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/events": {
+      "get": {
+        "summary": "Server-sent events (SSE)",
+        "description": "Stream server events (Content-Type: text/event-stream). Emits periodic ping and report notifications. When REQUEST_SIGNATURE_SECRET is set, requires signed query parameters ts and sig.",
+        "responses": {
+          "200": {
+            "description": "SSE stream"
+          }
+        }
+      }
+    },
+    "/api/events/token": {
+      "get": {
+        "summary": "Mint SSE signed token",
+        "description": "Returns a signed token { ts, sig } for connecting to /api/events when signatures are enabled. Returns 204 when signatures are disabled.",
+        "responses": {
+          "200": {
+            "description": "JSON with ts and sig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ts": {
+                      "type": "integer"
+                    },
+                    "sig": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "ts",
+                    "sig"
+                  ]
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "Signatures disabled"
+          }
+        }
+      }
+    },
+    "/api/price": {
+      "get": {
+        "summary": "Scrape price from URL",
+        "description": "Fetches a page and extracts a price candidate using simple selectors. Enforces optional allowlist and size/time limits.",
+        "parameters": [
+          {
+            "name": "url",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            }
+          },
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Required if API_KEY is configured on the server"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Price payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "price": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing url"
+          }
+        }
+      }
+    },
+    "/api/report": {
+      "post": {
+        "summary": "Compute report from ranked top items",
+        "description": "Produces a lightweight analysis response for the selected camera, goal, and ranked top items.",
+        "parameters": [
+          {
+            "name": "idempotency-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Optional idempotency key for future stateful writes"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "cameraName": {
+                    "type": "string"
+                  },
+                  "goal": {
+                    "type": "string"
+                  },
+                  "top": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "total": {
+                          "type": "number"
+                        },
+                        "weight_g": {
+                          "type": "number"
+                        },
+                        "price_chf": {
+                          "type": "number"
+                        },
+                        "type": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "total",
+                        "weight_g",
+                        "price_chf",
+                        "type"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "cameraName",
+                  "goal",
+                  "top"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Report response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "cameraName": {
+                      "type": "string"
+                    },
+                    "goal": {
+                      "type": "string"
+                    },
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    "verdicts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    "summary": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

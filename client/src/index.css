@@ -1,0 +1,141 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root {
+  height: 100%;
+}
+
+/* Slider theme variables with defaults */
+:root {
+  /* App scaffold */
+  --bg-from: #0b1220;
+  --bg-to: #0e1426;
+  --text-color: #e5e7eb; /* gray-200 */
+  --text-muted: #b5bdc7; /* adjusted for AA contrast on control bg */
+  --card-bg: rgba(31, 41, 55, 0.6); /* gray-800/60 */
+  --card-border: rgba(55, 65, 81, 1); /* gray-700 */
+  --error-bg: rgba(76, 5, 5, 0.4); /* red-950/40 */
+  --error-border: rgba(153, 27, 27, 0.6); /* red-800/60 */
+  --error-text: rgb(254, 202, 202); /* red-200 */
+
+  /* Controls and accents */
+  --control-bg: rgba(31, 41, 55, 1); /* gray-800 */
+  --control-border: rgba(55, 65, 81, 1); /* gray-700 */
+  --control-text: #d1d5db; /* gray-300 */
+  --border-default: rgba(55, 65, 81, 1); /* gray-700 */
+  --accent: rgb(59, 130, 246); /* blue-500 */
+  --accent-hover: rgb(37, 99, 235); /* blue-600 */
+  --surface-contrast: #ffffff; /* default high-contrast text/icon on colored surfaces */
+  --accent-contrast: var(--surface-contrast);
+  --accent-rgb: 59, 130, 246; /* for rgba(var(--accent-rgb), a) */
+
+  /* Soft container styling for discrete controls (checkbox/radio) */
+  --control-bg-soft: color-mix(in_oklab, var(--control-bg), white 6%);
+  --control-outline-soft: color-mix(in_oklab, var(--control-border), white 18%);
+  --focus-ring: var(--accent);
+  --checkbox-size: 1.25rem; /* 20px for comfortable hit target */
+  --checkbox-hit: 2.75rem; /* 44px hit target for touch accessibility */
+
+  /* Badge/theme color aliases */
+  --badge-success-bg: rgba(5, 46, 22, 0.3); /* green-950/30 */
+  --badge-success-border: rgba(34, 197, 94, 0.5); /* green-500/50 */
+  --badge-success-text: rgb(134, 239, 172); /* green-300 */
+  --badge-warning-bg: rgba(67, 20, 7, 0.3); /* amber-950/30 */
+  --badge-warning-border: rgba(245, 158, 11, 0.5); /* amber-500/50 */
+  --badge-warning-text: rgb(252, 211, 77); /* amber-300 */
+  --notice-warning-bg: var(--badge-warning-bg);
+  --notice-warning-border: var(--badge-warning-border);
+  --notice-warning-text: var(--badge-warning-text);
+  --hint-text: var(--notice-warning-text);
+
+  /* Notice (card/message) semantic colors */
+  --notice-info-bg: rgba(30, 58, 138, 0.2); /* indigo-900/20 */
+  --notice-info-border: rgba(29, 78, 216, 0.5); /* blue-700/50 */
+  --notice-info-text: rgb(191, 219, 254); /* blue-200 */
+  --notice-warning-bg: rgba(67, 20, 7, 0.2); /* amber-950/20 */
+  --notice-warning-border: rgba(180, 83, 9, 0.5); /* amber-700/50 */
+  --notice-warning-text: rgb(254, 240, 138); /* yellow-200 */
+  --notice-success-bg: rgba(5, 46, 22, 0.2); /* green-950/20 */
+  --notice-success-border: rgba(21, 128, 61, 0.5); /* green-700/50 */
+  --notice-success-text: rgb(187, 247, 208); /* green-200 */
+
+  /* Plotly theme variables */
+  --plot-marker: #93c5fd; /* blue-300 */
+  --plot-marker-highlight: #60a5fa; /* blue-400 */
+  --plot-frontier: #34d399; /* green-400 */
+  --plot-grid: color-mix(in_oklab, var(--text-color), transparent 90%);
+  --plot-font: var(--text-color);
+  --plot-legend-bg: color-mix(in_oklab, var(--control-bg), transparent 70%);
+  --plot-legend-border: var(--control-border);
+
+  --slider-track: theme(colors.gray.700/0.6);
+  --slider-range: theme(colors.blue.500);
+  --slider-focus: theme(colors.blue.500);
+  --slider-thumb: 1rem; /* 16px */
+  --slider-track-h: 0.375rem; /* 6px */
+  --slider-thumb-bg: var(--surface-contrast);
+  --slider-thumb-ring: color-mix(in_oklab, var(--control-border), transparent 90%);
+  /* Tick marks */
+  --slider-tick: rgba(55, 65, 81, 0.6); /* based on control-border @ 60% */
+  
+  /* Shadows */
+  --shadow-color: color-mix(in_oklab, var(--control-border), transparent 40%);
+  --shadow-elevated: 0 10px 30px -10px var(--shadow-color);
+}
+
+/* Default content styling for Message and similar components */
+.message-prose :is(p, ul, ol),
+.prose-content :is(p, ul, ol) {
+  @apply text-sm leading-6 text-[var(--text-color)];
+}
+.message-prose ul,
+.prose-content ul {
+  @apply list-disc pl-5 space-y-1;
+}
+.message-prose ol,
+.prose-content ol {
+  @apply list-decimal pl-5 space-y-1;
+}
+.message-prose a,
+.prose-content a {
+  @apply underline hover:text-[var(--accent)];
+}
+
+/* Reusable shadow class */
+.shadow-elevated {
+  box-shadow: var(--shadow-elevated);
+}
+
+/* Example theme overrides */
+.theme-cosmic {
+  --slider-track: theme(colors.indigo.900/0.5);
+  --slider-range: theme(colors.fuchsia.500);
+  --slider-focus: theme(colors.fuchsia.500);
+}
+
+.theme-sunset {
+  --slider-track: theme(colors.orange.900/0.5);
+  --slider-range: theme(colors.orange.500);
+  --slider-focus: theme(colors.orange.500);
+}
+
+.theme-forest {
+  --slider-track: theme(colors.green.900/0.5);
+  --slider-range: theme(colors.green.500);
+  --slider-focus: theme(colors.green.500);
+}
+
+.theme-royal {
+  --slider-track: theme(colors.blue.900/0.5);
+  --slider-range: theme(colors.blue.500);
+  --slider-focus: theme(colors.blue.500);
+}
+
+.theme-crimson {
+  --slider-track: theme(colors.red.900/0.5);
+  --slider-range: theme(colors.red.500);
+  --slider-focus: theme(colors.red.500);
+}
+
+

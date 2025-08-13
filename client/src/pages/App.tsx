@@ -1,112 +1,357 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import Plot from 'react-plotly.js';
 import { Camera, Lens, Result } from '../types';
-
-const fetchJSON = async <T,>(path: string): Promise<T> => {
-  const res = await fetch(path);
-  return res.json();
-};
+import Report from '../components/Report';
+import { useDebouncedReport } from '../hooks/useDebouncedReport';
+import type { Availability } from '../lib/availability';
+import { applyFilters } from '../lib/filters';
+import { makeBrandsForCamera, makeAvailabilitySelector, makeResultsSelector } from '../lib/selectors';
+import Card from '../components/ui/Card';
+import CompareShowdown from '../components/flow/CompareShowdown';
+import ExploreGrid from '../components/flow/ExploreGrid';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+const LazyProRequirements = React.lazy(() => import('../components/flow/ProRequirements'));
+const LazySimpleRequirements = React.lazy(() => import('../components/flow/SimpleRequirements'));
+import ModeSelect from '../components/flow/ModeSelect';
+import { shallow } from 'zustand/shallow';
+import { useBootstrap } from '../hooks/useBootstrap';
+import { computeDebugCounts } from '../lib/debugCounts';
+import { useFilterStore } from '../stores/filterStore';
+import { APP_BACKGROUND, PAGE_CONTAINER, SECTION_STACK, CARD_BASE, CARD_ERROR, TITLE_H1, TITLE_H2, TEXT_SM, TEXT_XS_MUTED, SECTION_TITLE, ROW_BETWEEN, ROW_END, STACK_Y, BADGE_COUNT } from '../components/ui/styles';
+import Loading from '../components/ui/Loading';
+import Button from '../components/ui/Button';
+import Message from '../components/ui/Message';
 
 export default function App() {
-  const [cameras, setCameras] = useState<Camera[]>([]);
-  const [lenses, setLenses] = useState<Lens[]>([]);
-  const [cameraName, setCameraName] = useState<string>('');
-  const [isPro, setIsPro] = useState(true);
+  const { cameras, lenses, fatalError, setFatalError } = useBootstrap();
+  const cameraName = useFilterStore(s => s.cameraName);
+  const isPro = useFilterStore(s => s.isPro);
+  const goalPreset = useFilterStore(s => s.goalPreset);
+  const goalWeights = useFilterStore(s => s.goalWeights, shallow);
+  const focalChoice = useFilterStore(s => s.focalChoice);
+  const subjectDistanceM = useFilterStore(s => s.subjectDistanceM);
+  const brand = useFilterStore(s => s.brand);
+  const lensType = useFilterStore(s => s.lensType);
+  const sealed = useFilterStore(s => s.sealed);
+  const isMacro = useFilterStore(s => s.isMacro);
+  const priceRange = useFilterStore(s => s.priceRange, shallow);
+  const weightRange = useFilterStore(s => s.weightRange, shallow);
+  const proCoverage = useFilterStore(s => s.proCoverage);
+  const proFocalMin = useFilterStore(s => s.proFocalMin);
+  const proFocalMax = useFilterStore(s => s.proFocalMax);
+  const proMaxApertureF = useFilterStore(s => s.proMaxApertureF);
+  const proRequireOIS = useFilterStore(s => s.proRequireOIS);
+  const proRequireSealed = useFilterStore(s => s.proRequireSealed);
+  const proRequireMacro = useFilterStore(s => s.proRequireMacro);
+  const proPriceMax = useFilterStore(s => s.proPriceMax);
+  const proWeightMax = useFilterStore(s => s.proWeightMax);
+  const proDistortionMaxPct = useFilterStore(s => s.proDistortionMaxPct);
+  const proBreathingMinScore = useFilterStore(s => s.proBreathingMinScore);
+  const softDistortion = useFilterStore(s => s.softDistortion);
+  const softBreathing = useFilterStore(s => s.softBreathing);
+  const compareList = useFilterStore(s => s.compareList);
+  const selected = useFilterStore(s => s.selected);
+  const report = useFilterStore(s => s.report);
+  const setReport = useFilterStore(s => s.setReport);
+  const pushHistory = useFilterStore(s => s.pushHistory);
+  const [priceOverrides, setPriceOverrides] = useState<Record<string, string>>({});
+  // History now lives in the store
 
+  // Journey state: 0 mode, 1 requirements, 2 compare/top, 3 report
+  const stage = useFilterStore(s => s.stage);
+  const continueTo = useFilterStore(s => s.continueTo);
+  const modeRef = React.useRef<HTMLDivElement | null>(null);
+  const reqRef = React.useRef<HTMLDivElement | null>(null);
+  const compareRef = React.useRef<HTMLDivElement | null>(null);
+  const reportRef = React.useRef<HTMLDivElement | null>(null);
+  const prefersReducedMotion = useReducedMotion();
+
+  // Pro hard spec filters now come from store
+
+  // bootstrap handled by useBootstrap
+
+  const camera = useMemo(() => (cameraName === 'Any' ? undefined : cameras.find((c) => c.name === cameraName)), [cameras, cameraName]);
+  const brandsSelector = useMemo(() => makeBrandsForCamera(), []);
+  const brandsForCamera = useMemo(() => brandsSelector(lenses, camera), [brandsSelector, lenses, camera]);
+
+  const availabilitySelector = useMemo(() => makeAvailabilitySelector(), []);
+  const availability = useMemo<Availability | null>(() => {
+    if (cameras.length === 0 || lenses.length === 0) return null;
+    const filters = {
+      brand, lensType, sealed, isMacro, priceRange, weightRange,
+      proCoverage, proFocalMin, proFocalMax, proMaxApertureF,
+      proRequireOIS, proRequireSealed, proRequireMacro,
+      proPriceMax, proWeightMax, proDistortionMaxPct, proBreathingMinScore,
+    };
+    return availabilitySelector(cameraName, camera, lenses, filters);
+  }, [availabilitySelector, cameras.length, lenses, cameraName, camera, brand, lensType, sealed, isMacro, priceRange, weightRange, proCoverage, proFocalMin, proFocalMax, proMaxApertureF, proRequireOIS, proRequireSealed, proRequireMacro, proPriceMax, proWeightMax, proDistortionMaxPct, proBreathingMinScore]);
+
+  // reset handled by store.resetFilters
+
+  // Event bus removed in favor of direct handlers passed to children
+
+  // Provide availability caps to the store for clamping and auto-bounds
+  const lastCapsSigRef = React.useRef<string | null>(null);
+  const capsSyncTimerRef = React.useRef<number | null>(null);
   useEffect(() => {
-    Promise.all([
-      fetchJSON<Camera[]>('/api/cameras'),
-      fetchJSON<Lens[]>('/api/lenses')
-    ]).then(([cams, lens]) => {
-      setCameras(cams);
-      setLenses(lens);
-      setCameraName(cams.find((c) => c.name === 'Sony a7 IV')?.name || cams[0]?.name || '');
+    if (!availability) return;
+    // Avoid loops by only updating when caps actually change
+    const capsNow = useFilterStore.getState().availabilityCaps;
+    const nextCaps = {
+      brands: availability.brands,
+      lensTypes: availability.lensTypes,
+      coverage: availability.coverage,
+      priceBounds: availability.priceBounds,
+      priceTicks: availability.priceTicks,
+      weightBounds: availability.weightBounds,
+      weightTicks: availability.weightTicks,
+      focalBounds: availability.focalBounds,
+      apertureMaxMax: availability.apertureMaxMax,
+      distortionMaxMax: availability.distortionMaxMax,
+      breathingMinMin: availability.breathingMinMin,
+    } as const;
+    const arraysEqual = (a: string[], b: string[]) => a.length === b.length && a.every((v, i) => v === b[i]);
+    const rangesEqual = (a: { min: number; max: number }, b: { min: number; max: number }) => a.min === b.min && a.max === b.max;
+    const equal = capsNow &&
+      arraysEqual(capsNow.brands, nextCaps.brands) &&
+      arraysEqual(capsNow.lensTypes, nextCaps.lensTypes) &&
+      arraysEqual(capsNow.coverage, nextCaps.coverage) &&
+      rangesEqual(capsNow.priceBounds, nextCaps.priceBounds) &&
+      rangesEqual(capsNow.weightBounds, nextCaps.weightBounds) &&
+      rangesEqual(capsNow.focalBounds, nextCaps.focalBounds) &&
+      capsNow.apertureMaxMax === nextCaps.apertureMaxMax &&
+      capsNow.distortionMaxMax === nextCaps.distortionMaxMax &&
+      capsNow.breathingMinMin === nextCaps.breathingMinMin;
+    const sig = JSON.stringify(nextCaps);
+    if (equal && lastCapsSigRef.current === sig) return;
+    if (capsSyncTimerRef.current) {
+      clearTimeout(capsSyncTimerRef.current);
+      capsSyncTimerRef.current = null;
+    }
+    capsSyncTimerRef.current = window.setTimeout(() => {
+      // Re-check against latest store caps before applying
+      const latest = useFilterStore.getState().availabilityCaps;
+      const arraysEqual2 = (a: string[], b: string[]) => a.length === b.length && a.every((v, i) => v === b[i]);
+      const rangesEqual2 = (a: { min: number; max: number }, b: { min: number; max: number }) => a.min === b.min && a.max === b.max;
+      const stillEqual = latest &&
+        arraysEqual2(latest.brands, nextCaps.brands) &&
+        arraysEqual2(latest.lensTypes, nextCaps.lensTypes) &&
+        arraysEqual2(latest.coverage, nextCaps.coverage) &&
+        rangesEqual2(latest.priceBounds, nextCaps.priceBounds) &&
+        (!!latest.priceTicks === !!nextCaps.priceTicks) &&
+        rangesEqual2(latest.weightBounds, nextCaps.weightBounds) &&
+        (!!latest.weightTicks === !!nextCaps.weightTicks) &&
+        rangesEqual2(latest.focalBounds, nextCaps.focalBounds) &&
+        latest.apertureMaxMax === nextCaps.apertureMaxMax &&
+        latest.distortionMaxMax === nextCaps.distortionMaxMax &&
+        latest.breathingMinMin === nextCaps.breathingMinMin;
+      if (stillEqual && lastCapsSigRef.current === sig) return;
+      lastCapsSigRef.current = sig;
+      useFilterStore.getState().setBoundsFromAvailability(nextCaps);
+    }, 0);
+  }, [availability]);
+
+  // Keep explicit guided flow: do not auto-advance from mode selection.
+
+  const resultsSelector = useMemo(() => makeResultsSelector(), []);
+  const resultsCount = useMemo(() => {
+    if (lenses.length === 0) return 0;
+    const filters = {
+      brand, lensType, sealed, isMacro, priceRange, weightRange,
+      proCoverage, proFocalMin, proFocalMax, proMaxApertureF,
+      proRequireOIS, proRequireSealed, proRequireMacro,
+      proPriceMax, proWeightMax, proDistortionMaxPct, proBreathingMinScore,
+    };
+    const filtered = applyFilters({
+      lenses,
+      cameraName,
+      cameraMount: camera?.mount,
+      ...filters,
+      softDistortion,
+      softBreathing,
     });
-  }, []);
-
-  const camera = useMemo(() => cameras.find((c) => c.name === cameraName), [cameras, cameraName]);
-
+    return filtered.length;
+  }, [lenses, camera, cameraName, brand, lensType, sealed, isMacro, priceRange, weightRange, proCoverage, proFocalMin, proFocalMax, proMaxApertureF, proRequireOIS, proRequireSealed, proRequireMacro, proPriceMax, proWeightMax, proDistortionMaxPct, proBreathingMinScore, softDistortion, softBreathing]);
   const results: Result[] = useMemo(() => {
-    if (!camera) return [] as Result[];
-    return lenses.filter((l) => l.mount === camera.mount).map((l) => ({
-      ...l,
-      focal_used_mm: (l.focal_min_mm + l.focal_max_mm) / 2,
-      max_aperture_at_focal: l.aperture_min,
-      eq_focal_ff_mm: ((l.focal_min_mm + l.focal_max_mm) / 2) * camera.sensor.crop,
-      fov_h_deg: 0,
-      dof_total_m: 0,
-      stabilization: l.ois || camera.ibis ? '✅' : '❌',
-      score_total: 1
-    }));
-  }, [camera, lenses]);
+    const filters = {
+      cameraName,
+      brand, lensType, sealed, isMacro, priceRange, weightRange,
+      proCoverage, proFocalMin, proFocalMax, proMaxApertureF,
+      proRequireOIS, proRequireSealed, proRequireMacro,
+      proPriceMax, proWeightMax, proDistortionMaxPct, proBreathingMinScore,
+      goalWeights, focalChoice, isPro, subjectDistanceM,
+      softDistortion, softBreathing,
+    };
+    const res = resultsSelector(lenses, camera, filters);
+    return res;
+  }, [resultsSelector, lenses, camera, cameraName, brand, lensType, sealed, isMacro, priceRange, weightRange, proCoverage, proFocalMin, proFocalMax, proMaxApertureF, proRequireOIS, proRequireSealed, proRequireMacro, proPriceMax, proWeightMax, proDistortionMaxPct, proBreathingMinScore, goalWeights, focalChoice, isPro, subjectDistanceM, softDistortion, softBreathing]);
 
-  return (
-    <div className="min-h-screen bg-[#0b1220] text-gray-200">
-      <div className="max-w-7xl mx-auto p-6">
-        <header className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold">Camera System Builder</h1>
-          <div className="flex items-center space-x-3">
-            <span className={isPro ? 'text-white' : 'text-gray-400'}>Pro</span>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" className="sr-only peer" checked={isPro} onChange={(e) => setIsPro(e.target.checked)} />
-              <div className="w-11 h-6 bg-gray-700 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-800"></div>
-            </label>
-            <span className={!isPro ? 'text-white' : 'text-gray-400'}>Beginner</span>
+  // History is pushed inside store setters; no post-render push needed here
+
+  const debugCounts = useMemo(() => {
+    if (!camera || import.meta.env.PROD) return null as null | Record<string, number>;
+    return computeDebugCounts({
+      cameraMount: camera.mount,
+      lenses,
+      brand,
+      lensType,
+      sealed,
+      isMacro,
+      priceRange,
+      weightRange,
+      proCoverage,
+      proFocalMin,
+      proFocalMax,
+      proMaxApertureF,
+      proRequireOIS,
+      proRequireSealed,
+      proRequireMacro,
+      proPriceMax,
+      proWeightMax,
+      proDistortionMaxPct,
+      proBreathingMinScore,
+    });
+  }, [camera, lenses, brand, lensType, sealed, isMacro, priceRange, weightRange, proCoverage, proFocalMin, proFocalMax, proMaxApertureF, proRequireOIS, proRequireSealed, proRequireMacro, proPriceMax, proWeightMax, proDistortionMaxPct, proBreathingMinScore]);
+
+  // Auto-generate report whenever inputs/results change (debounced)
+  useDebouncedReport({ camera, results, isPro, goalPreset, setReport });
+
+  // CSV export now imported from lib/csv
+
+  if (fatalError) {
+    return (
+      <div className={APP_BACKGROUND}>
+        <div className="max-w-2xl mx-auto p-6 pt-24">
+          <div className={`${CARD_BASE} ${CARD_ERROR}`}>
+            <div className="flex items-start gap-3">
+              <div className="h-9 w-9 rounded-lg bg-[var(--error-bg)] border border-[var(--error-border)] grid place-items-center">⚠️</div>
+              <div>
+                <h2 className={TITLE_H2}>Service temporarily unavailable</h2>
+                <p className={`${TEXT_SM} mt-1 text-[var(--error-text)]/90`}>{fatalError}</p>
+                <ul className={`${TEXT_SM} list-disc list-inside mt-3 space-y-1 text-[var(--error-text)]/80`}>
+                  <li>Ensure the database and API server are running.</li>
+                  <li>Then retry loading the app.</li>
+                </ul>
+                <div className="mt-4 flex gap-2">
+                  <Button variant="secondary" size="sm" onClick={() => { setFatalError(null); window.location.reload(); }}>Retry</Button>
+                </div>
+              </div>
+            </div>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  const appReady = cameras.length > 0 && lenses.length > 0;
+  return (
+    <div className={APP_BACKGROUND} data-app-ready={appReady ? '1' : '0'}>
+      <div className={PAGE_CONTAINER}>
+        <header className={`${ROW_BETWEEN} mb-8`}>
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-xl bg-[var(--accent)]/20 border border-[var(--accent)]/30 grid place-items-center text-[var(--accent)] font-bold">CF</div>
+            <div>
+              <h1 className={TITLE_H1}>Camera System Builder</h1>
+              <p className={TEXT_XS_MUTED}>Find your perfect lens setup—fast.</p>
+            </div>
+          </div>
+          {/* Minimal header; journey uses section titles */}
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <aside className="md:col-span-1 bg-gray-900/60 rounded-xl border border-gray-800 p-4 space-y-4">
-            <label className="block text-sm font-medium text-gray-400">Camera Body</label>
-            <select value={cameraName} onChange={(e) => setCameraName(e.target.value)} className="w-full bg-gray-800 border border-gray-700 text-white rounded-md p-2">
-              {cameras.map((c) => (
-                <option key={c.name} value={c.name}>{c.name}</option>
-              ))}
-            </select>
-          </aside>
-
-          <main className="md:col-span-2 space-y-6">
-            <section className="bg-gray-900/60 rounded-xl border border-gray-800 p-4">
-              <h2 className="text-lg font-semibold mb-2">Results</h2>
-              <div className="overflow-x-auto">
-                <table className="min-w-full">
-                  <thead className="bg-gray-800 sticky top-0">
-                    <tr>
-                      {['Name', 'Focal', 'Aperture', 'Eq. Focal', 'Weight', 'Price', 'Stab.', 'Score'].map((h) => (
-                        <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-800">
-                    {results.map((r) => (
-                      <tr key={r.name} className="hover:bg-gray-800/70">
-                        <td className="px-4 py-3 text-sm font-medium text-white">{r.name}</td>
-                        <td className="px-4 py-3 text-sm text-gray-300">{Math.round(r.focal_used_mm)}mm</td>
-                        <td className="px-4 py-3 text-sm text-gray-300">f/{r.max_aperture_at_focal.toFixed(1)}</td>
-                        <td className="px-4 py-3 text-sm text-gray-300">{r.eq_focal_ff_mm.toFixed(1)}mm</td>
-                        <td className="px-4 py-3 text-sm text-gray-300">{r.weight_g}g</td>
-                        <td className="px-4 py-3 text-sm text-gray-300">CHF {r.price_chf}</td>
-                        <td className="px-4 py-3 text-sm text-gray-300">{r.stabilization}</td>
-                        <td className="px-4 py-3 text-sm font-bold text-blue-400">{Math.round(r.score_total)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-
-            <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-gray-900/60 rounded-xl border border-gray-800 p-4">
-                <h3 className="font-semibold mb-2">FoV vs Eq. Focal</h3>
-                <Plot data={[]} layout={{ paper_bgcolor: 'transparent', plot_bgcolor: 'transparent' }} />
-              </div>
-              <div className="bg-gray-900/60 rounded-xl border border-gray-800 p-4">
-                <h3 className="font-semibold mb-2">Scores</h3>
-                <Plot data={[]} layout={{ paper_bgcolor: 'transparent', plot_bgcolor: 'transparent' }} />
-              </div>
-            </section>
-          </main>
+        <div className={`${ROW_BETWEEN} mb-4`}>
+          <span className={BADGE_COUNT}>{resultsCount} results</span>
+          {debugCounts && import.meta.env.DEV && (
+            <span className="text-[10px] text-[var(--text-muted)]">
+              m:{debugCounts.mount} b:{debugCounts.brand} t:{debugCounts.type} s:{debugCounts.sealed} m:{debugCounts.macro} pr:{debugCounts.priceRange} w:{debugCounts.weightRange} cov:{debugCounts.coverage} f:{debugCounts.focal} ap:{debugCounts.aperture} ois:{debugCounts.ois} ws:{debugCounts.proSealed} mc:{debugCounts.proMacro} pmax:{debugCounts.proPriceMax} wmax:{debugCounts.proWeightMax} dist:{debugCounts.distortion} br:{debugCounts.breathing}
+            </span>
+          )}
         </div>
+
+        {/* Flow content with animated transitions - render only current stage to avoid duplicates */}
+        <div className={SECTION_STACK}>
+          <AnimatePresence initial={false}>
+            {stage === 0 && (
+              <motion.div key="mode-section" ref={modeRef} initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }}>
+                <div className={SECTION_TITLE}>Choose your mode</div>
+                <ModeSelect onContinue={() => continueTo(1)} />
+              </motion.div>
+            )}
+
+            {stage === 1 && (
+              <motion.div key="requirements-section" ref={reqRef} initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }}>
+                <div className={SECTION_TITLE}>Set your filters</div>
+                <React.Suspense fallback={<Loading text="Loading requirements…" />}>
+                  {isPro ? (
+                    <LazyProRequirements
+                      cameras={cameras}
+                      brandsForCamera={brandsForCamera}
+                      camera={camera}
+                      cameraName={cameraName}
+                      lenses={lenses}
+                      resultsCount={resultsCount}
+                      onContinue={() => continueTo(2)}
+                    />
+                  ) : (
+                    <LazySimpleRequirements
+                      cameras={cameras}
+                      brandsForCamera={brandsForCamera}
+                      camera={camera}
+                      cameraName={cameraName}
+                      lenses={lenses}
+                      resultsCount={resultsCount}
+                      onContinue={() => continueTo(2)}
+                    />
+                  )}
+                </React.Suspense>
+              </motion.div>
+            )}
+
+            {(stage === 2 || stage > 2) && (
+              <motion.div key="compare-or-top" ref={compareRef} initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }} className={STACK_Y}>
+                <div className="mb-1 text-lg font-semibold text-[var(--text-color)]">Compare</div>
+                <ExploreGrid items={results} />
+                <CompareShowdown
+                  camera={camera}
+                  selected={results.filter(r => compareList.includes(r.name))}
+                />
+                <div className={ROW_END}>
+                  <Button onClick={() => continueTo(3)}>View Report</Button>
+                </div>
+              </motion.div>
+            )}
+
+            {stage === 3 && (
+              <motion.div key="report-section" ref={reportRef} initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }} className={STACK_Y}>
+                <div className="mb-1 text-lg font-semibold text-[var(--text-color)]">Summary & decision</div>
+                <Message variant="info" title="How to make the call">
+                  <ul className="list-disc pl-5 text-sm space-y-1">
+                    <li><strong>Start</strong>: Note Top Performer, Best Value, and Best Portability badges.</li>
+                    <li><strong>Chart</strong>: Prefer lenses near the top‑left (more Score for less CHF). Stay within budget.</li>
+                    <li><strong>Break ties</strong>: Use Low Light, Video, Portability, and Value bars on each card.</li>
+                    <li><strong>Total kit</strong>: Check combined price and weight with your camera are acceptable.</li>
+                    <li><strong>Refine</strong>: Adjust weights/filters or revisit Compare to inspect candidates side‑by‑side.</li>
+                  </ul>
+                </Message>
+                <Card title="Report" subtitle="Generated summary">
+                  <Report
+                    report={report}
+                    camera={camera}
+                    selected={selected}
+                    goalWeights={goalWeights}
+                    topResults={results.slice(0, 3)}
+                    onEditPreferences={() => { continueTo(1); }}
+                  />
+                </Card>
+                <div className={ROW_END}>
+                  <Button onClick={() => continueTo(0)}>Start Over</Button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Report moved into step 4 */}
+        </div>
+
+        {/* Developer templates removed; all sliders use RangeSlider */}
       </div>
     </div>
   );

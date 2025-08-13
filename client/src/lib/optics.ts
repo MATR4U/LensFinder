@@ -1,4 +1,4 @@
-import type { Sensor } from '../../types';
+import type { Sensor } from '../types';
 
 export const optics = {
   fovDeg(sensor: Sensor, focal_mm: number) {
@@ -32,5 +32,20 @@ export const optics = {
     return 1.0 + (Math.pow(2, stops) - 1.0) * 0.2;
   }
 };
+
+// Returns Pareto frontier points for an array of points maximizing y for increasing x
+export function computeParetoFrontier(points: Array<{ x: number; y: number }>): Array<{ x: number; y: number }> {
+  if (!points || points.length === 0) return [];
+  const sorted = points.slice().sort((a, b) => a.x - b.x || b.y - a.y);
+  const frontier: { x: number; y: number }[] = [];
+  let best = -Infinity;
+  for (const p of sorted) {
+    if (p.y > best) {
+      frontier.push({ x: p.x, y: p.y });
+      best = p.y;
+    }
+  }
+  return frontier;
+}
 
 
