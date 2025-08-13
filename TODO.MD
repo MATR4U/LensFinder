@@ -160,26 +160,26 @@ What we already have
 - Design tokens: `client/src/components/ui/styles.ts` (layout, colors, typography, slider tokens).
 
 What to add
-1) FieldBase (complete the field layer) [Status: Open]
+1) FieldBase (complete the field layer) [Status: Done]
 - Add: validation surface (invalid, helpText), disabled/readOnly, required, onFocus/onBlur analytics hook, testId.
 - Implement: extend `BaseLabeledField` props with optional `validationState?: 'none'|'error'|'success'`, `required?: boolean`, `disabled?: boolean`, `readOnly?: boolean`, `testId?: string`, and forward to `FieldContainer` + child.
 - Benefit: every input gets uniform a11y/validation/telemetry without repeating code.
 
-2) UIBase (app-wide) [Status: Open]
+2) UIBase (app-wide) [Status: In Progress]
 - UIProvider: theme + density + RTL + tokens via React context; expose CSS vars to all components.
 - CardBase: unify card paddings/variants/shadows; wrap tokens in a small component.
 - MessageBase: standard notice patterns (info/warning/error/success) with icon, title, body, action slot.
 - ModalBase/PopoverBase: focus trap, escape-to-close, aria-* wired.
 - Benefit: consistent look/feel and interaction; one place to tweak theme/density.
 
-3) ReportBase [Status: Open]
+3) ReportBase [Status: In Progress]
 - Standard report wrapper with header (title, subtext, share/export), body slot, footer (timestamp, disclaimers).
 - Loading + empty + error states via Suspense; chart theme + LazyPlot wrapper.
 - Hooks: `useReportLifecycle` (start/complete), `useShareableReport` (export JSON/PNG/PDF).
 - Implement: `client/src/components/report/BaseReport.tsx`. Migrate `Report.tsx`, `report/*` to consume.
 - Benefit: consistent behavior and easy enhancements (e.g., export) across all reports.
 
-4) PageBase [Status: Open]
+4) PageBase [Status: In Progress]
 - Page shell (background, `PAGE_CONTAINER`, `SECTION_STACK`), head/meta (title/description), ErrorBoundary + Suspense, route analytics, keyboard “skip to content”, optional stage guard (no auto-advance).
 - Implement: `client/src/components/pages/PageBase.tsx` with slots: `headerSlot`, `actionsSlot`, `children` and props: `title`, `meta`, `requireExplicitAdvance?`.
 - Migrate: `pages/App.tsx`, flows (`ModeSelect`, `SimpleRequirements`, `ProRequirements`, `ExploreGrid`, `CompareShowdown`).

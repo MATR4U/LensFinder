@@ -198,6 +198,7 @@ export default function SimpleRequirements(props: Props) {
           ticks={caps?.priceTicks}
           snap
           trackStyle={priceTrackStyle}
+          idPrefix="simple-price"
         />
       </div>
 
@@ -214,6 +215,7 @@ export default function SimpleRequirements(props: Props) {
           ticks={caps?.weightTicks}
           snap
           trackStyle={weightTrackStyle}
+          idPrefix="simple-weight"
         />
       </div>
     </BaseRequirements>
