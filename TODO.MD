@@ -20,46 +20,27 @@
 
 ### Production TODOs (must be satisfied before release)
 
- 
-
- 
-
- 
-
- 
-
- 
-
 - CI [Status: Open]
 - Optionally set `REDIS_URL=redis://localhost:6379/0` in CI to exercise cache paths.
 
 - Kubernetes Redis persistence (optional) [Status: Open]
 - Add PVC and mount `/data` for `infra/k8s/redis.yaml` if persistence is desired.
 
- 
-
- 
- 
-
- 
 - **CORS** [Status: In Progress]
   - Lock `CORS_ALLOWED_ORIGINS` to production domains only. [Plumbed in env/examples/K8s]
 
- 
- 
- 
 - **Caching** [Status: Open]
 - Configure Redis and `CACHE_TTL_SECONDS`. Verify cache client enabled in prod.
 - Set `REQUEST_SIGNATURE_SECRET` and enforce HMAC on `/api/cache/purge`.
 
- - CI: set `REDIS_URL=redis://localhost:6379/0` in both jobs to exercise cache path. [Open]
+- CI: set `REDIS_URL=redis://localhost:6379/0` in both jobs to exercise cache path. [Open]
 
 - **Observability** [Status: Open]
 - Ensure `/metrics` is scraped by Prometheus; dashboards in Grafana.
 - Set `LOG_LEVEL` appropriately; keep Pino redaction of auth/cookies.
 
-- **Health/Readiness** [Status: Open]
-- K8s probes: `/ready` for readiness, `/api/health` for liveness; set sane timeouts.
+- **Health/Readiness** [Status: Done]
+- Implemented `/ready` (checks DB connectivity) and `/api/health` (liveness) with `HEAD` for health; wired probes in `infra/k8s/server.yaml`.
 
 - **Security** [Status: Open]
 - Validate Helmet/CSP settings for production.
@@ -86,7 +67,8 @@
 
 - **Error handling (RFC 7807)** [Status: In Progress]
 - Central Express error middleware added to emit `application/problem+json` consistently. [Done]
-- Replace remaining ad-hoc `{ error: ... }` responses with standardized problem details; document error types and fields. [Open]
+- Converted REST and GraphQL ad-hoc error responses to RFC7807 in server. [Done]
+- Document error types and fields in API docs, and ensure tests cover negative cases. [Open]
 
 - **Pagination (cursor-based)** [Status: Open]
 - Add opaque cursor pagination for large collections; support both offset and cursor in a backward-compatible way.
@@ -113,16 +95,12 @@
 - Document SSE/Webhooks/WS usage, backoff, and security requirements.
 
   - **Request validation (schema-driven)** [Status: In Progress]
-  - Validate all request payloads and query parameters using a centralized schema (e.g., Zod) and emit RFC7807 problem responses on validation failures. [Partial: `/api/price` query and `/api/report` body validated]
+  - Validate all request payloads and query parameters using a centralized schema (e.g., Zod) and emit RFC7807 problem responses on validation failures. [Partial: `/api/price` query, `/api/report` body, and pagination params on `/api/cameras` and `/api/lenses` validated]
   - Document per-endpoint request/response schemas and align OpenAPI accordingly.
-
- 
 
   - **HTTP semantics (Vary/HEAD)** [Status: In Progress]
   - Standardize `Vary` headers (`Accept`, `Accept-Encoding`, and `Origin` when CORS is enabled) across cacheable endpoints. [Done]
   - Support `HEAD` for all `GET` resources returning identical headers and status with an empty body. [Partial: implemented for `/api/cameras` and `/api/lenses`]
-
- 
 
   - **HATEOAS affordances (beyond links)** [Status: Open]
   - Include hypermedia controls for writes (e.g., forms/templates or HAL-FORMS/Collection+JSON affordances) where applicable; document link relations and affordance semantics.

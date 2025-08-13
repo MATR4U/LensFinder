@@ -1,29 +1,60 @@
 {
-  "name": "camera-system-builder",
+  "name": "lensfinder-monorepo",
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "workspaces": [
+    "client",
+    "server"
+  ],
   "scripts": {
-    "kill3000": "lsof -ti tcp:3000 | xargs -r kill -9 || true",
-    "dev": "npm run kill3000 && node --loader ts-node/esm --no-warnings=ExperimentalWarning server/index.ts",
-    "start": "node dist/server/index.js",
-    "build": "tsc"
-  },
-  "dependencies": {
-    "cheerio": "1.0.0",
-    "express": "4.19.2",
-    "node-fetch": "3.3.2",
-    "react": "18.3.1",
-    "react-dom": "18.3.1"
+    "predev": "kill-port 3001 || true && kill-port 3000 || true",
+    "dev:client": "npm --workspace client run dev",
+    "dev:server": "cross-env NODE_ENV=development npm --workspace server run dev",
+    "predev:server": "kill-port 3001 || true",
+    "predev:client": "kill-port 3000 || true",
+    "dev": "concurrently -n server,client -c blue,green -k=0 -s first-success \"npm --workspace server run dev\" \"wait-on tcp:3001 && npm --workspace client run dev\"",
+    "build:client": "npm --workspace client run build",
+    "build:server": "npm --workspace server run build",
+    "build": "npm run build:client && npm run build:server",
+    "test:client": "npm --workspace client run test",
+    "test:server": "if [ \"$SKIP_DB_TESTS\" = \"1\" ] || [ \"$SKIP_DB_TESTS\" = \"true\" ]; then npm --workspace server run test; else POSTGRES_PORT=55432 PGADMIN_PORT=55050 npm run db:up && POSTGRES_PORT=55432 npm run db:migrate && npm --workspace server run test; fi",
+    "test": "npm run test:server && npm run test:client",
+    "test:e2e": "docker info >/dev/null 2>&1 || { echo 'Docker daemon not running; skipping e2e tests.'; exit 0; }; playwright test",
+    "start:client": "npm --workspace client run start",
+    "start:server": "npm --workspace server run start",
+    "prestart": "kill-port 3001 || true && kill-port 3000 || true",
+    "start": "concurrently -n client,server -c green,blue \"npm run start:client\" \"npm run start:server\"",
+    "dev:server:pg": "cross-env NODE_ENV=development DB_DRIVER=pg PORT=3001 npm --workspace server run dev",
+    "db:up": "docker compose --env-file .env.dev -f infra/docker/docker-compose.db.yml -p lensfinder-db up -d",
+    "db:up:prod": "docker compose --env-file .env.prod -f infra/docker/docker-compose.db.yml -p lensfinder-db up -d",
+    "db:down": "docker compose --env-file .env.dev -f infra/docker/docker-compose.db.yml -p lensfinder-db down -v",
+    "db:down:prod": "docker compose --env-file .env.prod -f infra/docker/docker-compose.db.yml -p lensfinder-db down -v",
+    "db:logs": "docker compose --env-file .env.dev -f infra/docker/docker-compose.db.yml -p lensfinder-db logs -f",
+    "db:logs:prod": "docker compose --env-file .env.prod -f infra/docker/docker-compose.db.yml -p lensfinder-db logs -f",
+    "db:migrate": "tsx db/migrate.ts",
+    "start:ordered": "concurrently -n server,client -c blue,green -k=0 -s first-success \"npm run start:server\" \"wait-on tcp:3001 && npm run start:client\"",
+    "stack:up": "npm run build:server && npm run test:server && npm run build:client && npm run test:client && npm run start:ordered",
+    "deploy:gen": "node scripts/generate-deploy.mjs --env .env.prod",
+    "deploy:gen:dev": "node scripts/generate-deploy.mjs --env .env.dev",
+    "deploy:compose:up": "docker compose -f infra/docker/docker-compose.yml --env-file .env.prod up -d --build",
+    "deploy:compose:down": "docker compose -f infra/docker/docker-compose.yml --env-file .env.prod down -v",
+    "deploy:k8s:apply": "kubectl apply -k infra/k8s/",
+    "deploy:k8s:delete": "kubectl delete -k infra/k8s/",
+    "ci:fast": "npm run test:server && npm run test:client",
+    "ci:verify": "npm run build && npm run test && npm run test:e2e",
+    "prepare": "husky install"
   },
   "devDependencies": {
-    "@types/cheerio": "0.22.35",
-    "@types/express": "4.17.21",
-    "@types/node": "22.5.4",
-    "@types/react": "18.3.3",
-    "@types/react-dom": "18.3.0",
-    "ts-node": "10.9.2",
-    "typescript": "5.5.4"
+    "@playwright/test": "1.46.1",
+    "concurrently": "8.2.2",
+    "cross-env": "7.0.3",
+    "kill-port": "2.0.1",
+    "wait-on": "7.2.0",
+    "husky": "9.0.11"
+  },
+  "overrides": {
+    "graphql": "16.9.0"
   }
 }
 
