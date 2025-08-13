@@ -263,169 +263,169 @@ export default function App() {
 
   return (
     <PageBase title="Camera System Builder" metaDescription="Find your perfect lens setup—fast.">
-        <header className={`${ROW_BETWEEN} mb-8`}>
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-[var(--accent)]/20 border border-[var(--accent)]/30 grid place-items-center text-[var(--accent)] font-bold">CF</div>
-            <div>
-              <h1 className={TITLE_H1}>Camera System Builder</h1>
-              <p className={TEXT_XS_MUTED}>Find your perfect lens setup—fast.</p>
-            </div>
+      <header className={`${ROW_BETWEEN} mb-8`}>
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-xl bg-[var(--accent)]/20 border border-[var(--accent)]/30 grid place-items-center text-[var(--accent)] font-bold">CF</div>
+          <div>
+            <h1 className={TITLE_H1}>Camera System Builder</h1>
+            <p className={TEXT_XS_MUTED}>Find your perfect lens setup—fast.</p>
           </div>
-          {/* Minimal header; journey uses section titles */}
-        </header>
-
-        {(fatalError || forceOutage) && (
-          <OutageScreen title="Service temporarily unavailable" message={fatalError || 'Reconnecting…'} />
-        )}
-
-        {showRecovered && (
-          <div className="mb-4">
-            <StatusBanner variant="info" title="Recovered" message="All services are available again." />
-          </div>
-        )}
-
-        {degraded && (
-          <div className="mb-4">
-            <StatusBanner
-              variant="warning"
-              title="Limited availability"
-              message={degraded}
-              onRetry={() => retryNow()}
-              pausedControls={{ isPaused, onPause: pauseRetries, onResume: resumeRetries }}
-              copyText={`cameraName=${cameraName}; isPro=${isPro}; brand=${brand}; lensType=${lensType}; sealed=${sealed}; macro=${isMacro}; p=${priceRange.min}-${priceRange.max}; w=${weightRange.min}-${weightRange.max}; coverage=${proCoverage}; focal=${proFocalMin}-${proFocalMax}; ap<=${proMaxApertureF}; ois=${proRequireOIS}; wsealed=${proRequireSealed}; macroReq=${proRequireMacro}; pmax=${proPriceMax}; wmax=${proWeightMax}; dist<=${proDistortionMaxPct}; breath>=${proBreathingMinScore}`}
-            />
-          </div>
-        )}
-
-        <div className={`${ROW_BETWEEN} mb-4`}>
-          <span className={BADGE_COUNT}>{resultsCount} results</span>
-          {import.meta.env.DEV && (
-            <div className="flex items-center gap-2">
-              {debugCounts && (
-                <span className="text-[10px] text-[var(--text-muted)]">
-                  m:{debugCounts.mount} b:{debugCounts.brand} t:{debugCounts.type} s:{debugCounts.sealed} m:{debugCounts.macro} pr:{debugCounts.priceRange} w:{debugCounts.weightRange} cov:{debugCounts.coverage} f:{debugCounts.focal} ap:{debugCounts.aperture} ois:{debugCounts.ois} ws:{debugCounts.proSealed} mc:{debugCounts.proMacro} pmax:{debugCounts.proPriceMax} wmax:{debugCounts.proWeightMax} dist:{debugCounts.distortion} br:{debugCounts.breathing}
-                </span>
-              )}
-              <Button variant="secondary" size="xs" onClick={() => setShowDebug(v => !v)}>
-                {showDebug ? 'Hide debug' : 'Show debug'}
-              </Button>
-            </div>
-          )}
         </div>
+        {/* Minimal header; journey uses section titles */}
+      </header>
 
-        {/* Flow content with animated transitions - render only current stage to avoid duplicates */}
-        <div className={SECTION_STACK}>
-          {import.meta.env.DEV && showDebug && debugCounts && (
-            <DebugFilterPanel
-              counts={debugCounts}
-              cameraMount={camera?.mount}
-              brand={brand}
-              lensType={lensType}
-              sealed={sealed}
-              isMacro={isMacro}
-              priceRange={priceRange}
-              weightRange={weightRange}
-              proCoverage={proCoverage}
-              proFocalMin={proFocalMin}
-              proFocalMax={proFocalMax}
-              proMaxApertureF={proMaxApertureF}
-              proRequireOIS={proRequireOIS}
-              proRequireSealed={proRequireSealed}
-              proRequireMacro={proRequireMacro}
-              proPriceMax={proPriceMax}
-              proWeightMax={proWeightMax}
-              proDistortionMaxPct={proDistortionMaxPct}
-              proBreathingMinScore={proBreathingMinScore}
-              softDistortion={softDistortion}
-              softBreathing={softBreathing}
-              distributions={debugDist || undefined}
-              perCameraCounts={debugPerCam || undefined}
-            />
+      {(fatalError || forceOutage) && (
+        <OutageScreen title="Service temporarily unavailable" message={fatalError || 'Reconnecting…'} />
+      )}
+
+      {showRecovered && (
+        <div className="mb-4">
+          <StatusBanner variant="info" title="Recovered" message="All services are available again." />
+        </div>
+      )}
+
+      {degraded && (
+        <div className="mb-4">
+          <StatusBanner
+            variant="warning"
+            title="Limited availability"
+            message={degraded}
+            onRetry={() => retryNow()}
+            pausedControls={{ isPaused, onPause: pauseRetries, onResume: resumeRetries }}
+            copyText={`cameraName=${cameraName}; isPro=${isPro}; brand=${brand}; lensType=${lensType}; sealed=${sealed}; macro=${isMacro}; p=${priceRange.min}-${priceRange.max}; w=${weightRange.min}-${weightRange.max}; coverage=${proCoverage}; focal=${proFocalMin}-${proFocalMax}; ap<=${proMaxApertureF}; ois=${proRequireOIS}; wsealed=${proRequireSealed}; macroReq=${proRequireMacro}; pmax=${proPriceMax}; wmax=${proWeightMax}; dist<=${proDistortionMaxPct}; breath>=${proBreathingMinScore}`}
+          />
+        </div>
+      )}
+
+      <div className={`${ROW_BETWEEN} mb-4`}>
+        <span className={BADGE_COUNT}>{resultsCount} results</span>
+        {import.meta.env.DEV && (
+          <div className="flex items-center gap-2">
+            {debugCounts && (
+              <span className="text-[10px] text-[var(--text-muted)]">
+                m:{debugCounts.mount} b:{debugCounts.brand} t:{debugCounts.type} s:{debugCounts.sealed} m:{debugCounts.macro} pr:{debugCounts.priceRange} w:{debugCounts.weightRange} cov:{debugCounts.coverage} f:{debugCounts.focal} ap:{debugCounts.aperture} ois:{debugCounts.ois} ws:{debugCounts.proSealed} mc:{debugCounts.proMacro} pmax:{debugCounts.proPriceMax} wmax:{debugCounts.proWeightMax} dist:{debugCounts.distortion} br:{debugCounts.breathing}
+              </span>
+            )}
+            <Button variant="secondary" size="xs" onClick={() => setShowDebug(v => !v)}>
+              {showDebug ? 'Hide debug' : 'Show debug'}
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {/* Flow content with animated transitions - render only current stage to avoid duplicates */}
+      <div className={SECTION_STACK}>
+        {import.meta.env.DEV && showDebug && debugCounts && (
+          <DebugFilterPanel
+            counts={debugCounts}
+            cameraMount={camera?.mount}
+            brand={brand}
+            lensType={lensType}
+            sealed={sealed}
+            isMacro={isMacro}
+            priceRange={priceRange}
+            weightRange={weightRange}
+            proCoverage={proCoverage}
+            proFocalMin={proFocalMin}
+            proFocalMax={proFocalMax}
+            proMaxApertureF={proMaxApertureF}
+            proRequireOIS={proRequireOIS}
+            proRequireSealed={proRequireSealed}
+            proRequireMacro={proRequireMacro}
+            proPriceMax={proPriceMax}
+            proWeightMax={proWeightMax}
+            proDistortionMaxPct={proDistortionMaxPct}
+            proBreathingMinScore={proBreathingMinScore}
+            softDistortion={softDistortion}
+            softBreathing={softBreathing}
+            distributions={debugDist || undefined}
+            perCameraCounts={debugPerCam || undefined}
+          />
+        )}
+        <AnimatePresence initial={false} mode="wait">
+          {stage === 0 && (
+            <motion.div key="mode-section" ref={modeRef} initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }} transition={{ duration: 0.18, ease: 'easeOut' }}>
+              <div className={SECTION_TITLE}>Choose your mode</div>
+              <ModeSelect onContinue={() => continueTo(1)} />
+            </motion.div>
           )}
-          <AnimatePresence initial={false} mode="wait">
-            {stage === 0 && (
-              <motion.div key="mode-section" ref={modeRef} initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }} transition={{ duration: 0.18, ease: 'easeOut' }}>
-                <div className={SECTION_TITLE}>Choose your mode</div>
-                <ModeSelect onContinue={() => continueTo(1)} />
-              </motion.div>
-            )}
 
-            {stage === 1 && (
-              <motion.div key="requirements-section" ref={reqRef} initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }} transition={{ duration: 0.18, ease: 'easeOut' }}>
-                <div className={SECTION_TITLE}>Set your filters</div>
-                <React.Suspense fallback={<Loading text="Loading requirements…" />}>
-                  {/* Always show mode card here so user can switch modes within the Requirements step */}
-                  <ModeCard />
-                  {isPro ? (
-                    <LazyProRequirements
-                      cameras={cameras}
-                      brandsForCamera={brandsForCamera}
-                      camera={camera}
-                      cameraName={cameraName}
-                      lenses={lenses}
-                      resultsCount={resultsCount}
-                      onContinue={() => continueTo(2)}
-                    />
-                  ) : (
-                    <LazySimpleRequirements
-                      cameras={cameras}
-                      brandsForCamera={brandsForCamera}
-                      camera={camera}
-                      cameraName={cameraName}
-                      lenses={lenses}
-                      resultsCount={resultsCount}
-                      onContinue={() => continueTo(2)}
-                    />
-                  )}
-                </React.Suspense>
-              </motion.div>
-            )}
-
-            {(stage === 2 || stage > 2) && (
-              <motion.div key="compare-or-top" ref={compareRef} initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }} transition={{ duration: 0.18, ease: 'easeOut' }} className={STACK_Y}>
-                <div className="mb-1 text-lg font-semibold text-[var(--text-color)]">Compare</div>
-                <ExploreGrid items={results} />
-                <CompareShowdown
-                  camera={camera}
-                  selected={results.filter(r => compareList.includes(r.name))}
-                />
-                <div className={ROW_END}>
-                  <Button onClick={() => continueTo(3)}>View Report</Button>
-                </div>
-              </motion.div>
-            )}
-
-            {stage === 3 && (
-              <motion.div key="report-section" ref={reportRef} initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }} transition={{ duration: 0.18, ease: 'easeOut' }} className={STACK_Y}>
-                <div className="mb-1 text-lg font-semibold text-[var(--text-color)]">Summary & decision</div>
-                <CollapsibleMessage variant="info" title="How to make the call" defaultOpen={false}>
-                  <ul className="list-disc pl-5 text-sm space-y-1">
-                    <li><strong>Start</strong>: Note Top Performer, Best Value, and Best Portability badges.</li>
-                    <li><strong>Chart</strong>: Prefer lenses near the top‑left (more Score for less CHF). Stay within budget.</li>
-                    <li><strong>Break ties</strong>: Use Low Light, Video, Portability, and Value bars on each card.</li>
-                    <li><strong>Total kit</strong>: Check combined price and weight with your camera are acceptable.</li>
-                    <li><strong>Refine</strong>: Adjust weights/filters or revisit Compare to inspect candidates side‑by‑side.</li>
-                  </ul>
-                </CollapsibleMessage>
-                <Card title="Report" subtitle="Generated summary">
-                  <Report
-                    report={report}
+          {stage === 1 && (
+            <motion.div key="requirements-section" ref={reqRef} initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }} transition={{ duration: 0.18, ease: 'easeOut' }}>
+              <div className={SECTION_TITLE}>Set your filters</div>
+              <React.Suspense fallback={<Loading text="Loading requirements…" />}>
+                {/* Always show mode card here so user can switch modes within the Requirements step */}
+                <ModeCard />
+                {isPro ? (
+                  <LazyProRequirements
+                    cameras={cameras}
+                    brandsForCamera={brandsForCamera}
                     camera={camera}
-                    selected={selected}
-                    goalWeights={goalWeights}
-                    topResults={results.slice(0, 3)}
-                    onEditPreferences={() => { continueTo(1); }}
+                    cameraName={cameraName}
+                    lenses={lenses}
+                    resultsCount={resultsCount}
+                    onContinue={() => continueTo(2)}
                   />
-                </Card>
-                <div className={ROW_END}>
-                  <Button onClick={() => continueTo(0)}>Start Over</Button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                ) : (
+                  <LazySimpleRequirements
+                    cameras={cameras}
+                    brandsForCamera={brandsForCamera}
+                    camera={camera}
+                    cameraName={cameraName}
+                    lenses={lenses}
+                    resultsCount={resultsCount}
+                    onContinue={() => continueTo(2)}
+                  />
+                )}
+              </React.Suspense>
+            </motion.div>
+          )}
 
-          {/* Report moved into step 4 */}
-        </div>
+          {(stage === 2 || stage > 2) && (
+            <motion.div key="compare-or-top" ref={compareRef} initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }} transition={{ duration: 0.18, ease: 'easeOut' }} className={STACK_Y}>
+              <div className="mb-1 text-lg font-semibold text-[var(--text-color)]">Compare</div>
+              <ExploreGrid items={results} />
+              <CompareShowdown
+                camera={camera}
+                selected={results.filter(r => compareList.includes(r.name))}
+              />
+              <div className={ROW_END}>
+                <Button onClick={() => continueTo(3)}>View Report</Button>
+              </div>
+            </motion.div>
+          )}
+
+          {stage === 3 && (
+            <motion.div key="report-section" ref={reportRef} initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }} transition={{ duration: 0.18, ease: 'easeOut' }} className={STACK_Y}>
+              <div className="mb-1 text-lg font-semibold text-[var(--text-color)]">Summary & decision</div>
+              <CollapsibleMessage variant="info" title="How to make the call" defaultOpen={false}>
+                <ul className="list-disc pl-5 text-sm space-y-1">
+                  <li><strong>Start</strong>: Note Top Performer, Best Value, and Best Portability badges.</li>
+                  <li><strong>Chart</strong>: Prefer lenses near the top‑left (more Score for less CHF). Stay within budget.</li>
+                  <li><strong>Break ties</strong>: Use Low Light, Video, Portability, and Value bars on each card.</li>
+                  <li><strong>Total kit</strong>: Check combined price and weight with your camera are acceptable.</li>
+                  <li><strong>Refine</strong>: Adjust weights/filters or revisit Compare to inspect candidates side‑by‑side.</li>
+                </ul>
+              </CollapsibleMessage>
+              <Card title="Report" subtitle="Generated summary">
+                <Report
+                  report={report}
+                  camera={camera}
+                  selected={selected}
+                  goalWeights={goalWeights}
+                  topResults={results.slice(0, 3)}
+                  onEditPreferences={() => { continueTo(1); }}
+                />
+              </Card>
+              <div className={ROW_END}>
+                <Button onClick={() => continueTo(0)}>Start Over</Button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Report moved into step 4 */}
+      </div>
     </PageBase>
   );
 }

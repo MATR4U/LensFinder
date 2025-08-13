@@ -18,9 +18,10 @@ type Props = {
   status?: FieldStatus;
   warningTip?: string;
   softPreference?: { checked: boolean; onChange: (v: boolean) => void; id?: string; label?: string };
+  idPrefix?: string;
 };
 
-export default function LabeledSlider({ label, infoText, min, max, step, value, onChange, ticks, snap, format, right, hint, status, warningTip, softPreference }: Props) {
+export default function LabeledSlider({ label, infoText, min, max, step, value, onChange, ticks, snap, format, right, hint, status, warningTip, softPreference, idPrefix }: Props) {
   const atLimit = (typeof min === 'number' && value <= min) || (typeof max === 'number' && value >= max);
   const fieldStatus: FieldStatus | undefined = atLimit ? (status ?? 'warning') : status;
   return (
@@ -40,6 +41,7 @@ export default function LabeledSlider({ label, infoText, min, max, step, value, 
       status={fieldStatus}
       warningTip={warningTip}
       softPreference={softPreference}
+      idPrefix={idPrefix}
     />
   );
 }

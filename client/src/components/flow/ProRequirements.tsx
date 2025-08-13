@@ -332,7 +332,7 @@ export default function ProRequirements(props: Props) {
       {/* Optional micro-hint row can remain for positive counts if desired; omit for now */}
 
       <div>
-        <LabeledSelect label="Coverage" infoText={FIELD_HELP.coverage} value={coverage} onChange={setCoverage}>
+        <LabeledSelect label="Coverage" infoText={FIELD_HELP.coverage} value={coverage} onChange={setCoverage} idPrefix="coverage">
           {(caps?.coverage || ['Any', 'Full Frame', 'APS-C']).map(c => <option key={c} value={c}>{c}</option>)}
         </LabeledSelect>
       </div>
@@ -378,6 +378,7 @@ export default function ProRequirements(props: Props) {
             const tight = focalMin <= (caps.focalBounds?.min ?? -Infinity) || focalMax >= (caps.focalBounds?.max ?? Infinity);
             return tight ? 'warning' as const : 'normal' as const;
           })()}
+          idPrefix="focal"
         />
       </div>
 
@@ -410,6 +411,7 @@ export default function ProRequirements(props: Props) {
               return tight ? 'warning' as const : 'normal' as const;
             })()}
             softPreference={{ checked: softPrice, onChange: setSoftPrice, id: 'soft-price', label: 'Soft preference' }}
+            idPrefix="price"
           />
         </div>
         <div>
@@ -440,6 +442,7 @@ export default function ProRequirements(props: Props) {
               return tight ? 'warning' as const : 'normal' as const;
             })()}
             softPreference={{ checked: softWeight, onChange: setSoftWeight, id: 'soft-weight', label: 'Soft preference' }}
+            idPrefix="weight"
           />
         </div>
       </div>
@@ -464,6 +467,7 @@ export default function ProRequirements(props: Props) {
               return tight ? 'warning' as const : 'normal' as const;
             })()}
             softPreference={{ checked: softDistortion, onChange: setSoftDistortion, id: 'soft-distortion', label: 'Soft preference' }}
+            idPrefix="distortion"
           />
         </div>
         <div>
@@ -484,6 +488,7 @@ export default function ProRequirements(props: Props) {
               return tight ? 'warning' as const : 'normal' as const;
             })()}
             softPreference={{ checked: softBreathing, onChange: setSoftBreathing, id: 'soft-breathing', label: 'Soft preference' }}
+            idPrefix="breathing"
           />
         </div>
       </div>

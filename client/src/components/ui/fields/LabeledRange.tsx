@@ -23,9 +23,10 @@ type Props = {
   id?: string;
   warningTip?: string;
   softPreference?: { checked: boolean; onChange: (v: boolean) => void; id?: string; label?: string };
+  idPrefix?: string;
 };
 
-export default function LabeledRange({ label, infoText, min, max, step, value, onChange, ticks, snap, format, trackStyle, right, hint, status, id, warningTip, softPreference }: Props) {
+export default function LabeledRange({ label, infoText, min, max, step, value, onChange, ticks, snap, format, trackStyle, right, hint, status, id, warningTip, softPreference, idPrefix }: Props) {
   const atAnyEdge = value.min <= min || value.max >= max;
   const fieldStatus = atAnyEdge ? (status ?? 'warning') : status;
   return (
@@ -47,6 +48,7 @@ export default function LabeledRange({ label, infoText, min, max, step, value, o
       id={id}
       warningTip={warningTip}
       softPreference={softPreference}
+      idPrefix={idPrefix}
     />
   );
 }
