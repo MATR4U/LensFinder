@@ -7,12 +7,11 @@ import pg from 'pg';
 async function main() {
   const moduleDir = path.dirname(new URL(import.meta.url).pathname);
   const monoRoot = path.resolve(moduleDir, '..');
-  const preferredEnv = process.env.NODE_ENV === 'production' ? '.env.prod' : '.env.dev';
-  const fallbackEnv = process.env.NODE_ENV === 'production' ? 'env.prod.example' : 'env.dev.example';
-  const preferredPath = path.join(monoRoot, preferredEnv);
-  const fallbackPath = path.join(monoRoot, fallbackEnv);
-  dotenv.config({ path: preferredPath });
-  dotenv.config({ path: fallbackPath });
+  const envPath = path.join(monoRoot, '.env');
+  const loaded = dotenv.config({ path: envPath });
+  if (loaded.error) {
+    throw new Error('Missing required env file .env at repo root.');
+  }
 
   const hasExplicitPgParams = !!(process.env.POSTGRES_HOST || process.env.POSTGRES_PORT || process.env.POSTGRES_USER || process.env.POSTGRES_PASSWORD || process.env.POSTGRES_DB);
   const databaseUrl = hasExplicitPgParams

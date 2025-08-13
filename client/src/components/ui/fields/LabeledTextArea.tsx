@@ -1,6 +1,6 @@
 import React from 'react';
-import FieldContainer, { type FieldStatus } from './FieldContainer';
-import Info from '../Info';
+import { type FieldStatus } from './FieldContainer';
+import BaseLabeledField from './BaseLabeledField';
 import { INPUT_FORM, INPUT_STYLE } from '../styles';
 
 type Props = {
@@ -13,19 +13,24 @@ type Props = {
   right?: React.ReactNode;
   hint?: string;
   status?: FieldStatus;
+  idPrefix?: string;
 };
 
-export default function LabeledTextArea({ label, infoText, value, onChange, rows = 3, placeholder, right, hint, status }: Props) {
+export default function LabeledTextArea({ label, infoText, value, onChange, rows = 3, placeholder, right, hint, status, idPrefix }: Props) {
   return (
-    <FieldContainer label={label} info={infoText ? <Info text={infoText} /> : undefined} right={right} hint={hint} status={status}>
-      <textarea
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        rows={rows}
-        placeholder={placeholder}
-        className={`${INPUT_FORM} ${INPUT_STYLE}`}
-      />
-    </FieldContainer>
+    <BaseLabeledField label={label} infoText={infoText} right={right} hint={hint} status={status} idPrefix={idPrefix}>
+      {({ inputId, labelId }) => (
+        <textarea
+          id={inputId}
+          aria-labelledby={labelId}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          rows={rows}
+          placeholder={placeholder}
+          className={`${INPUT_FORM} ${INPUT_STYLE}`}
+        />
+      )}
+    </BaseLabeledField>
   );
 }
 

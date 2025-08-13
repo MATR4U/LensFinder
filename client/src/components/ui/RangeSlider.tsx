@@ -51,7 +51,7 @@ export default function RangeSlider({
   disabled = false,
   trackStyle,
   ticks,
-  snap = false,
+  snap = true,
   showTickLabels = true,
   minDistance = 0,
   ariaLabelMin = 'Minimum',

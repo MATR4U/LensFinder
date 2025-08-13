@@ -15,9 +15,11 @@ type Props = {
   labelId?: string;
   // Optional for associating label with a specific input via htmlFor
   htmlFor?: string;
+  // Optional inline warning with hover tooltip (exclamation icon)
+  warningTip?: string;
 };
 
-export default function FieldContainer({ label, info, status = 'normal', hint, action, right, children, labelId, htmlFor }: Props) {
+export default function FieldContainer({ label, info, status = 'normal', hint, action, right, children, labelId, htmlFor, warningTip }: Props) {
   const bgCls = status === 'blocking' ? FIELD_CONTAINER_BG_BLOCKING : status === 'limit' ? FIELD_CONTAINER_BG_LIMIT : status === 'warning' ? FIELD_CONTAINER_BG_WARNING : FIELD_CONTAINER_BG_NORMAL;
   return (
     <div className={`${FIELD_CONTAINER_BASE} ${bgCls}`} role="group" aria-labelledby={labelId}>
@@ -25,6 +27,14 @@ export default function FieldContainer({ label, info, status = 'normal', hint, a
         <label id={labelId} htmlFor={htmlFor} className={`${FORM_LABEL} flex items-center gap-2`}>
           <span>{label}</span>
           {info}
+          {warningTip && (
+            <span className="relative inline-flex items-center group">
+              <span className="h-5 w-5 rounded-full bg-[var(--notice-warning-bg)] border border-[var(--notice-warning-border)] text-[var(--notice-warning-text)] grid place-items-center text-[11px]/[11px] cursor-help">!</span>
+              <span className="pointer-events-none absolute z-20 top-full mt-2 hidden w-80 rounded-md border border-[var(--control-border)] bg-[var(--control-bg)] p-3 text-xs text-[var(--text-color)] shadow-xl group-hover:block">
+                {warningTip}
+              </span>
+            </span>
+          )}
         </label>
         {right}
       </div>

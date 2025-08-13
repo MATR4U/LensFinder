@@ -2,29 +2,43 @@ import path from 'path';
 import dotenv from 'dotenv';
 import { z } from 'zod';
 
-// Load env from monorepo root with fallback to example files
+// Load env from monorepo root using a single live .env file (no example fallbacks)
 const ROOT = path.resolve(process.cwd());
 const MONO_ROOT = path.resolve(ROOT, '..');
 
-function loadDotEnvForCurrentEnv(nodeEnvOverride?: string) {
-  const nodeEnv = nodeEnvOverride ?? (process.env.NODE_ENV === 'production' ? 'production' : (process.env.NODE_ENV || 'development'));
-  if (process.env.SKIP_DOTENV === 'true') {
-    return;
-  }
-  const preferredEnv = nodeEnv === 'production' ? '.env.prod' : '.env.dev';
-  dotenv.config({ path: path.join(MONO_ROOT, preferredEnv) });
-  // Only load example fallback in non-production to avoid masking missing secrets
-  if (nodeEnv !== 'production') {
-    const fallbackEnv = 'env.dev.example';
-    dotenv.config({ path: path.join(MONO_ROOT, fallbackEnv) });
+function loadDotEnvSingle() {
+  if (process.env.SKIP_DOTENV === 'true') return;
+  const envPath = path.join(MONO_ROOT, '.env');
+  const loaded = dotenv.config({ path: envPath });
+  if (loaded.error) {
+    throw new Error('Missing required env file .env at repo root.');
   }
 }
-loadDotEnvForCurrentEnv();
+loadDotEnvSingle();
+
+function buildDbUrlFromParts(): string {
+  const user = process.env.POSTGRES_USER || 'lens';
+  const pass = process.env.POSTGRES_PASSWORD || 'lens';
+  const host = process.env.POSTGRES_HOST || 'localhost';
+  const port = process.env.POSTGRES_PORT || '5432';
+  const db = process.env.POSTGRES_DB || 'lensfinder';
+  return `postgres://${user}:${pass}@${host}:${port}/${db}`;
+}
 
 function computeDatabaseUrl(nodeEnv: string): string {
   const envUrl = process.env.DATABASE_URL;
-  if (envUrl && envUrl.trim()) return envUrl;
-  if (nodeEnv !== 'production') return 'postgres://lens:lens@localhost:5432/lensfinder';
+  if (envUrl && envUrl.trim()) {
+    // Tolerate unexpanded shell-style variables in .env by rebuilding from POSTGRES_* parts
+    if (envUrl.includes('${')) return buildDbUrlFromParts();
+    return envUrl;
+  }
+  if (nodeEnv !== 'production') {
+    // Prefer POSTGRES_* parts when provided (e.g., compose exposing non-default port)
+    if (process.env.POSTGRES_DB || process.env.POSTGRES_PORT || process.env.POSTGRES_USER || process.env.POSTGRES_PASSWORD) {
+      return buildDbUrlFromParts();
+    }
+    return 'postgres://lens:lens@localhost:5432/lensfinder';
+  }
   throw new Error('DATABASE_URL is required in production');
 }
 
@@ -50,7 +64,7 @@ const EnvSchema = z.object({
 });
 
 export function createConfigFromEnv(nodeEnvOverride?: string) {
-  loadDotEnvForCurrentEnv(nodeEnvOverride);
+  loadDotEnvSingle();
   const nodeEnv = nodeEnvOverride ?? (process.env.NODE_ENV === 'production' ? 'production' : (process.env.NODE_ENV || 'development'));
   const parsed = EnvSchema.safeParse(process.env);
   if (!parsed.success) {

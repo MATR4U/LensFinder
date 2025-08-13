@@ -9,7 +9,7 @@ import { clientConfig } from '../config';
 import SummaryHeader from './report/SummaryHeader';
 import Recommendations from './report/Recommendations';
 import RankingWeights from './report/RankingWeights';
-import Message from './ui/Message';
+import CollapsibleMessage from './ui/CollapsibleMessage';
 import Info from './ui/Info';
 
 type Props = {
@@ -61,7 +61,7 @@ export default function Report({ report, camera, selected, goalWeights, topResul
       {/* Section 1: Personalized summary */}
       <SummaryHeader cameraName={cameraName} goal={goal} onEditPreferences={onEditPreferences} />
 
-      <Message variant="info" title="How to read this report" className="mb-4">
+      <CollapsibleMessage variant="info" title="How to read this report" defaultOpen={false} className="mb-4">
         <ul>
           <li><strong>Score</strong>: Overall utility aligned to your preferences. Higher is better.</li>
           <li><strong>Badges</strong>: Top Performer = highest Score; Best Value = best Score÷Price; Best Portability = lightest.</li>
@@ -69,7 +69,7 @@ export default function Report({ report, camera, selected, goalWeights, topResul
           <li><strong>Chart</strong>: Each dot is a lens (X = Price, Y = Score). The green line marks the Pareto frontier—prefer options near the top‑left.</li>
           <li><strong>Decide</strong>: If torn, pick the best value on the frontier, then consider portability and your shooting style.</li>
         </ul>
-      </Message>
+      </CollapsibleMessage>
 
       {/* Top badges based on consistent definitions */}
       {top3.length > 0 && (

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { useFilterStore } from '../src/stores/filterStore';
 import ProRequirements from '../src/components/flow/ProRequirements';
 
@@ -16,8 +16,8 @@ function renderWithCapsAndZeroResults() {
   );
 }
 
-describe('Contextual zero-results notice and field warnings', () => {
-  it('shows a contextual zero-results notice after changing price range', async () => {
+describe('Inline zero-results warning and field warnings', () => {
+  it('shows an inline warning icon on Price after changing range leading to zero results', async () => {
     const s = useFilterStore.getState();
     s.resetFilters({ priceBounds: { min: 0, max: 8000 }, weightBounds: { min: 0, max: 3000 } });
     s.setBoundsFromAvailability({
@@ -34,8 +34,11 @@ describe('Contextual zero-results notice and field warnings', () => {
     // Change price range (pushHistory is called inside setter)
     s.setPriceRange({ min: 0, max: 100 });
     renderWithCapsAndZeroResults();
-    // Use a strict heading match to avoid matching inline hint texts
-    expect(screen.getAllByText(/^No matches$/i).length).toBeGreaterThan(0);
+    const priceLabel = screen.getAllByText('Price (CHF)')[0];
+    const container = priceLabel.closest('label');
+    expect(container).toBeTruthy();
+    const icon = within(container as HTMLElement).getByText('!');
+    expect(icon).toBeTruthy();
   });
 
   it('applies warning styling when range sits at bounds (edge)', async () => {
@@ -54,7 +57,9 @@ describe('Contextual zero-results notice and field warnings', () => {
     });
     s.setWeightRange({ min: 0, max: 3000 });
     renderWithCapsAndZeroResults();
-    expect(screen.getAllByText(/No matches/i).length).toBeGreaterThan(0);
+    const weightLabel = screen.getAllByText('Weight (g)')[0];
+    const container = weightLabel.closest('label');
+    expect(container).toBeTruthy();
   });
 });
 

@@ -94,7 +94,7 @@ export function computeAvailability(args: AvailabilityArgs): Availability {
     const applyFocalRange = (proFocalMin > 0) || (proFocalMax < 9999);
     arr = arr
       .filter(l => (except.has('focalRange') ? true : (!applyFocalRange ? true : ((l.focal_min_mm ?? 0) <= proFocalMin && (l.focal_max_mm ?? 0) >= proFocalMax))))
-      .filter(l => (except.has('apertureMax') ? true : ((l.aperture_max ?? 99) <= proMaxApertureF)))
+      .filter(l => (except.has('apertureMax') ? true : ((l.aperture_min ?? 99) <= proMaxApertureF)))
       .filter(l => (proRequireOIS ? !!l.ois : true))
       .filter(l => (proRequireSealed ? !!l.weather_sealed : true))
       .filter(l => (proRequireMacro ? !!l.is_macro : true))
@@ -160,7 +160,7 @@ export function computeAvailability(args: AvailabilityArgs): Availability {
   const focalTicks = makeTicks(focalBounds.min, focalBounds.max);
 
   const afterNoAperture = applyAll(new Set(['apertureMax']));
-  const apertureVals = afterNoAperture.map(l => l.aperture_max ?? 99).filter(v => Number.isFinite(v));
+  const apertureVals = afterNoAperture.map(l => l.aperture_min ?? 99).filter(v => Number.isFinite(v));
   const apertureMaxMax = Math.min(99, (apertureVals.length ? Math.max(...apertureVals) : 99));
   const afterNoDistortion = applyAll(new Set(['distortionMax']));
   const distVals = afterNoDistortion.map(l => l.distortion_pct ?? 0).filter(v => Number.isFinite(v));

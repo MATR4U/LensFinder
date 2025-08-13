@@ -9,7 +9,7 @@ const repoRoot = path.resolve(__dirname, '..');
 
 function parseArgs() {
   const args = process.argv.slice(2);
-  const out = { envPath: path.join(repoRoot, '.env.prod') };
+  const out = { envPath: path.join(repoRoot, '.env') };
   for (let i = 0; i < args.length; i += 1) {
     const a = args[i];
     if (a === '--env' || a === '--env-path') {
@@ -47,13 +47,13 @@ function makeDockerComposeClient(env) {
   return `services:\n  client:\n    build:\n      context: ./client\n      dockerfile: Dockerfile\n      args:\n        VITE_API_BASE_URL: ${JSON.stringify(VITE_API_BASE_URL)}\n    image: lensfinder-client:latest\n    container_name: lensfinder-client\n    restart: unless-stopped\n    ports:\n      - "${CLIENT_PORT}:3000"\n`;
 }
 
-function makeDockerComposeServer(env) {
+function makeDockerComposeServer(env, envFileName) {
   const DATABASE_URL = get(env, 'DATABASE_URL', 'postgres://lens:lens@postgres:5432/lensfinder');
   const PORT = get(env, 'PORT', '3001');
-  return `services:\n  server:\n    build:\n      context: .\n      dockerfile: server/Dockerfile\n    image: lensfinder-server:latest\n    container_name: lensfinder-server\n    restart: unless-stopped\n    env_file:\n      - .env.prod\n    environment:\n      NODE_ENV: production\n      DATABASE_URL: ${JSON.stringify(DATABASE_URL)}\n    ports:\n      - "${PORT}:${PORT}"\n`;
+  return `services:\n  server:\n    build:\n      context: .\n      dockerfile: server/Dockerfile\n    image: lensfinder-server:latest\n    container_name: lensfinder-server\n    restart: unless-stopped\n    env_file:\n      - ${envFileName}\n    environment:\n      NODE_ENV: production\n      DATABASE_URL: ${JSON.stringify(DATABASE_URL)}\n    ports:\n      - "${PORT}:${PORT}"\n`;
 }
 
-function makeDockerComposeDb(env) {
+function makeDockerComposeDb(env, envFileName) {
   const POSTGRES_DB = get(env, 'POSTGRES_DB', 'lensfinder');
   const POSTGRES_USER = get(env, 'POSTGRES_USER', 'lens');
   const POSTGRES_PASSWORD = get(env, 'POSTGRES_PASSWORD', 'lens');
@@ -61,7 +61,7 @@ function makeDockerComposeDb(env) {
   const PGADMIN_DEFAULT_EMAIL = get(env, 'PGADMIN_DEFAULT_EMAIL', 'admin@example.com');
   const PGADMIN_DEFAULT_PASSWORD = get(env, 'PGADMIN_DEFAULT_PASSWORD', 'lenspass');
   const PGADMIN_PORT = get(env, 'PGADMIN_PORT', '5050');
-  return `services:\n  postgres:\n    image: postgres:16-alpine\n    container_name: lensfinder-postgres\n    restart: unless-stopped\n    env_file:\n      - .env.prod\n    environment:\n      POSTGRES_DB: ${JSON.stringify(POSTGRES_DB)}\n      POSTGRES_USER: ${JSON.stringify(POSTGRES_USER)}\n      POSTGRES_PASSWORD: ${JSON.stringify(POSTGRES_PASSWORD)}\n    healthcheck:\n      test: [\"CMD-SHELL\", \"pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB\"]\n      interval: 5s\n      timeout: 5s\n      retries: 10\n    volumes:\n      - pgdata:/var/lib/postgresql/data\n    ports:\n      - \"${POSTGRES_PORT}:5432\"\n\n  pgadmin:\n    image: dpage/pgadmin4:9.6\n    container_name: lensfinder-pgadmin\n    restart: unless-stopped\n    env_file:\n      - .env.prod\n    environment:\n      PGADMIN_DEFAULT_EMAIL: ${JSON.stringify(PGADMIN_DEFAULT_EMAIL)}\n      PGADMIN_DEFAULT_PASSWORD: ${JSON.stringify(PGADMIN_DEFAULT_PASSWORD)}\n      PGADMIN_CONFIG_SERVER_MODE: 'False'\n    ports:\n      - \"${PGADMIN_PORT}:80\"\n    volumes:\n      - pgadmin:/var/lib/pgadmin\n\nvolumes:\n  pgdata:\n  pgadmin:\n`;
+  return `services:\n  postgres:\n    image: postgres:16-alpine\n    container_name: lensfinder-postgres\n    restart: unless-stopped\n    env_file:\n      - ${envFileName}\n    environment:\n      POSTGRES_DB: ${JSON.stringify(POSTGRES_DB)}\n      POSTGRES_USER: ${JSON.stringify(POSTGRES_USER)}\n      POSTGRES_PASSWORD: ${JSON.stringify(POSTGRES_PASSWORD)}\n    healthcheck:\n      test: [\"CMD-SHELL\", \"pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB\"]\n      interval: 5s\n      timeout: 5s\n      retries: 10\n    volumes:\n      - pgdata:/var/lib/postgresql/data\n    ports:\n      - \"${POSTGRES_PORT}:5432\"\n\n  pgadmin:\n    image: dpage/pgadmin4:9.6\n    container_name: lensfinder-pgadmin\n    restart: unless-stopped\n    env_file:\n      - ${envFileName}\n    environment:\n      PGADMIN_DEFAULT_EMAIL: ${JSON.stringify(PGADMIN_DEFAULT_EMAIL)}\n      PGADMIN_DEFAULT_PASSWORD: ${JSON.stringify(PGADMIN_DEFAULT_PASSWORD)}\n      PGADMIN_CONFIG_SERVER_MODE: 'False'\n    ports:\n      - \"${PGADMIN_PORT}:80\"\n    volumes:\n      - pgadmin:/var/lib/pgadmin\n\nvolumes:\n  pgdata:\n  pgadmin:\n`;
 }
 
 function makeDockerComposeRoot() {
@@ -102,14 +102,15 @@ function makeK8sIngress(env) {
 async function main() {
   const { envPath } = parseArgs();
   dotenv.config({ path: envPath });
+  const envFileName = path.basename(envPath);
   const env = process.env;
 
   // Docker Compose files
   const cicdDockerDir = path.join(repoRoot, 'infra', 'docker');
   await ensureDir(cicdDockerDir);
   await writeFileIfChanged(path.join(cicdDockerDir, 'docker-compose.client.yml'), makeDockerComposeClient(env));
-  await writeFileIfChanged(path.join(cicdDockerDir, 'docker-compose.server.yml'), makeDockerComposeServer(env));
-  await writeFileIfChanged(path.join(cicdDockerDir, 'docker-compose.db.yml'), makeDockerComposeDb(env));
+  await writeFileIfChanged(path.join(cicdDockerDir, 'docker-compose.server.yml'), makeDockerComposeServer(env, envFileName));
+  await writeFileIfChanged(path.join(cicdDockerDir, 'docker-compose.db.yml'), makeDockerComposeDb(env, envFileName));
   await writeFileIfChanged(path.join(cicdDockerDir, 'docker-compose.yml'), makeDockerComposeRoot());
 
   // Kubernetes files

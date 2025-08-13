@@ -12,17 +12,32 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 const LazyProRequirements = React.lazy(() => import('../components/flow/ProRequirements'));
 const LazySimpleRequirements = React.lazy(() => import('../components/flow/SimpleRequirements'));
 import ModeSelect from '../components/flow/ModeSelect';
+import ModeCard from '../components/flow/ModeCard';
 import { shallow } from 'zustand/shallow';
 import { useBootstrap } from '../hooks/useBootstrap';
-import { computeDebugCounts } from '../lib/debugCounts';
+import { computeDebugCounts, computeDebugDistributions, computeDebugPerCameraCounts } from '../lib/debugCounts';
 import { useFilterStore } from '../stores/filterStore';
-import { APP_BACKGROUND, PAGE_CONTAINER, SECTION_STACK, CARD_BASE, CARD_ERROR, TITLE_H1, TITLE_H2, TEXT_SM, TEXT_XS_MUTED, SECTION_TITLE, ROW_BETWEEN, ROW_END, STACK_Y, BADGE_COUNT } from '../components/ui/styles';
+import { APP_BACKGROUND, PAGE_CONTAINER, SECTION_STACK, CARD_BASE, CARD_ERROR, CARD_WARNING, TITLE_H1, TITLE_H2, TEXT_SM, TEXT_XS_MUTED, SECTION_TITLE, ROW_BETWEEN, ROW_END, STACK_Y, BADGE_COUNT } from '../components/ui/styles';
 import Loading from '../components/ui/Loading';
 import Button from '../components/ui/Button';
-import Message from '../components/ui/Message';
+import CollapsibleMessage from '../components/ui/CollapsibleMessage';
+import StatusBanner from '../components/ui/StatusBanner';
+import OutageScreen from '../components/ui/OutageScreen';
+import DebugFilterPanel from '../components/DebugFilterPanel';
 
 export default function App() {
-  const { cameras, lenses, fatalError, setFatalError } = useBootstrap();
+  const { cameras, lenses, fatalError, setFatalError, degraded, isPaused, pauseRetries, resumeRetries, retryNow } = useBootstrap();
+  const [showRecovered, setShowRecovered] = React.useState(false);
+  const prevDegradedRef = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    const prev = prevDegradedRef.current;
+    if (prev && !degraded) {
+      setShowRecovered(true);
+      const t = setTimeout(() => setShowRecovered(false), 2000);
+      return () => clearTimeout(t);
+    }
+    prevDegradedRef.current = degraded || null;
+  }, [degraded]);
   const cameraName = useFilterStore(s => s.cameraName);
   const isPro = useFilterStore(s => s.isPro);
   const goalPreset = useFilterStore(s => s.goalPreset);
@@ -46,6 +61,8 @@ export default function App() {
   const proWeightMax = useFilterStore(s => s.proWeightMax);
   const proDistortionMaxPct = useFilterStore(s => s.proDistortionMaxPct);
   const proBreathingMinScore = useFilterStore(s => s.proBreathingMinScore);
+  const softPrice = useFilterStore(s => s.softPrice);
+  const softWeight = useFilterStore(s => s.softWeight);
   const softDistortion = useFilterStore(s => s.softDistortion);
   const softBreathing = useFilterStore(s => s.softBreathing);
   const compareList = useFilterStore(s => s.compareList);
@@ -166,11 +183,13 @@ export default function App() {
       cameraName,
       cameraMount: camera?.mount,
       ...filters,
+      softPrice,
+      softWeight,
       softDistortion,
       softBreathing,
     });
     return filtered.length;
-  }, [lenses, camera, cameraName, brand, lensType, sealed, isMacro, priceRange, weightRange, proCoverage, proFocalMin, proFocalMax, proMaxApertureF, proRequireOIS, proRequireSealed, proRequireMacro, proPriceMax, proWeightMax, proDistortionMaxPct, proBreathingMinScore, softDistortion, softBreathing]);
+  }, [lenses, camera, cameraName, brand, lensType, sealed, isMacro, priceRange, weightRange, proCoverage, proFocalMin, proFocalMax, proMaxApertureF, proRequireOIS, proRequireSealed, proRequireMacro, proPriceMax, proWeightMax, proDistortionMaxPct, proBreathingMinScore, softPrice, softWeight, softDistortion, softBreathing]);
   const results: Result[] = useMemo(() => {
     const filters = {
       cameraName,
@@ -179,11 +198,12 @@ export default function App() {
       proRequireOIS, proRequireSealed, proRequireMacro,
       proPriceMax, proWeightMax, proDistortionMaxPct, proBreathingMinScore,
       goalWeights, focalChoice, isPro, subjectDistanceM,
+      softPrice, softWeight,
       softDistortion, softBreathing,
     };
     const res = resultsSelector(lenses, camera, filters);
     return res;
-  }, [resultsSelector, lenses, camera, cameraName, brand, lensType, sealed, isMacro, priceRange, weightRange, proCoverage, proFocalMin, proFocalMax, proMaxApertureF, proRequireOIS, proRequireSealed, proRequireMacro, proPriceMax, proWeightMax, proDistortionMaxPct, proBreathingMinScore, goalWeights, focalChoice, isPro, subjectDistanceM, softDistortion, softBreathing]);
+  }, [resultsSelector, lenses, camera, cameraName, brand, lensType, sealed, isMacro, priceRange, weightRange, proCoverage, proFocalMin, proFocalMax, proMaxApertureF, proRequireOIS, proRequireSealed, proRequireMacro, proPriceMax, proWeightMax, proDistortionMaxPct, proBreathingMinScore, goalWeights, focalChoice, isPro, subjectDistanceM, softPrice, softWeight, softDistortion, softBreathing]);
 
   // History is pushed inside store setters; no post-render push needed here
 
@@ -212,37 +232,77 @@ export default function App() {
     });
   }, [camera, lenses, brand, lensType, sealed, isMacro, priceRange, weightRange, proCoverage, proFocalMin, proFocalMax, proMaxApertureF, proRequireOIS, proRequireSealed, proRequireMacro, proPriceMax, proWeightMax, proDistortionMaxPct, proBreathingMinScore]);
 
+  const [showDebug, setShowDebug] = useState<boolean>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return import.meta.env.DEV && params.get('debug') === '1';
+  });
+  const debugDist = useMemo(() => {
+    if (!camera || import.meta.env.PROD) return null as null | ReturnType<typeof computeDebugDistributions>;
+    return computeDebugDistributions({
+      cameraName,
+      cameraMount: camera.mount,
+      lenses,
+      brand,
+      lensType,
+      sealed,
+      isMacro,
+      priceRange,
+      weightRange,
+      proCoverage,
+      proFocalMin,
+      proFocalMax,
+      proMaxApertureF,
+      proRequireOIS,
+      proRequireSealed,
+      proRequireMacro,
+      proPriceMax,
+      proWeightMax,
+      proDistortionMaxPct,
+      proBreathingMinScore,
+      softDistortion,
+      softBreathing,
+    });
+  }, [camera, cameraName, lenses, brand, lensType, sealed, isMacro, priceRange, weightRange, proCoverage, proFocalMin, proFocalMax, proMaxApertureF, proRequireOIS, proRequireSealed, proRequireMacro, proPriceMax, proWeightMax, proDistortionMaxPct, proBreathingMinScore, softDistortion, softBreathing]);
+  const debugPerCam = useMemo(() => {
+    if (import.meta.env.PROD) return null as null | Record<string, number>;
+    return computeDebugPerCameraCounts({
+      cameras,
+      lenses,
+      brand,
+      lensType,
+      sealed,
+      isMacro,
+      priceRange,
+      weightRange,
+      proCoverage,
+      proFocalMin,
+      proFocalMax,
+      proMaxApertureF,
+      proRequireOIS,
+      proRequireSealed,
+      proRequireMacro,
+      proPriceMax,
+      proWeightMax,
+      proDistortionMaxPct,
+      proBreathingMinScore,
+      softDistortion,
+      softBreathing,
+    });
+  }, [cameras, lenses, brand, lensType, sealed, isMacro, priceRange, weightRange, proCoverage, proFocalMin, proFocalMax, proMaxApertureF, proRequireOIS, proRequireSealed, proRequireMacro, proPriceMax, proWeightMax, proDistortionMaxPct, proBreathingMinScore, softDistortion, softBreathing]);
+
   // Auto-generate report whenever inputs/results change (debounced)
   useDebouncedReport({ camera, results, isPro, goalPreset, setReport });
 
   // CSV export now imported from lib/csv
 
-  if (fatalError) {
-    return (
-      <div className={APP_BACKGROUND}>
-        <div className="max-w-2xl mx-auto p-6 pt-24">
-          <div className={`${CARD_BASE} ${CARD_ERROR}`}>
-            <div className="flex items-start gap-3">
-              <div className="h-9 w-9 rounded-lg bg-[var(--error-bg)] border border-[var(--error-border)] grid place-items-center">⚠️</div>
-              <div>
-                <h2 className={TITLE_H2}>Service temporarily unavailable</h2>
-                <p className={`${TEXT_SM} mt-1 text-[var(--error-text)]/90`}>{fatalError}</p>
-                <ul className={`${TEXT_SM} list-disc list-inside mt-3 space-y-1 text-[var(--error-text)]/80`}>
-                  <li>Ensure the database and API server are running.</li>
-                  <li>Then retry loading the app.</li>
-                </ul>
-                <div className="mt-4 flex gap-2">
-                  <Button variant="secondary" size="sm" onClick={() => { setFatalError(null); window.location.reload(); }}>Retry</Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Keep rendering the app background/theme and show a fixed overlay when unavailable
 
   const appReady = cameras.length > 0 && lenses.length > 0;
+  // Vite define injects a global at build time; safe-guard for type
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  const forceOutage = (typeof window !== 'undefined' && typeof window.__FORCE_OUTAGE__ !== 'undefined') ? (window as any).__FORCE_OUTAGE__ : false;
+
   return (
     <div className={APP_BACKGROUND} data-app-ready={appReady ? '1' : '0'}>
       <div className={PAGE_CONTAINER}>
@@ -257,17 +317,74 @@ export default function App() {
           {/* Minimal header; journey uses section titles */}
         </header>
 
+        {(fatalError || forceOutage) && (
+          <OutageScreen title="Service temporarily unavailable" message={fatalError || 'Reconnecting…'} />
+        )}
+
+        {showRecovered && (
+          <div className="mb-4">
+            <StatusBanner variant="info" title="Recovered" message="All services are available again." />
+          </div>
+        )}
+
+        {degraded && (
+          <div className="mb-4">
+            <StatusBanner
+              variant="warning"
+              title="Limited availability"
+              message={degraded}
+              onRetry={() => retryNow()}
+              pausedControls={{ isPaused, onPause: pauseRetries, onResume: resumeRetries }}
+              copyText={`cameraName=${cameraName}; isPro=${isPro}; brand=${brand}; lensType=${lensType}; sealed=${sealed}; macro=${isMacro}; p=${priceRange.min}-${priceRange.max}; w=${weightRange.min}-${weightRange.max}; coverage=${proCoverage}; focal=${proFocalMin}-${proFocalMax}; ap<=${proMaxApertureF}; ois=${proRequireOIS}; wsealed=${proRequireSealed}; macroReq=${proRequireMacro}; pmax=${proPriceMax}; wmax=${proWeightMax}; dist<=${proDistortionMaxPct}; breath>=${proBreathingMinScore}`}
+            />
+          </div>
+        )}
+
         <div className={`${ROW_BETWEEN} mb-4`}>
           <span className={BADGE_COUNT}>{resultsCount} results</span>
-          {debugCounts && import.meta.env.DEV && (
-            <span className="text-[10px] text-[var(--text-muted)]">
-              m:{debugCounts.mount} b:{debugCounts.brand} t:{debugCounts.type} s:{debugCounts.sealed} m:{debugCounts.macro} pr:{debugCounts.priceRange} w:{debugCounts.weightRange} cov:{debugCounts.coverage} f:{debugCounts.focal} ap:{debugCounts.aperture} ois:{debugCounts.ois} ws:{debugCounts.proSealed} mc:{debugCounts.proMacro} pmax:{debugCounts.proPriceMax} wmax:{debugCounts.proWeightMax} dist:{debugCounts.distortion} br:{debugCounts.breathing}
-            </span>
+          {import.meta.env.DEV && (
+            <div className="flex items-center gap-2">
+              {debugCounts && (
+                <span className="text-[10px] text-[var(--text-muted)]">
+                  m:{debugCounts.mount} b:{debugCounts.brand} t:{debugCounts.type} s:{debugCounts.sealed} m:{debugCounts.macro} pr:{debugCounts.priceRange} w:{debugCounts.weightRange} cov:{debugCounts.coverage} f:{debugCounts.focal} ap:{debugCounts.aperture} ois:{debugCounts.ois} ws:{debugCounts.proSealed} mc:{debugCounts.proMacro} pmax:{debugCounts.proPriceMax} wmax:{debugCounts.proWeightMax} dist:{debugCounts.distortion} br:{debugCounts.breathing}
+                </span>
+              )}
+              <Button variant="secondary" size="xs" onClick={() => setShowDebug(v => !v)}>
+                {showDebug ? 'Hide debug' : 'Show debug'}
+              </Button>
+            </div>
           )}
         </div>
 
         {/* Flow content with animated transitions - render only current stage to avoid duplicates */}
         <div className={SECTION_STACK}>
+          {import.meta.env.DEV && showDebug && debugCounts && (
+            <DebugFilterPanel
+              counts={debugCounts}
+              cameraMount={camera?.mount}
+              brand={brand}
+              lensType={lensType}
+              sealed={sealed}
+              isMacro={isMacro}
+              priceRange={priceRange}
+              weightRange={weightRange}
+              proCoverage={proCoverage}
+              proFocalMin={proFocalMin}
+              proFocalMax={proFocalMax}
+              proMaxApertureF={proMaxApertureF}
+              proRequireOIS={proRequireOIS}
+              proRequireSealed={proRequireSealed}
+              proRequireMacro={proRequireMacro}
+              proPriceMax={proPriceMax}
+              proWeightMax={proWeightMax}
+              proDistortionMaxPct={proDistortionMaxPct}
+              proBreathingMinScore={proBreathingMinScore}
+              softDistortion={softDistortion}
+              softBreathing={softBreathing}
+              distributions={debugDist || undefined}
+              perCameraCounts={debugPerCam || undefined}
+            />
+          )}
           <AnimatePresence initial={false}>
             {stage === 0 && (
               <motion.div key="mode-section" ref={modeRef} initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }}>
@@ -280,6 +397,8 @@ export default function App() {
               <motion.div key="requirements-section" ref={reqRef} initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }}>
                 <div className={SECTION_TITLE}>Set your filters</div>
                 <React.Suspense fallback={<Loading text="Loading requirements…" />}>
+                  {/* Always show mode card here so user can switch modes within the Requirements step */}
+                  <ModeCard />
                   {isPro ? (
                     <LazyProRequirements
                       cameras={cameras}
@@ -322,7 +441,7 @@ export default function App() {
             {stage === 3 && (
               <motion.div key="report-section" ref={reportRef} initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }} className={STACK_Y}>
                 <div className="mb-1 text-lg font-semibold text-[var(--text-color)]">Summary & decision</div>
-                <Message variant="info" title="How to make the call">
+                <CollapsibleMessage variant="info" title="How to make the call" defaultOpen={false}>
                   <ul className="list-disc pl-5 text-sm space-y-1">
                     <li><strong>Start</strong>: Note Top Performer, Best Value, and Best Portability badges.</li>
                     <li><strong>Chart</strong>: Prefer lenses near the top‑left (more Score for less CHF). Stay within budget.</li>
@@ -330,7 +449,7 @@ export default function App() {
                     <li><strong>Total kit</strong>: Check combined price and weight with your camera are acceptable.</li>
                     <li><strong>Refine</strong>: Adjust weights/filters or revisit Compare to inspect candidates side‑by‑side.</li>
                   </ul>
-                </Message>
+                </CollapsibleMessage>
                 <Card title="Report" subtitle="Generated summary">
                   <Report
                     report={report}

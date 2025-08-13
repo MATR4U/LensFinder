@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react';
 export default defineConfig(({ mode }) => {
   const rootEnv = loadEnv(mode, process.cwd(), '');
   const apiTarget = rootEnv.VITE_API_BASE_URL || `http://localhost:${rootEnv.PORT ?? '3001'}`;
+  const forceOutage = rootEnv.VITE_FORCE_OUTAGE === '1' || rootEnv.VITE_FORCE_OUTAGE === 'true';
   return {
     plugins: [react()],
     build: {
@@ -37,6 +38,9 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true
         }
       }
+    },
+    define: {
+      'window.__FORCE_OUTAGE__': JSON.stringify(forceOutage)
     },
     test: {
       environment: 'jsdom',

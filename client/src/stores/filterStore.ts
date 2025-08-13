@@ -69,6 +69,8 @@ export interface FilterState {
   proDistortionMaxPct: number;
   proBreathingMinScore: number;
   // Soft vs hard toggles
+  softPrice: boolean;
+  softWeight: boolean;
   softDistortion: boolean;
   softBreathing: boolean;
 
@@ -118,6 +120,8 @@ export interface FilterState {
   setProWeightMax: (n: number) => void;
   setProDistortionMaxPct: (n: number) => void;
   setProBreathingMinScore: (n: number) => void;
+  setSoftPrice: (v: boolean) => void;
+  setSoftWeight: (v: boolean) => void;
   setSoftDistortion: (v: boolean) => void;
   setSoftBreathing: (v: boolean) => void;
 
@@ -184,6 +188,8 @@ export const useFilterStore = createWithEqualityFn<FilterState>()(persist((set, 
   proWeightMax: 100_000,
   proDistortionMaxPct: 100,
   proBreathingMinScore: 0,
+  softPrice: false,
+  softWeight: false,
   softDistortion: false,
   softBreathing: false,
 
@@ -312,6 +318,8 @@ export const useFilterStore = createWithEqualityFn<FilterState>()(persist((set, 
     const val = Math.min(Math.max(n, bmin), 10);
     set({ proBreathingMinScore: val });
   },
+  setSoftPrice: (v) => { get().pushHistory(); set({ softPrice: v }); },
+  setSoftWeight: (v) => { get().pushHistory(); set({ softWeight: v }); },
   setSoftDistortion: (v) => { get().pushHistory(); set({ softDistortion: v }); },
   setSoftBreathing: (v) => { get().pushHistory(); set({ softBreathing: v }); },
 
@@ -477,6 +485,8 @@ export const useFilterStore = createWithEqualityFn<FilterState>()(persist((set, 
       proWeightMax: s.proWeightMax,
       proDistortionMaxPct: s.proDistortionMaxPct,
       proBreathingMinScore: s.proBreathingMinScore,
+      softPrice: s.softPrice,
+      softWeight: s.softWeight,
       softDistortion: s.softDistortion,
       softBreathing: s.softBreathing,
     };
@@ -517,6 +527,8 @@ export const useFilterStore = createWithEqualityFn<FilterState>()(persist((set, 
       proWeightMax: currentAny.proWeightMax,
       proDistortionMaxPct: currentAny.proDistortionMaxPct,
       proBreathingMinScore: currentAny.proBreathingMinScore,
+      softPrice: currentAny.softPrice,
+      softWeight: currentAny.softWeight,
       softDistortion: currentAny.softDistortion,
       softBreathing: currentAny.softBreathing,
     };
@@ -540,6 +552,8 @@ export const useFilterStore = createWithEqualityFn<FilterState>()(persist((set, 
       proWeightMax: prev.proWeightMax,
       proDistortionMaxPct: prev.proDistortionMaxPct,
       proBreathingMinScore: prev.proBreathingMinScore,
+      softPrice: prev.softPrice,
+      softWeight: prev.softWeight,
       softDistortion: prev.softDistortion,
       softBreathing: prev.softBreathing,
       [histKey]: next,
@@ -574,6 +588,8 @@ export const useFilterStore = createWithEqualityFn<FilterState>()(persist((set, 
       proWeightMax: currentAny.proWeightMax,
       proDistortionMaxPct: currentAny.proDistortionMaxPct,
       proBreathingMinScore: currentAny.proBreathingMinScore,
+      softPrice: currentAny.softPrice,
+      softWeight: currentAny.softWeight,
       softDistortion: currentAny.softDistortion,
       softBreathing: currentAny.softBreathing,
     };
@@ -596,6 +612,8 @@ export const useFilterStore = createWithEqualityFn<FilterState>()(persist((set, 
       proWeightMax: nextState.proWeightMax,
       proDistortionMaxPct: nextState.proDistortionMaxPct,
       proBreathingMinScore: nextState.proBreathingMinScore,
+      softPrice: nextState.softPrice,
+      softWeight: nextState.softWeight,
       softDistortion: nextState.softDistortion,
       softBreathing: nextState.softBreathing,
       [histKey]: [...hist, cur].slice(-100),

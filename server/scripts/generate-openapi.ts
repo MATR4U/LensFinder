@@ -11,12 +11,10 @@ type Column = {
 };
 
 function getDatabaseUrl(): string {
-  // Load .env.* like db/migrate.ts for consistency
+  // Load single .env at repo root
   const monoRoot = path.resolve(process.cwd(), '..');
-  const preferredEnv = process.env.NODE_ENV === 'production' ? '.env.prod' : '.env.dev';
-  const fallbackEnv = process.env.NODE_ENV === 'production' ? 'env.prod.example' : 'env.dev.example';
-  dotenv.config({ path: path.join(monoRoot, preferredEnv) });
-  dotenv.config({ path: path.join(monoRoot, fallbackEnv) });
+  const envPath = path.join(monoRoot, '.env');
+  dotenv.config({ path: envPath });
   const url = process.env.DATABASE_URL && process.env.DATABASE_URL.trim();
   if (!url) throw new Error('DATABASE_URL is required (load from .env).');
   return url;

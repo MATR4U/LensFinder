@@ -39,13 +39,17 @@ export function useSliderLogic(params: SliderLogicParams) {
 
   const onValueChange = React.useCallback((arr: number[]) => {
     if (isSingle) {
-      const v = Math.min(Math.max(arr[0]!, min), max);
+      let v = Math.min(Math.max(arr[0]!, min), max);
+      if (snap && ticks && ticks.length > 0) v = snapTo(v);
       onChangeSingle?.(v);
       return;
     }
     const [vMin, vMax] = arr as [number, number];
     let nextMin = Math.min(Math.max(vMin, min), Math.min(vMax, max));
     let nextMax = Math.max(Math.min(vMax, max), Math.max(vMin, min));
+    if (snap && ticks && ticks.length > 0) {
+      nextMin = snapTo(nextMin); nextMax = snapTo(nextMax);
+    }
     if (minDistance > 0 && nextMax - nextMin < minDistance) {
       const curMin = values[0]!; const curMax = values[1]!;
       if (Math.abs(vMin - curMin) > Math.abs(vMax - curMax)) {
@@ -55,7 +59,7 @@ export function useSliderLogic(params: SliderLogicParams) {
       }
     }
     onChangeRange?.({ min: nextMin, max: nextMax });
-  }, [isSingle, min, max, minDistance, values, onChangeRange, onChangeSingle]);
+  }, [isSingle, min, max, minDistance, values, onChangeRange, onChangeSingle, snap, ticks, snapTo]);
 
   const onValueCommit = React.useCallback((arr: number[]) => {
     if (isSingle) {

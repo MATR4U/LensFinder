@@ -23,6 +23,8 @@ export type FiltersInput = {
   proDistortionMaxPct: number;
   proBreathingMinScore: number;
   // Soft vs hard toggles
+  softPrice?: boolean;
+  softWeight?: boolean;
   softDistortion?: boolean;
   softBreathing?: boolean;
 };
@@ -62,11 +64,11 @@ export function applyFilters(input: FiltersInput): Lens[] {
     })
     .filter((l) => (sealed ? l.weather_sealed : true))
     .filter((l) => (isMacro ? l.is_macro : true))
-    .filter((l) => l.price_chf >= priceRange.min && l.price_chf <= priceRange.max)
-    .filter((l) => l.weight_g >= weightRange.min && l.weight_g <= weightRange.max)
+    .filter((l) => (input.softPrice ? true : (l.price_chf >= priceRange.min && l.price_chf <= priceRange.max)))
+    .filter((l) => (input.softWeight ? true : (l.weight_g >= weightRange.min && l.weight_g <= weightRange.max)))
     .filter((l) => coverageMatches(l.coverage, proCoverage))
     .filter((l) => !applyFocalRange ? true : ((l.focal_min_mm ?? 0) <= proFocalMin && (l.focal_max_mm ?? 0) >= proFocalMax))
-    .filter((l) => (l.aperture_max ?? 99) <= proMaxApertureF)
+    .filter((l) => (l.aperture_min ?? 99) <= proMaxApertureF)
     .filter((l) => (proRequireOIS ? !!l.ois : true))
     .filter((l) => (proRequireSealed ? !!l.weather_sealed : true))
     .filter((l) => (proRequireMacro ? !!l.is_macro : true))

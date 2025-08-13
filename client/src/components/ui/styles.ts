@@ -14,7 +14,7 @@ export const INPUT_STYLE = 'bg-[var(--control-bg)] border border-[var(--control-
 export const SELECT_STYLE = INPUT_STYLE;
 export const CHECKBOX_STYLE = 'accent-[var(--accent)]';
 export const CARD_STYLE_NEUTRAL = 'bg-[var(--card-bg)] border-[var(--card-border)] text-[var(--text-color)]';
-export const FIELD_CONTAINER_BASE = 'rounded-lg border p-2.5';
+export const FIELD_CONTAINER_BASE = 'w-full rounded-lg border p-3';
 export const FIELD_CONTAINER_BG_NORMAL = 'bg-[var(--control-bg)] border-[var(--control-border)]';
 export const FIELD_CONTAINER_BG_LIMIT = 'bg-[var(--control-bg)] border-[var(--border-default)]';
 export const FIELD_CONTAINER_BG_BLOCKING = 'bg-[var(--error-bg)] border-[var(--error-border)]';
@@ -107,5 +107,17 @@ export const CARD_PADDED_SM = `${CARD_BASE} ${CARD_NEUTRAL} p-3`;
 
 // Common vertical rhythm stack
 export const STACK_Y = 'space-y-4';
+
+// Glassmorphism tokens
+export const GLASS_PANEL = 'rounded-3xl border border-[var(--control-border)] bg-[color-mix(in_oklab,var(--card-bg),white_6%)]/80 backdrop-blur-md shadow-xl';
+export const GLASS_CARD_SM = 'rounded-xl border border-[var(--control-border)] bg-[color-mix(in_oklab,var(--card-bg),white_6%)]/70 backdrop-blur';
+export const AURA_ACCENT = 'absolute inset-0 -z-10 rounded-3xl bg-[var(--accent)]/10 blur-2xl';
+export const STICKY_TOP = 'sticky top-2 z-40';
+export const BADGE_ICON = 'h-6 w-6 rounded-md grid place-items-center bg-[var(--control-bg)]/40 border border-[var(--border-default)]';
+export const SPINNER_SM = 'h-6 w-6 rounded-full border-2 border-[var(--accent)] border-t-transparent animate-spin';
+
+// Collapsible (standardized)
+export const COLLAPSE_TOGGLE = 'inline-flex items-center gap-1 text-xs text-[var(--text-muted)] hover:text-[var(--text-color)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] rounded px-1 py-0.5';
+export const ICON_CHEVRON_SM = 'h-3 w-3 transition-transform';
 
 

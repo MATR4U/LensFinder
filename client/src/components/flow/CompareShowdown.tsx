@@ -2,7 +2,7 @@ import React from 'react';
 import LazyPlot from '../ui/LazyPlot';
 import type { Result, Camera } from '../../types';
 import { useFilterStore } from '../../stores/filterStore';
-import Message from '../ui/Message';
+import CollapsibleMessage from '../ui/CollapsibleMessage';
 import Info from '../ui/Info';
 import Button from '../ui/Button';
 import { CARD_BASE, CARD_NEUTRAL, TEXT_SM, TEXT_MUTED } from '../ui/styles';
@@ -25,7 +25,7 @@ export default function CompareShowdown({ camera, selected }: Props) {
   const pts = rows.map(r => ({ name: r.name, x: r.price_chf, y: r.score_total, label: r.name }));
   return (
     <div className="space-y-4">
-      <Message variant="info" title="How to read these results">
+      <CollapsibleMessage variant="info" title="How to read these results" defaultOpen={false}>
         <ul className="list-disc pl-5 text-sm space-y-1">
           <li><strong>Score</strong>: Overall performance matched to your priorities. Higher is better.</li>
           <li><strong>Price</strong>: In CHF. Consider value, not just cost—use the chart for price-to-performance.</li>
@@ -34,7 +34,7 @@ export default function CompareShowdown({ camera, selected }: Props) {
           <li><strong>Eq. Focal</strong>: 35mm-equivalent field of view. Match this to your intended framing.</li>
           <li><strong>Decision tip</strong>: Shortlist lenses with the highest <em>Score</em> you can afford. On the chart, look for points toward the top-left (better performance for less money), then break ties using <em>Weight</em> and <em>Aperture</em>.</li>
         </ul>
-      </Message>
+      </CollapsibleMessage>
       <div className={`${CARD_BASE} ${CARD_NEUTRAL} p-3`}>{table}</div>
       <div className={`${CARD_BASE} ${CARD_NEUTRAL} p-3`}>
         <div className={`flex items-center gap-2 ${TEXT_SM} font-semibold text-[var(--text-color)] mb-2`}>

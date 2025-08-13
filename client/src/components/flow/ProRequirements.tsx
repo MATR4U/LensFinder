@@ -16,8 +16,8 @@ import { shallow } from 'zustand/shallow';
 import { applyFilters } from '../../lib/filters';
 import GoalPresetWeights from '../ui/fields/GoalPresetWeights';
 import { FIELD_HELP } from '../ui/fieldHelp';
-import Message from '../ui/Message';
-import NoticeZeroResults from '../ui/NoticeZeroResults';
+import CollapsibleMessage from '../ui/CollapsibleMessage';
+// Inline warnings replace the standalone block; remove NoticeZeroResults usage
 
 type Props = {
   cameras?: Camera[];
@@ -52,6 +52,8 @@ export default function ProRequirements(props: Props) {
     caps,
     undoLastFilter,
     resetFilters,
+    softPrice, setSoftPrice,
+    softWeight, setSoftWeight,
     softDistortion, setSoftDistortion,
     softBreathing, setSoftBreathing,
   } = useFilterStore((s) => ({
@@ -90,6 +92,10 @@ export default function ProRequirements(props: Props) {
     caps: s.availabilityCaps,
     undoLastFilter: s.undoLastFilter,
     resetFilters: s.resetFilters,
+    softPrice: s.softPrice,
+    setSoftPrice: s.setSoftPrice,
+    softWeight: s.softWeight,
+    setSoftWeight: s.setSoftWeight,
     softDistortion: s.softDistortion,
     setSoftDistortion: s.setSoftDistortion,
     softBreathing: s.softBreathing,
@@ -287,25 +293,18 @@ export default function ProRequirements(props: Props) {
         <span className={BADGE_COUNT}>{resultsCount} matches</span>
       </div>
 
-      <Message variant="info" title="How to use hard specs">
+      <CollapsibleMessage variant="info" title="How to use hard specs" defaultOpen={false}>
         <ul className="list-disc pl-5 text-sm space-y-1">
-          <li><strong>Coverage</strong>: Match your sensor; mixing formats can crop or vignette.</li>
-          <li><strong>Focal range</strong>: Sets field of view; choose a range that covers your subjects.</li>
-          <li><strong>Max aperture</strong>: Lower f/ gathers more light; matters for low‑light and blur.</li>
-          <li><strong>Price/Weight</strong>: Start broad, then narrow—use density tracks to see what’s common.</li>
-          <li><strong>Video constraints</strong>: Distortion and breathing gates for stricter video work.</li>
-          <li><strong>Tip</strong>: If results hit zero, use the suggested quick resets shown automatically.</li>
+          <li><strong>Coverage</strong>: {FIELD_HELP.coverage}</li>
+          <li><strong>Focal range</strong>: {FIELD_HELP.focalRange}</li>
+          <li><strong>Max aperture</strong>: {FIELD_HELP.maxAperture}</li>
+          <li><strong>Price/Weight</strong>: {FIELD_HELP.price} {FIELD_HELP.weight}</li>
+          <li><strong>Video constraints</strong>: {FIELD_HELP.distortionMax} {FIELD_HELP.breathingMin}</li>
+          <li><strong>Tip</strong>: If results hit zero, use the quick reset suggestions shown above the fields.</li>
         </ul>
-      </Message>
+      </CollapsibleMessage>
 
-      {/* Suggestions when results are zero */}
-      {resultsCount === 0 && (
-        <NoticeZeroResults
-          changedLabel={lastChangedLabel()}
-          changedDetail={lastChangedDetail()}
-          suggestions={predictive ?? {}}
-        />
-      )}
+      {/* No standalone zero-results block; warnings will be integrated inline */}
 
       {cameras && (
         <div>
@@ -334,41 +333,34 @@ export default function ProRequirements(props: Props) {
       )}
 
       {/* Quick reset limiting filters: pick top 1–3 suggestions when results shrink or hit zero */}
-      {predictive && resultsCount > 0 && (
-        <Message variant="info" title="Tight filters detected" className="text-xs">
-          <div className="mb-1">Quick reset:</div>
-          <div className="flex flex-wrap gap-2">
-            {Object.entries(predictive)
-              .sort((a, b) => b[1].count - a[1].count)
-              .slice(0, 3)
-              .map(([key, s]) => (
-                <Button key={key} variant="secondary" size="xs" onClick={s.apply}>
-                  {key}: {s.label}
-                </Button>
-              ))}
-          </div>
-        </Message>
-      )}
+      {/* Optional micro-hint row can remain for positive counts if desired; omit for now */}
 
-      <div className={GRID_TWO_GAP3}>
-        <div>
-          <LabeledSelect label="Coverage" infoText={FIELD_HELP.coverage} value={coverage} onChange={setCoverage}>
-            {(caps?.coverage || ['Any', 'Full Frame', 'APS-C']).map(c => <option key={c} value={c}>{c}</option>)}
-          </LabeledSelect>
-        </div>
-        <div>
-          <LabeledSlider
-            label="Max aperture (f/)"
-            infoText={FIELD_HELP.maxAperture}
-            min={0.7}
-            max={caps?.apertureMaxMax ?? 16}
-            step={0.1}
-            value={maxApertureF}
-            onChange={(v) => setMaxApertureF(v)}
-            format={(v) => `f/${v.toFixed(1)}`}
-            hint={caps && maxApertureF >= (caps.apertureMaxMax ?? 16) ? 'at limit' : (resultsCount === 0 && lastChangedLabel() === 'Price range' ? `No matches at ${caps ? `CHF ${caps.priceBounds.min}–${caps.priceBounds.max}` : ''}` : undefined)}
-          />
-        </div>
+      <div>
+        <LabeledSelect label="Coverage" infoText={FIELD_HELP.coverage} value={coverage} onChange={setCoverage}>
+          {(caps?.coverage || ['Any', 'Full Frame', 'APS-C']).map(c => <option key={c} value={c}>{c}</option>)}
+        </LabeledSelect>
+      </div>
+      <div>
+        <LabeledSlider
+          label="Max aperture (f/)"
+          infoText={FIELD_HELP.maxAperture}
+          min={0.7}
+          max={caps?.apertureMaxMax ?? 16}
+          step={0.1}
+          value={maxApertureF}
+          onChange={(v) => setMaxApertureF(v)}
+          format={(v) => `f/${v.toFixed(1)}`}
+          hint={caps && maxApertureF >= (caps.apertureMaxMax ?? 16) ? 'at limit' : undefined}
+          warningTip={(resultsCount === 0 && lastChangedLabel() === 'Max aperture' && lastChangedDetail()) ? `No matches after setting ${lastChangedDetail()}. Try loosening related filters.` : undefined}
+          status={(function () {
+            if (!caps) return undefined;
+            // Tight when at bounds; normal when free
+            const atEdge = maxApertureF <= 0.7 || maxApertureF >= (caps.apertureMaxMax ?? 16);
+            return atEdge ? 'warning' as const : 'normal' as const;
+          })()}
+          // Inline hover message when results drop to zero because of latest change
+          right={undefined}
+        />
       </div>
 
       <div>
@@ -384,6 +376,12 @@ export default function ProRequirements(props: Props) {
           ticks={caps?.focalTicks}
           snap
           hint={caps && focalMin <= (caps.focalBounds?.min ?? -Infinity) && focalMax >= (caps.focalBounds?.max ?? Infinity) ? 'at limit' : undefined}
+          warningTip={(resultsCount === 0 && lastChangedLabel() === 'Focal range' && lastChangedDetail()) ? `No matches after adjusting Focal range to ${lastChangedDetail()}.` : undefined}
+          status={(function () {
+            if (!caps) return undefined;
+            const tight = focalMin <= (caps.focalBounds?.min ?? -Infinity) || focalMax >= (caps.focalBounds?.max ?? Infinity);
+            return tight ? 'warning' as const : 'normal' as const;
+          })()}
         />
       </div>
 
@@ -402,7 +400,20 @@ export default function ProRequirements(props: Props) {
             snap
             trackStyle={priceTrackStyle}
             right={predictive ? <span className={TEXT_2XS_MUTED}>→ {predictive.priceRange?.count ?? 0}</span> : undefined}
-            hint={resultsCount === 0 && lastChangedLabel() === 'Weight range' ? `No matches at ${caps ? `${caps.weightBounds.min}–${caps.weightBounds.max} g` : ''}` : undefined}
+            hint={undefined}
+            warningTip={(function () {
+              if (resultsCount !== 0) return undefined;
+              const label = lastChangedLabel();
+              const detail = lastChangedDetail();
+              if (label === 'Price range' && detail) return `No matches after setting ${detail}.`;
+              return 'No matches with the current filters. Try loosening this range.';
+            })()}
+            status={(function () {
+              if (!caps) return undefined;
+              const tight = priceRange.min <= (caps.priceBounds.min) || priceRange.max >= (caps.priceBounds.max);
+              return tight ? 'warning' as const : 'normal' as const;
+            })()}
+            softPreference={{ checked: softPrice, onChange: setSoftPrice, id: 'soft-price', label: 'Soft preference' }}
           />
         </div>
         <div>
@@ -419,7 +430,20 @@ export default function ProRequirements(props: Props) {
             snap
             trackStyle={weightTrackStyle}
             right={predictive ? <span className={TEXT_2XS_MUTED}>→ {predictive.weightRange?.count ?? 0}</span> : undefined}
-            hint={resultsCount === 0 && lastChangedLabel() === 'Distortion max' ? 'No matches with this distortion limit' : undefined}
+            hint={undefined}
+            warningTip={(function () {
+              if (resultsCount !== 0) return undefined;
+              const label = lastChangedLabel();
+              const detail = lastChangedDetail();
+              if (label === 'Weight range' && detail) return `No matches after setting ${detail}.`;
+              return 'No matches with the current filters. Try loosening this range.';
+            })()}
+            status={(function () {
+              if (!caps) return undefined;
+              const tight = weightRange.min <= (caps.weightBounds.min) || weightRange.max >= (caps.weightBounds.max);
+              return tight ? 'warning' as const : 'normal' as const;
+            })()}
+            softPreference={{ checked: softWeight, onChange: setSoftWeight, id: 'soft-weight', label: 'Soft preference' }}
           />
         </div>
       </div>
@@ -435,16 +459,15 @@ export default function ProRequirements(props: Props) {
             value={distortionMaxPct}
             onChange={(v) => setDistortionMaxPct(v)}
             format={(v) => `${v.toFixed(1)}%`}
-            right={(function () {
-              const id = 'soft-distortion';
-              return (
-                <label htmlFor={id} className={INLINE_LABEL_MUTED_XS}>
-                  <Checkbox checked={softDistortion} onChange={setSoftDistortion} inputProps={{ id }} />
-                  <span>Soft preference</span>
-                </label>
-              );
+            right={undefined}
+            hint={undefined}
+            warningTip={(resultsCount === 0 && lastChangedLabel() === 'Distortion max' && lastChangedDetail()) ? `No matches after setting Distortion to ${lastChangedDetail()}.` : undefined}
+            status={(function () {
+              if (!caps) return undefined;
+              const tight = distortionMaxPct >= (caps.distortionMaxMax ?? 10) || distortionMaxPct <= 0;
+              return tight ? 'warning' as const : 'normal' as const;
             })()}
-            hint={resultsCount === 0 && lastChangedLabel() === 'Breathing min score' ? 'No matches with this breathing score' : undefined}
+            softPreference={{ checked: softDistortion, onChange: setSoftDistortion, id: 'soft-distortion', label: 'Soft preference' }}
           />
         </div>
         <div>
@@ -457,15 +480,14 @@ export default function ProRequirements(props: Props) {
             value={breathingMinScore}
             onChange={(v) => setBreathingMinScore(v)}
             format={(v) => v.toFixed(1)}
-            right={(function () {
-              const id = 'soft-breathing';
-              return (
-                <label htmlFor={id} className={INLINE_LABEL_MUTED_XS}>
-                  <Checkbox checked={softBreathing} onChange={setSoftBreathing} inputProps={{ id }} />
-                  <span>Soft preference</span>
-                </label>
-              );
+            right={undefined}
+            warningTip={(resultsCount === 0 && lastChangedLabel() === 'Breathing min score' && lastChangedDetail()) ? `No matches after setting Breathing score to ${lastChangedDetail()}.` : undefined}
+            status={(function () {
+              if (!caps) return undefined;
+              const tight = breathingMinScore <= (caps.breathingMinMin ?? 0) || breathingMinScore >= 10;
+              return tight ? 'warning' as const : 'normal' as const;
             })()}
+            softPreference={{ checked: softBreathing, onChange: setSoftBreathing, id: 'soft-breathing', label: 'Soft preference' }}
           />
         </div>
       </div>
@@ -474,9 +496,9 @@ export default function ProRequirements(props: Props) {
         label="Build and capabilities"
         infoText="Quick toggles for key build features."
         items={[
-          { key: 'sealed', label: 'Weather sealed', checked: sealed, onChange: setSealed, id: 'opt-sealed' },
-          { key: 'macro', label: 'Macro', checked: isMacro, onChange: setIsMacro, id: 'opt-macro' },
-          { key: 'ois', label: 'Require OIS', checked: requireOIS, onChange: setRequireOIS, id: 'opt-ois' },
+          { key: 'sealed', label: 'Weather sealed', checked: sealed, onChange: setSealed, id: 'opt-sealed', infoText: 'Only include lenses with weather sealing/gaskets for better environmental protection.' },
+          { key: 'macro', label: 'Macro', checked: isMacro, onChange: setIsMacro, id: 'opt-macro', infoText: 'Only include lenses capable of close‑focus macro work (1:1 or close).' },
+          { key: 'ois', label: 'Require OIS', checked: requireOIS, onChange: setRequireOIS, id: 'opt-ois', infoText: FIELD_HELP.requireOIS },
         ]}
       />
 

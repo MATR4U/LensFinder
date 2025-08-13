@@ -1,13 +1,9 @@
 import React from 'react';
-import { TITLE_H2, TEXT_XS_MUTED, CARD_PADDED, GRID_TWO_GAP3, ROW_BETWEEN, BADGE_SHAPE_XS, SECTION_TITLE } from '../ui/styles';
+import { TITLE_H2, TEXT_XS_MUTED, CARD_PADDED, GRID_TWO_GAP3, ROW_BETWEEN, BADGE_SHAPE_XS } from '../ui/styles';
 import { useFilterStore } from '../../stores/filterStore';
 import CollapsibleMessage from '../ui/CollapsibleMessage';
 
-type Props = {
-  onContinue: () => void;
-};
-
-export default function ModeSelect({ onContinue }: Props) {
+export default function ModeCard() {
   const isPro = useFilterStore(s => s.isPro);
   const setIsPro = useFilterStore(s => s.setIsPro);
   return (
@@ -62,15 +58,10 @@ export default function ModeSelect({ onContinue }: Props) {
         <div className={TEXT_XS_MUTED}>
           Mode: <span className="text-[var(--text-color)] font-medium">{isPro ? 'Pro' : 'Beginner'}</span>
         </div>
-        <button
-          className="px-4 py-2 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--accent-contrast)] text-sm"
-          onClick={onContinue}
-        >
-          Continue
-        </button>
       </div>
     </div>
   );
 }
+
 
 

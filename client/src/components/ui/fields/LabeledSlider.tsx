@@ -1,8 +1,6 @@
 import React from 'react';
-import FieldContainer, { type FieldStatus } from './FieldContainer';
-import Info from '../Info';
-import RangeSlider from '../RangeSlider';
-import { SLIDER_FIELD_STACK } from '../styles';
+import { type FieldStatus } from './FieldContainer';
+import BaseLabeledSlider from './BaseLabeledSlider';
 
 type Props = {
   label: string;
@@ -18,17 +16,31 @@ type Props = {
   right?: React.ReactNode;
   hint?: string;
   status?: FieldStatus;
+  warningTip?: string;
+  softPreference?: { checked: boolean; onChange: (v: boolean) => void; id?: string; label?: string };
 };
 
-export default function LabeledSlider({ label, infoText, min, max, step, value, onChange, ticks, snap, format, right, hint, status }: Props) {
+export default function LabeledSlider({ label, infoText, min, max, step, value, onChange, ticks, snap, format, right, hint, status, warningTip, softPreference }: Props) {
   const atLimit = (typeof min === 'number' && value <= min) || (typeof max === 'number' && value >= max);
   const fieldStatus: FieldStatus | undefined = atLimit ? (status ?? 'warning') : status;
   return (
-    <FieldContainer label={label} info={infoText ? <Info text={infoText} /> : undefined} right={right} hint={hint} status={fieldStatus}>
-      <div className={SLIDER_FIELD_STACK}>
-        <RangeSlider min={min} max={max} step={step} singleValue={value} onChangeSingle={onChange} ticks={ticks ?? [min, (min + max) / 4, (min + max) / 2, (3 * (min + max)) / 4, max]} snap={snap} format={format} showTickLabels={true} />
-      </div>
-    </FieldContainer>
+    <BaseLabeledSlider
+      label={label}
+      infoText={infoText}
+      min={min}
+      max={max}
+      step={step}
+      singleValue={value}
+      onChangeSingle={onChange}
+      ticks={ticks}
+      snap={snap}
+      format={format}
+      right={right}
+      hint={hint}
+      status={fieldStatus}
+      warningTip={warningTip}
+      softPreference={softPreference}
+    />
   );
 }
 

@@ -14,7 +14,7 @@ import { shallow } from 'zustand/shallow';
 import { applyFilters } from '../../lib/filters';
 import GoalPresetWeights from '../ui/fields/GoalPresetWeights';
 import { FIELD_HELP } from '../ui/fieldHelp';
-import Message from '../ui/Message';
+import CollapsibleMessage from '../ui/CollapsibleMessage';
 
 type Props = {
   cameras: Camera[];
@@ -136,14 +136,14 @@ export default function SimpleRequirements(props: Props) {
         <span className={BADGE_COUNT}>{resultsCount} matches</span>
       </div>
 
-      <Message variant="info" title="How to use these filters">
+      <CollapsibleMessage variant="info" title="How to use these filters" defaultOpen={false}>
         <ul className="list-disc pl-5 text-sm space-y-1">
-          <li><strong>Camera</strong>: Start with your body to see only compatible lenses.</li>
-          <li><strong>Brand/Type</strong>: Narrow by maker and prime vs zoom.</li>
-          <li><strong>Price/Weight</strong>: Begin broad; refine once you see enough matches.</li>
-          <li><strong>Priorities</strong>: Pick a preset that matches your style; you can fine‑tune later.</li>
+          <li><strong>Camera</strong>: {FIELD_HELP.cameraBody}</li>
+          <li><strong>Brand/Type</strong>: Filter by maker and choose Prime (single focal length) or Zoom (range).</li>
+          <li><strong>Price/Weight</strong>: {FIELD_HELP.price} {FIELD_HELP.weight}</li>
+          <li><strong>Priorities</strong>: {FIELD_HELP.goalPreset}</li>
         </ul>
-      </Message>
+      </CollapsibleMessage>
 
       {/* Inline active filter chips */}
       <div className={INLINE_CHIPS_ROW}>
@@ -182,8 +182,8 @@ export default function SimpleRequirements(props: Props) {
         label="Build and capabilities"
         infoText="Quick toggles for key build features."
         items={[
-          { key: 'sealed', label: 'Weather sealed', checked: sealed, onChange: setSealed, id: 'opt-sealed-simple' },
-          { key: 'macro', label: 'Macro', checked: isMacro, onChange: setIsMacro, id: 'opt-macro-simple' },
+          { key: 'sealed', label: 'Weather sealed', checked: sealed, onChange: setSealed, id: 'opt-sealed-simple', infoText: 'Only include lenses with weather sealing/gaskets for better environmental protection.' },
+          { key: 'macro', label: 'Macro', checked: isMacro, onChange: setIsMacro, id: 'opt-macro-simple', infoText: 'Only include lenses capable of close‑focus macro work (1:1 or close).' },
         ]}
       />
 
