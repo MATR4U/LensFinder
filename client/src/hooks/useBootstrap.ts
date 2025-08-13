@@ -26,19 +26,33 @@ export function useBootstrap() {
   // CameraName is now in the global store; keep only data/error here
 
   useEffect(() => {
-    function handleOnline() { setOffline(false); }
+    function handleOnline() {
+      setOffline(false);
+      if (!pausedRef.current) {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+        (async () => { await attemptRef.current?.(0); })();
+      }
+    }
     function handleOffline() { setOffline(true); }
+    function handleVisibility() {
+      if (document.visibilityState === 'visible' && !pausedRef.current && !offline) {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+        (async () => { await attemptRef.current?.(0); })();
+      }
+    }
     try {
       window.addEventListener('online', handleOnline);
       window.addEventListener('offline', handleOffline);
+      document.addEventListener('visibilitychange', handleVisibility);
     } catch {}
     return () => {
       try {
         window.removeEventListener('online', handleOnline);
         window.removeEventListener('offline', handleOffline);
+        document.removeEventListener('visibilitychange', handleVisibility);
       } catch {}
     };
-  }, []);
+  }, [offline]);
 
   useEffect(() => {
     let cancelled = false;
@@ -50,13 +64,16 @@ export function useBootstrap() {
       try {
         // Soft readiness check to set degraded banner when dependencies are not ready yet
         try {
-          const ready = await fetch('/ready', { method: 'GET' });
+          const ready = await fetch('/ready', { method: 'GET', cache: 'no-store' });
           if (!ready.ok) {
             setDegraded('Service unavailable. Dependencies are not ready.');
             setFatalError('Dependencies unavailable');
+            // Short-circuit to avoid spamming /api when not ready
+            throw new Error('Service not ready');
           } else {
+            // Clear any prior outage states immediately on positive readiness
             setDegraded(null);
-            if (fatalError) setFatalError(null);
+            setFatalError(null);
           }
           // Health components breakdown (best-effort)
           try {
@@ -90,7 +107,12 @@ export function useBootstrap() {
         const elapsed = Date.now() - startedAt.current;
         // After 8s, surface a non-blocking message; still keep retrying
         if (elapsed > 8000) {
-          setFatalError('Service warming up… retrying connection');
+          // Only surface the warning if we truly cannot get either cameras or lenses
+          try {
+            const snap = getCachedSnapshot();
+            if (!snap.cameras || !snap.lenses) setFatalError('Service warming up… retrying connection');
+            else setFatalError(null);
+          } catch { setFatalError('Service warming up… retrying connection'); }
         }
         const nextDelay = Math.min(8000, Math.max(1000, Math.floor(elapsed / 2))); // smoother backoff
         setEtaSeconds(Math.ceil(nextDelay / 1000));

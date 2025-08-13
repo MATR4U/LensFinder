@@ -181,24 +181,7 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            id?: number;
-                            name?: string;
-                            brand?: string;
-                            mount?: string;
-                            ibis?: boolean;
-                            price_chf?: number;
-                            weight_g?: number;
-                            source_url?: string;
-                            sensor?: {
-                                name?: string;
-                                width_mm?: number;
-                                height_mm?: number;
-                                coc_mm?: number;
-                                crop?: number;
-                            };
-                            _links?: {
-                                [key: string]: unknown;
-                            };
+                            [key: string]: unknown;
                         }[];
                     };
                 };
@@ -250,26 +233,7 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            id?: number;
-                            name?: string;
-                            brand?: string;
-                            mount?: string;
-                            coverage?: string;
-                            focal_min_mm?: number;
-                            focal_max_mm?: number;
-                            aperture_min?: number;
-                            aperture_max?: number;
-                            weight_g?: number;
-                            ois?: boolean;
-                            price_chf?: number;
-                            weather_sealed?: boolean;
-                            is_macro?: boolean;
-                            distortion_pct?: number;
-                            focus_breathing_score?: number;
-                            source_url?: string;
-                            _links?: {
-                                [key: string]: unknown;
-                            };
+                            [key: string]: unknown;
                         }[];
                     };
                 };

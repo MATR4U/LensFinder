@@ -13,7 +13,7 @@ const lensesCache: Cache<Lens[]> = { data: null, etag: null, lastFetched: null }
 async function fetchWithEtag<T>(url: string, cache: Cache<T>): Promise<T> {
   const headers: Record<string, string> = {};
   if (cache.etag) headers['If-None-Match'] = cache.etag;
-  const res = await fetch(url, { headers });
+  const res = await fetch(url, { headers, cache: 'no-store' });
   if (res.status === 304 && cache.data) {
     return cache.data;
   }

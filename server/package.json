@@ -8,7 +8,7 @@
     "build": "tsc -p tsconfig.json",
     "openapi": "cross-env NODE_ENV=development tsx scripts/generate-openapi.ts",
     "graphql:schema": "cross-env NODE_ENV=development tsx scripts/generate-graphql-sdl.ts",
-    "pretest": "node -e \"if(!process.env.SKIP_DB_TESTS){process.exit(0)}\" || npm run openapi",
+    "pretest": "npm run openapi",
     "test": "vitest --run && tsc -p tsconfig.json --noEmit",
     "start": "node dist/index.js"
   },
