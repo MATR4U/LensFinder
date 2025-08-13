@@ -51,8 +51,13 @@ export function useBootstrap() {
         // Soft readiness check to set degraded banner when dependencies are not ready yet
         try {
           const ready = await fetch('/ready', { method: 'GET' });
-          if (!ready.ok) setDegraded('Service starting… some features may be unavailable');
-          else setDegraded(null);
+          if (!ready.ok) {
+            setDegraded('Service unavailable. Dependencies are not ready.');
+            setFatalError('Dependencies unavailable');
+          } else {
+            setDegraded(null);
+            if (fatalError) setFatalError(null);
+          }
           // Health components breakdown (best-effort)
           try {
             const hc = await fetch('/api/health/components');
@@ -80,7 +85,7 @@ export function useBootstrap() {
         });
         setFatalError(null);
         setLastError(null);
-      } catch (_) {
+      } catch (err: any) {
         // Do not block UI; retry with backoff until ready
         const elapsed = Date.now() - startedAt.current;
         // After 8s, surface a non-blocking message; still keep retrying
@@ -89,7 +94,8 @@ export function useBootstrap() {
         }
         const nextDelay = Math.min(8000, Math.max(1000, Math.floor(elapsed / 2))); // smoother backoff
         setEtaSeconds(Math.ceil(nextDelay / 1000));
-        setLastError({ message: 'Retry scheduled', ts: Date.now(), cid: Math.random().toString(36).slice(2, 8) });
+        setDegraded('Service unavailable. Retrying…');
+        setLastError({ message: String(err?.message || 'Request failed'), ts: Date.now(), cid: Math.random().toString(36).slice(2, 8) });
         // schedule next attempt
         if (!cancelled && !pausedRef.current) {
           retryTimer.current = window.setTimeout(() => attempt(), nextDelay);
