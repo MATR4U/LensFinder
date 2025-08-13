@@ -38,38 +38,21 @@
 
  
 
-- Observability (optional) [Status: Done]
-  - Add cache hit/miss counters and Redis client metrics to Prometheus (`/metrics`). [Done]
+ 
+ 
 
-### Production TODOs (must be satisfied before release)
-
-- **Authentication (API key)** [Status: Done]
-- Set server `API_KEY` and enforce via `x-api-key` on `/api/cameras`, `/api/lenses`, `/api/price`, `/api/report`, `/api/events`, `/graphql`.
-- Set client `VITE_API_KEY` so requests include the header.
-
+ 
 - **CORS** [Status: In Progress]
   - Lock `CORS_ALLOWED_ORIGINS` to production domains only. [Plumbed in env/examples/K8s]
 
-- **Proxy/Ingress** [Status: Done]
-  - Set `TRUST_PROXY=true` when behind load balancer/ingress. [Done in K8s ConfigMap]
-
-- **Rate limiting and body size** [Status: Done]
-  - Review current limits (global 600/min, `/api/price` 60/min, JSON 256kb). Externalize to env if needed. [Done]
-
-- **API versioning headers** [Status: Done]
-  - Configure `API_VERSION_CURRENT`, `API_VERSION_DEPRECATED`, `API_VERSION_POLICY_URL`. [Done]
-  - Update version middleware to emit `Deprecation` and `Link`/policy headers from config. [Done]
-
+ 
+ 
+ 
 - **Caching** [Status: Open]
 - Configure Redis and `CACHE_TTL_SECONDS`. Verify cache client enabled in prod.
 - Set `REQUEST_SIGNATURE_SECRET` and enforce HMAC on `/api/cache/purge`.
 
-- **Request-signature and cache follow-ups** [Status: Done]
-- Exclude `/graphql` and other public endpoints from signature enforcement; enforce only on admin/mutating routes. [Done]
-- Replace raw-body reader with `express.json({ verify: (req, _res, buf) => (req as any).rawBody = buf.toString('utf8') })` to avoid double-reading the stream. [Done]
-- Add `POST /api/admin/cache/purge { prefix }` protected by HMAC signature or API key; call `getCacheClient().delPrefix(prefix)` and return deleted count. [Done]
-- CI: set `REDIS_URL=redis://localhost:6379/0` in both jobs to exercise cache path. [Open]
-- Config: optional allow/deny list for signature middleware (e.g., `SIGNATURE_EXCLUDE_PATHS=/graphql,/api/health`). [Done]
+ - CI: set `REDIS_URL=redis://localhost:6379/0` in both jobs to exercise cache path. [Open]
 
 - **Observability** [Status: Open]
 - Ensure `/metrics` is scraped by Prometheus; dashboards in Grafana.
@@ -133,15 +116,13 @@
   - Validate all request payloads and query parameters using a centralized schema (e.g., Zod) and emit RFC7807 problem responses on validation failures. [Partial: `/api/price` query and `/api/report` body validated]
   - Document per-endpoint request/response schemas and align OpenAPI accordingly.
 
-  - **Rate limit response headers** [Status: Done]
-  - Expose standard headers (e.g., `RateLimit-Limit`, `RateLimit-Remaining`, `RateLimit-Reset` or `X-RateLimit-*`) and `Retry-After` on 429 responses; ensure behavior behind proxies is correct when `TRUST_PROXY` is enabled.
+ 
 
   - **HTTP semantics (Vary/HEAD)** [Status: In Progress]
   - Standardize `Vary` headers (`Accept`, `Accept-Encoding`, and `Origin` when CORS is enabled) across cacheable endpoints. [Done]
   - Support `HEAD` for all `GET` resources returning identical headers and status with an empty body. [Partial: implemented for `/api/cameras` and `/api/lenses`]
 
-  - **API service index (discoverability)** [Status: Done]
-  - Provide a top-level service document (e.g., `/api` or `/.well-known/lensfinder`) advertising entry points and supported media types via `_links`.
+ 
 
   - **HATEOAS affordances (beyond links)** [Status: Open]
   - Include hypermedia controls for writes (e.g., forms/templates or HAL-FORMS/Collection+JSON affordances) where applicable; document link relations and affordance semantics.
