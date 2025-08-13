@@ -33,7 +33,7 @@
   - Results grid renders cards with `data-testid="lens-card"`; each card has a visible 'Select' button and a `[data-testid="compare-toggle"]` button that toggles to 'Remove'.
   - Default flow renders results promptly; client does not block UI on server health and fetches in background.
   - Affected: `client/src/components/flow/*`, `client/src/components/report/LensCard.tsx`, `client/src/pages/App.tsx`, store/selectors.
-  - Progress: UI labels/controls aligned; compare grid always present for later stages; ARIA labels added; server serves built client for tests. Per workflow, e2e runs are deferred unless explicitly requested.
+  - Progress: UI labels/controls aligned; compare grid always present for later stages; ARIA labels added; server serves built client for tests. Sliders now use static/global bounds with dynamic "Available now" helper ranges and density tracks; auto-snapping/clamping removed; filters apply even when camera is set to Any. Per workflow, e2e runs are deferred unless explicitly requested.
   - Tests: Fix failing e2e specs to green across Chromium/Firefox/WebKit/mobile-safari. [Deferred]
 
 - **CORS** [Status: In Progress]
