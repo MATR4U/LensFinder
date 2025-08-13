@@ -19,6 +19,7 @@ import { useBootstrap } from '../hooks/useBootstrap';
 import { computeDebugCounts, computeDebugDistributions, computeDebugPerCameraCounts } from '../lib/debugCounts';
 import { useFilterStore } from '../stores/filterStore';
 import { APP_BACKGROUND, PAGE_CONTAINER, SECTION_STACK, CARD_BASE, CARD_ERROR, CARD_WARNING, TITLE_H1, TITLE_H2, TEXT_SM, TEXT_XS_MUTED, SECTION_TITLE, ROW_BETWEEN, ROW_END, STACK_Y, BADGE_COUNT } from '../components/ui/styles';
+import PageBase from '../components/pages/PageBase';
 import Loading from '../components/ui/Loading';
 import Button from '../components/ui/Button';
 import CollapsibleMessage from '../components/ui/CollapsibleMessage';
@@ -261,8 +262,7 @@ export default function App() {
   const forceOutage = (typeof window !== 'undefined' && typeof window.__FORCE_OUTAGE__ !== 'undefined') ? (window as any).__FORCE_OUTAGE__ : false;
 
   return (
-    <div className={APP_BACKGROUND} data-app-ready={appReady ? '1' : '0'}>
-      <div className={PAGE_CONTAINER}>
+    <PageBase title="Camera System Builder" metaDescription="Find your perfect lens setup—fast.">
         <header className={`${ROW_BETWEEN} mb-8`}>
           <div className="flex items-center gap-3">
             <div className="h-9 w-9 rounded-xl bg-[var(--accent)]/20 border border-[var(--accent)]/30 grid place-items-center text-[var(--accent)] font-bold">CF</div>
@@ -426,10 +426,7 @@ export default function App() {
 
           {/* Report moved into step 4 */}
         </div>
-
-        {/* Developer templates removed; all sliders use RangeSlider */}
-      </div>
-    </div>
+    </PageBase>
   );
 }
 
