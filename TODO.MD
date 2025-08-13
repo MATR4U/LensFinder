@@ -39,8 +39,7 @@
 - Ensure `/metrics` is scraped by Prometheus; dashboards in Grafana.
 - Set `LOG_LEVEL` appropriately; keep Pino redaction of auth/cookies.
 
-- **Health/Readiness** [Status: Done]
-- Implemented `/ready` (checks DB connectivity) and `/api/health` (liveness) with `HEAD` for health; wired probes in `infra/k8s/server.yaml`.
+ 
 
 - **Security** [Status: Open]
 - Validate Helmet/CSP settings for production.
