@@ -20,12 +20,13 @@ This repo uses `TODO.MD` as the single-source backlog for production-critical wo
 - Fast checks (unit + type): `npm run ci:fast`
 - Full verification (build + unit + e2e): `npm run ci:verify`
 - Start DB (dev): `npm run db:up`
+- Pre-commit fast path: `npm run test:precommit`
 
 #### Repeatable Steps
 1. Create branch: `feat/<area>-<short>`
 2. Write/adjust tests first (server, client, e2e)
 3. Implement changes
-4. Run `npm run ci:fast` and then `npm run ci:verify`
+4. Run `npm run test:precommit` (fast) and then `npm run ci:verify` before PR
 5. Update docs and infra/env manifests
 6. Open PR using the template; complete DoR/DoD
 7. Merge; check off in `TODO.MD`

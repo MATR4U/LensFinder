@@ -48,6 +48,7 @@ tsconfig.tsbuildinfo
 # --- Testing / Coverage ---
 coverage/
 .nyc_output/
+test-results/
 
 # --- Tooling Caches ---
 .eslintcache

@@ -129,6 +129,20 @@ Start production servers (serves built client from server):
 npm run start:ordered
 ```
 
+## Tests and checks
+
+Quick local pre-commit check:
+
+```bash
+npm run test:precommit
+```
+
+Full verification (build + unit + e2e; e2e skipped when Docker not running):
+
+```bash
+npm run ci:verify
+```
+
 ## Server-only commands
 
 From the `server/` workspace:

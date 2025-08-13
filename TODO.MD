@@ -14,6 +14,7 @@
 - All tests green: `npm run test:server && npm run test:client && npm run test:e2e`
 - 100% atomic coverage for changed areas
 - Build passes: `npm run build`
+- Pre-commit: run `npm run test:precommit` locally before committing
 - Docs updated (README, API contracts) and infra/env manifests updated
 - No defensive programming; strict, root-cause fixes
 - No hardcoded config; all config sourced from `.env.*`

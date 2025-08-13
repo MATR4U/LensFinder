@@ -46,6 +46,7 @@
     "deploy:k8s:delete": "kubectl delete -k infra/k8s/",
     "ci:fast": "npm run test:server && npm run test:client",
     "ci:verify": "npm run build && npm run test && npm run test:e2e",
+    "test:precommit": "SKIP_DB_TESTS=1 npm run ci:fast && npm run build",
     "prepare": "husky install"
   },
   "devDependencies": {
