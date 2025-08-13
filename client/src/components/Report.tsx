@@ -1,6 +1,7 @@
 import React from 'react';
 import { TEXT_XS_MUTED, LINK_HOVER_ACCENT, PANEL_BASE, PANEL_NEUTRAL, TEXT_SM, CARD_PADDED, GRID_LG_TWO_GAP6 } from './ui/styles';
 import BaseReport from './report/BaseReport';
+import { useReportLifecycle } from './report/useReportLifecycle';
 import LazyPlot from './ui/LazyPlot';
 import { computeParetoFrontier } from '../lib/optics';
 import type { ReportResponse } from '../lib/api';
@@ -25,6 +26,8 @@ type Props = {
 export default function Report({ report, camera, selected, goalWeights, topResults = [], onEditPreferences }: Props) {
   if (!report) return null;
   const { cameraName, goal, items } = report;
+
+  useReportLifecycle('Personalized lens report', report);
 
   // Helpers
 
