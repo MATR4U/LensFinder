@@ -1,5 +1,6 @@
 import React from 'react';
 import Card from '../ui/Card';
+import Button from '../ui/Button';
 import Message from '../ui/Message';
 
 type Props = {
@@ -11,14 +12,23 @@ type Props = {
   isEmpty?: boolean;
   emptyMessage?: string;
   children: React.ReactNode;
+  onExportCSV?: () => void;
 };
 
-export default function BaseReport({ title, subtitle, actions, isLoading, isError, isEmpty, emptyMessage = 'No data', children }: Props) {
+export default function BaseReport({ title, subtitle, actions, isLoading, isError, isEmpty, emptyMessage = 'No data', children, onExportCSV }: Props) {
   if (isLoading) return <Message variant="info" title={title}>Loading…</Message>;
   if (isError) return <Message variant="error" title={title}>We couldn’t load this report. Try again later.</Message>;
   if (isEmpty) return <Message variant="warning" title={title}>{emptyMessage}</Message>;
+  const right = (
+    <div className="flex items-center gap-2">
+      {actions}
+      {onExportCSV && (
+        <Button variant="secondary" size="sm" onClick={onExportCSV}>Export CSV</Button>
+      )}
+    </div>
+  );
   return (
-    <Card title={title} subtitle={subtitle} right={actions}>
+    <Card title={title} subtitle={subtitle} right={right}>
       {children}
     </Card>
   );

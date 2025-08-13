@@ -2,6 +2,7 @@ import React from 'react';
 import { TEXT_XS_MUTED, LINK_HOVER_ACCENT, PANEL_BASE, PANEL_NEUTRAL, TEXT_SM, CARD_PADDED, GRID_LG_TWO_GAP6 } from './ui/styles';
 import BaseReport from './report/BaseReport';
 import { useReportLifecycle } from './report/useReportLifecycle';
+import { downloadCSV } from '../lib/csv';
 import LazyPlot from './ui/LazyPlot';
 import { computeParetoFrontier } from '../lib/optics';
 import type { ReportResponse } from '../lib/api';
@@ -61,7 +62,7 @@ export default function Report({ report, camera, selected, goalWeights, topResul
   }));
 
   return (
-    <BaseReport title="Your personalized lens report">
+    <BaseReport title="Your personalized lens report" onExportCSV={() => downloadCSV(items as any)}>
       {/* Section 1: Personalized summary */}
       <SummaryHeader cameraName={cameraName} goal={goal} onEditPreferences={onEditPreferences} />
 

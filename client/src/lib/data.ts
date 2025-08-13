@@ -91,4 +91,20 @@ export function onDataInvalidated(cb: () => void) {
   };
 }
 
+// Expose cache metadata for read-only mode and diagnostics
+export function getCacheMeta() {
+  return {
+    camerasLastFetched: camerasCache.lastFetched,
+    lensesLastFetched: lensesCache.lastFetched
+  } as const;
+}
+
+// Get a snapshot of last-known data without fetching (may be nulls)
+export function getCachedSnapshot() {
+  return {
+    cameras: camerasCache.data,
+    lenses: lensesCache.data
+  } as const;
+}
+
 
