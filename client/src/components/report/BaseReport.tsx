@@ -1,6 +1,7 @@
 import React from 'react';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
+import { copyCurrentUrlToClipboard } from './share';
 import Message from '../ui/Message';
 
 type Props = {
@@ -13,9 +14,10 @@ type Props = {
   emptyMessage?: string;
   children: React.ReactNode;
   onExportCSV?: () => void;
+  shareable?: boolean;
 };
 
-export default function BaseReport({ title, subtitle, actions, isLoading, isError, isEmpty, emptyMessage = 'No data', children, onExportCSV }: Props) {
+export default function BaseReport({ title, subtitle, actions, isLoading, isError, isEmpty, emptyMessage = 'No data', children, onExportCSV, shareable = true }: Props) {
   if (isLoading) return <Message variant="info" title={title}>Loading…</Message>;
   if (isError) return <Message variant="error" title={title}>We couldn’t load this report. Try again later.</Message>;
   if (isEmpty) return <Message variant="warning" title={title}>{emptyMessage}</Message>;
@@ -24,6 +26,9 @@ export default function BaseReport({ title, subtitle, actions, isLoading, isErro
       {actions}
       {onExportCSV && (
         <Button variant="secondary" size="sm" onClick={onExportCSV}>Export CSV</Button>
+      )}
+      {shareable && (
+        <Button variant="secondary" size="sm" onClick={() => void copyCurrentUrlToClipboard()}>Share link</Button>
       )}
     </div>
   );

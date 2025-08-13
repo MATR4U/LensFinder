@@ -11,10 +11,21 @@ type Props = {
   details?: string;
   pausedControls?: { isPaused: boolean; onPause: () => void; onResume: () => void };
   copyText?: string;
+  etaStartSeconds?: number;
 };
 
-export default function StatusBanner({ variant, title, message, onRetry, details, pausedControls, copyText }: Props) {
+export default function StatusBanner({ variant, title, message, onRetry, details, pausedControls, copyText, etaStartSeconds }: Props) {
   const clsVariant = variant === 'warning' ? CARD_WARNING : (variant === 'error' ? CARD_ERROR : '');
+  const [eta, setEta] = React.useState<number | undefined>(etaStartSeconds);
+  React.useEffect(() => {
+    setEta(etaStartSeconds);
+  }, [etaStartSeconds]);
+  React.useEffect(() => {
+    if (!eta || eta <= 0) return;
+    const t = setInterval(() => setEta((e) => (typeof e === 'number' ? Math.max(0, e - 1) : e)), 1000);
+    return () => clearInterval(t);
+  }, [eta]);
+  const etaPct = typeof eta === 'number' && etaStartSeconds && etaStartSeconds > 0 ? Math.max(0, Math.min(100, Math.round(((etaStartSeconds - eta) / etaStartSeconds) * 100))) : undefined;
   return (
     <div className={STICKY_TOP}>
       <div className={`${CARD_BASE} ${clsVariant} ${GLASS_CARD_SM}`}>
@@ -41,6 +52,14 @@ export default function StatusBanner({ variant, title, message, onRetry, details
                   >Copy diagnostics</button>
                 )}
                 <div className={SPINNER_SM} aria-hidden="true" />
+              </div>
+            )}
+            {typeof etaPct === 'number' && (
+              <div className="mt-2" onClick={onRetry} title="Retry now">
+                <div className="h-1 w-full bg-[var(--control-border)]/60 rounded-full overflow-hidden">
+                  <div className="h-1 bg-[var(--accent)]" style={{ width: `${etaPct}%` }} />
+                </div>
+                <div className={`${TEXT_SM} ${TEXT_MUTED} mt-1`}>Retrying in {eta}s</div>
               </div>
             )}
           </div>

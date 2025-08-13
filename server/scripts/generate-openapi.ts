@@ -80,8 +80,10 @@ function buildLensSchema(cols: Column[]) {
 }
 
 async function main() {
-  const pool = new pg.Pool({ connectionString: getDatabaseUrl() });
+  let pool: pg.Pool | null = null;
   try {
+    const conn = getDatabaseUrl();
+    pool = new pg.Pool({ connectionString: conn });
     const [cameraCols, lensCols] = await Promise.all([
       readColumns(pool, 'cameras'),
       readColumns(pool, 'lenses')
@@ -327,7 +329,7 @@ async function main() {
       throw err;
     }
   } finally {
-    await pool.end();
+    if (pool) await pool.end();
   }
 }
 
