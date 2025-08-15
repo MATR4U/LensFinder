@@ -2,6 +2,39 @@ import React from 'react';
 import { useFilterStore } from '../stores/filterStore';
 import { FilterStateSchema } from '../lib/schema';
 
+const paramMap = [
+  ['cameraName', 'cameraName'],
+  ['isPro', (v: any) => (v ? '1' : '0'), (s: any, v: string) => (v === '1' || v === 'true')],
+  ['brand', 'brand'],
+  ['lensType', 'lensType'],
+  ['sealed', (v: any) => (v ? '1' : '0'), (s: any, v: string) => (v === '1' || v === 'true')],
+  ['isMacro', (v: any) => (v ? '1' : '0'), (s: any, v: string) => (v === '1' || v === 'true')],
+  ['pmin', (s: any) => s.priceRange.min, undefined, (s: any, n: number) => ({ ...s, priceRange: { ...s.priceRange, min: n } })],
+  ['pmax', (s: any) => s.priceRange.max, undefined, (s: any, n: number) => ({ ...s, priceRange: { ...s.priceRange, max: n } })],
+  ['wmin', (s: any) => s.weightRange.min, undefined, (s: any, n: number) => ({ ...s, weightRange: { ...s.weightRange, min: n } })],
+  ['wmax', (s: any) => s.weightRange.max, undefined, (s: any, n: number) => ({ ...s, weightRange: { ...s.weightRange, max: n } })],
+  ['coverage', 'proCoverage'],
+  ['fmin', 'proFocalMin'],
+  ['fmax', 'proFocalMax'],
+  ['apmax', 'proMaxApertureF'],
+  ['ois', (v: any) => (v ? '1' : '0'), (s: any, v: string) => (v === '1' || v === 'true'), 'proRequireOIS'],
+  ['reqSealed', (v: any) => (v ? '1' : '0'), (s: any, v: string) => (v === '1' || v === 'true'), 'proRequireSealed'],
+  ['reqMacro', (v: any) => (v ? '1' : '0'), (s: any, v: string) => (v === '1' || v === 'true'), 'proRequireMacro'],
+  ['pmaxHard', 'proPriceMax'],
+  ['wmaxHard', 'proWeightMax'],
+  ['distMax', 'proDistortionMaxPct'],
+  ['breathMin', 'proBreathingMinScore'],
+  ['softPrice', (v: any) => (v ? '1' : '0'), (s: any, v: string) => (v === '1' || v === 'true')],
+  ['softWeight', (v: any) => (v ? '1' : '0'), (s: any, v: string) => (v === '1' || v === 'true')],
+  ['softDist', (v: any) => (v ? '1' : '0'), (s: any, v: string) => (v === '1' || v === 'true')],
+  ['softBreath', (v: any) => (v ? '1' : '0'), (s: any, v: string) => (v === '1' || v === 'true')],
+  ['enPrice', (v: any) => (v ? '1' : '0'), (s: any, v: string) => (v === '1' || v === 'true'), 'enablePrice'],
+  ['enWeight', (v: any) => (v ? '1' : '0'), (s: any, v: string) => (v === '1' || v === 'true'), 'enableWeight'],
+  ['enDist', (v: any) => (v ? '1' : '0'), (s: any, v: string) => (v === '1' || v === 'true'), 'enableDistortion'],
+  ['enBreath', (v: any) => (v ? '1' : '0'), (s: any, v: string) => (v === '1' || v === 'true'), 'enableBreathing'],
+  ['goal', 'goalPreset'],
+] as const;
+
 export function useUrlFiltersSync() {
   React.useEffect(() => {
     const s = useFilterStore.getState();
@@ -122,7 +155,6 @@ export function useUrlFiltersSync() {
         p.set('pmin', String(next.priceRange.min)); p.set('pmax', String(next.priceRange.max));
         p.set('wmin', String(next.weightRange.min)); p.set('wmax', String(next.weightRange.max));
         p.set('goal', next.goalPreset);
-        // Advanced / pro filters
         p.set('coverage', next.proCoverage);
         p.set('fmin', String(next.proFocalMin));
         p.set('fmax', String(next.proFocalMax));
@@ -134,7 +166,6 @@ export function useUrlFiltersSync() {
         p.set('wmaxHard', String(next.proWeightMax));
         p.set('distMax', String(next.proDistortionMaxPct));
         p.set('breathMin', String(next.proBreathingMinScore));
-        // Soft/enable flags
         p.set('softPrice', next.softPrice ? '1' : '0');
         p.set('softWeight', next.softWeight ? '1' : '0');
         p.set('softDist', next.softDistortion ? '1' : '0');

@@ -9,6 +9,8 @@ import AvailabilitySelect from '../ui/AvailabilitySelect';
 import { useFilterStore } from '../../stores/filterStore';
 import CheckboxGroup from '../ui/fields/CheckboxGroup';
 import StageNav from '../ui/StageNav';
+import { AvailabilityProvider } from '../../context/AvailabilityContext';
+import { COPY } from '../../lib/copy';
 
 type ToggleItem = { key: string; label: string; checked: boolean; onChange: (v: boolean) => void; id: string; infoText?: string };
 
@@ -63,11 +65,12 @@ export default function BaseRequirements(props: Props) {
 
   const { onEnter } = useStageLifecycle(2, { resetOnEntry: false });
   React.useEffect(() => { onEnter(); }, [onEnter]);
+  const continueText = stageNumber === 2 ? 'See results' : 'Continue';
   return (
     <PageBase
-      title={title}
+      title={title || COPY.stages.requirements.title}
       actionsSlot={<span className={BADGE_COUNT}>{resultsCount} matches</span>}
-      footerSlot={<StageNav onBack={onBack} onReset={onReset} onContinue={onContinue} stageNumber={stageNumber} />}
+      footerSlot={<StageNav onBack={onBack} onReset={onReset} onContinue={onContinue} continueLabel={continueText} />}
     >
       <div className={CARD_PADDED}>
         {info}

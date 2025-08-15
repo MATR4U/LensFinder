@@ -4,7 +4,7 @@ import type { Camera, Lens } from '../../types';
 import Info from '../ui/Info';
 import { GRID_TWO_GAP3, INLINE_CHIPS_ROW } from '../ui/styles';
 import LabeledRange from '../ui/fields/LabeledRange';
-import MetricRange from '../ui/fields/MetricRange';
+import MetricRange from './MetricRange';
 import { useFilterStore } from '../../stores/filterStore';
 import { PRESETS } from '../../lib/recommender';
 import { shallow } from 'zustand/shallow';
@@ -15,6 +15,7 @@ import CollapsibleMessage from '../ui/CollapsibleMessage';
 import BaseRequirements from './BaseRequirements';
 import StageHeader from '../ui/StageHeader';
 import StageNav from '../ui/StageNav';
+import { AvailabilityProvider, useAvailability } from '../../context/AvailabilityContext';
 import { computeNormalizedHistogram, gradientStyleFromNormalized } from '../../lib/hist';
 
 type Props = {
@@ -27,7 +28,7 @@ type Props = {
   lenses?: Lens[];
 };
 
-export default function SimpleRequirements(props: Props) {
+function SimpleRequirementsBody(props: Props) {
   const { cameras, brandsForCamera, onContinue, resultsCount = 0, camera, cameraName: selectedCameraName = 'Any', lenses = [] } = props;
 
   const {
@@ -151,10 +152,10 @@ export default function SimpleRequirements(props: Props) {
       cameras={cameras}
       cameraName={cameraName}
       setCameraName={setCameraName}
-      brandOptions={(caps?.brands || brandsForCamera)}
+      brandOptions={useAvailability().supBrands}
       brand={brand}
       setBrand={setBrand}
-      lensTypeOptions={(caps?.lensTypes || ['Any', 'Prime', 'Zoom'])}
+      lensTypeOptions={useAvailability().supLensTypes}
       lensType={lensType}
       setLensType={setLensType}
       showPrimarySelectors={false}
@@ -166,7 +167,6 @@ export default function SimpleRequirements(props: Props) {
       onBack={onBack}
       onReset={onReset}
       onContinue={onContinue}
-      stageNumber={2}
     >
       <StageHeader
         title="Your requirements"
@@ -197,6 +197,15 @@ export default function SimpleRequirements(props: Props) {
         <MetricRange metric="weight" />
       </div>
     </BaseRequirements>
+  );
+}
+
+export default function SimpleRequirements(props: Props) {
+  const caps = useFilterStore(s => s.availabilityCaps);
+  return (
+    <AvailabilityProvider cameras={props.cameras || []} caps={caps as any} brandsForCamera={props.brandsForCamera}>
+      <SimpleRequirementsBody {...props} />
+    </AvailabilityProvider>
   );
 }
 

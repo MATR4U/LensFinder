@@ -4,7 +4,8 @@ import Report from '../components/Report';
 import { useDebouncedReport } from '../hooks/useDebouncedReport';
 import type { Availability } from '../lib/availability';
 import { computeGlobalAvailability } from '../lib/availability';
-import { applyFilters } from '../lib/filters';
+import { applyFilters, buildFilterInput } from '../lib/filters';
+import { PlotProvider } from '../context/PlotProvider';
 import { makeBrandsForCamera, makeAvailabilitySelector, makeResultsSelector } from '../lib/selectors';
 import Card from '../components/ui/Card';
 import CompareShowdown from '../components/flow/CompareShowdown';
@@ -134,12 +135,11 @@ export default function App() {
   // Count that ignores step-2 Requirements constraints for the Build & capabilities screen
   const buildResultsCount = useMemo(() => {
     if (lenses.length === 0) return 0;
-    const filtered = applyFilters({
+    const sObj: any = {
       lenses,
       cameraName,
-      cameraMount: camera?.mount,
       brand, lensType, sealed, isMacro,
-      // Use current coverage and OIS/sealed/macro hard flags only; ignore step-2 ranges
+      priceRange, weightRange,
       proCoverage,
       proFocalMin: 0,
       proFocalMax: 9999,
@@ -147,12 +147,10 @@ export default function App() {
       proRequireOIS,
       proRequireSealed,
       proRequireMacro,
-      // Max caps to avoid constraining
       proPriceMax: 1_000_000,
       proWeightMax: 100_000,
       proDistortionMaxPct: 100,
       proBreathingMinScore: 0,
-      // Do not apply ranges/preferences in this stage
       softPrice: true,
       softWeight: true,
       softDistortion: true,
@@ -161,33 +159,23 @@ export default function App() {
       enableWeight: false,
       enableDistortion: false,
       enableBreathing: false,
-      priceRange,
-      weightRange,
-    });
+    };
+    const filtered = applyFilters(buildFilterInput(sObj, camera?.mount));
     return filtered.length;
   }, [lenses, camera, cameraName, brand, lensType, sealed, isMacro, proCoverage, proRequireOIS, proRequireSealed, proRequireMacro, priceRange, weightRange]);
   const resultsCount = useMemo(() => {
     if (lenses.length === 0) return 0;
-    const filters = {
+    const sObj: any = {
+      lenses,
+      cameraName,
       brand, lensType, sealed, isMacro, priceRange, weightRange,
       proCoverage, proFocalMin, proFocalMax, proMaxApertureF,
       proRequireOIS, proRequireSealed, proRequireMacro,
       proPriceMax, proWeightMax, proDistortionMaxPct, proBreathingMinScore,
+      softPrice, softWeight, softDistortion, softBreathing,
+      enablePrice, enableWeight, enableDistortion, enableBreathing,
     };
-    const filtered = applyFilters({
-      lenses,
-      cameraName,
-      cameraMount: camera?.mount,
-      ...filters,
-      softPrice,
-      softWeight,
-      softDistortion,
-      softBreathing,
-      enablePrice,
-      enableWeight,
-      enableDistortion,
-      enableBreathing,
-    });
+    const filtered = applyFilters(buildFilterInput(sObj, camera?.mount));
     return filtered.length;
   }, [lenses, camera, cameraName, brand, lensType, sealed, isMacro, priceRange, weightRange, proCoverage, proFocalMin, proFocalMax, proMaxApertureF, proRequireOIS, proRequireSealed, proRequireMacro, proPriceMax, proWeightMax, proDistortionMaxPct, proBreathingMinScore, softPrice, softWeight, softDistortion, softBreathing, enablePrice, enableWeight, enableDistortion, enableBreathing]);
   const results: Result[] = useMemo(() => {
@@ -203,14 +191,9 @@ export default function App() {
       subjectDistanceM: subjectDistanceM || 3.0,
       softPrice, softWeight,
       softDistortion, softBreathing,
-    };
-    const res = resultsSelector(lenses, camera, {
-      ...filters,
-      enablePrice,
-      enableWeight,
-      enableDistortion,
-      enableBreathing,
-    } as any);
+      enablePrice, enableWeight, enableDistortion, enableBreathing,
+    } as any;
+    const res = resultsSelector(lenses, camera, filters);
     return res;
   }, [resultsSelector, lenses, camera, cameraName, brand, lensType, sealed, isMacro, priceRange, weightRange, proCoverage, proFocalMin, proFocalMax, proMaxApertureF, proRequireOIS, proRequireSealed, proRequireMacro, proPriceMax, proWeightMax, proDistortionMaxPct, proBreathingMinScore, goalWeights, focalChoice, isPro, subjectDistanceM, softPrice, softWeight, softDistortion, softBreathing, enablePrice, enableWeight, enableDistortion, enableBreathing]);
 
@@ -354,217 +337,219 @@ export default function App() {
   const forceOutage = (typeof window !== 'undefined' && typeof window.__FORCE_OUTAGE__ !== 'undefined') ? (window as any).__FORCE_OUTAGE__ : false;
 
   return (
-    <PageBase
-      title="Camera System Builder"
-      metaDescription="Find your perfect lens setup—fast."
-      headerSlot={(
-        <div className={STACK_Y}>
-          <p className={TEXT_XS_MUTED}>Find your perfect lens setup—fast.</p>
-          {/* One-column, collapsible intro to reduce cognitive load */}
-        </div>
-      )}
-      subheaderSlot={(
-        <CollapsibleMessage variant="info" title="About this tool & how it works" defaultOpen={false} className="w-full">
-          <MessageTwoColumn
-            leftTitle="What this tool does"
-            rightTitle="How it works"
-            variant="info"
-            bare
-            left={(
-              <ul className="list-disc pl-5 text-sm space-y-1">
-                <li>Evaluates lenses for your camera and goals</li>
-                <li>Visualizes trade‑offs (price, weight, performance)</li>
-                <li>Helps shortlist and compare up to three picks</li>
-              </ul>
-            )}
-            right={(
-              <ol className="list-decimal pl-5 text-sm space-y-1">
-                <li>Choose your mode</li>
-                <li>Set build & capabilities</li>
-                <li>Refine filters</li>
-                <li>Add up to 3 lenses to compare</li>
-                <li>View the report for a clear recommendation</li>
-              </ol>
-            )}
-          />
-        </CollapsibleMessage>
-      )}
-      actionsSlot={(
-        showDebug ? (
-          <div className="flex items-center gap-2">
-            <button className="rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent text-xs px-2 py-1 bg-[var(--control-bg)] border border-[var(--control-border)] text-[var(--text-color)] hover:bg-[color-mix(in_oklab,var(--control-bg),white_8%)]" onClick={() => setShowDebug(v => !v)}>
-              Hide debug
-            </button>
+    <PlotProvider>
+      <PageBase
+        title="Camera System Builder"
+        metaDescription="Find your perfect lens setup—fast."
+        headerSlot={(
+          <div className={STACK_Y}>
+            <p className={TEXT_XS_MUTED}>Find your perfect lens setup—fast.</p>
+            {/* One-column, collapsible intro to reduce cognitive load */}
           </div>
-        ) : null
-      )}
-    >
-
-      {(fatalError || forceOutage) && (
-        <OutageScreen title="Service temporarily unavailable" message={fatalError || 'Reconnecting…'} />
-      )}
-
-      {/* No main-app retry or recovered banners; overlay handles outage UX */}
-
-      {/* Header actions moved to PageBase actionsSlot */}
-
-      {/* Flow content with animated transitions - render only current stage to avoid duplicates */}
-      <div className={SECTION_STACK}>
-        {import.meta.env.DEV && showDebug && debugCounts && (
-          <DebugFilterPanel
-            counts={debugCounts}
-            cameraMount={camera?.mount}
-            brand={brand}
-            lensType={lensType}
-            sealed={sealed}
-            isMacro={isMacro}
-            priceRange={priceRange}
-            weightRange={weightRange}
-            proCoverage={proCoverage}
-            proFocalMin={proFocalMin}
-            proFocalMax={proFocalMax}
-            proMaxApertureF={proMaxApertureF}
-            proRequireOIS={proRequireOIS}
-            proRequireSealed={proRequireSealed}
-            proRequireMacro={proRequireMacro}
-            proPriceMax={proPriceMax}
-            proWeightMax={proWeightMax}
-            proDistortionMaxPct={proDistortionMaxPct}
-            proBreathingMinScore={proBreathingMinScore}
-            softDistortion={softDistortion}
-            softBreathing={softBreathing}
-            distributions={debugDist || undefined}
-            perCameraCounts={debugPerCam || undefined}
-          />
         )}
-        <AnimatePresence initial={false} mode="wait">
-          {stage === 0 && (
-            <motion.div key="mode-section" ref={modeRef} initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }} transition={{ duration: 0.18, ease: 'easeOut' }}>
-              <Section title="Choose your mode">
-                <ModeSelect onContinue={() => {
-                  // Entering stage 1: reset filters to defaults once and capture a clean baseline for stage 1
-                  useFilterStore.getState().captureStageBaseline(1, { resetOnEntry: true });
-                  continueTo(1);
-                }} />
-              </Section>
-            </motion.div>
-          )}
-
-          {stage === 1 && (
-            <motion.div key="build-capabilities" initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }} transition={{ duration: 0.18, ease: 'easeOut' }}>
-              <Section title="Build and Capabilities">
-                <BuildCapabilities
-                  cameras={cameras}
-                  brandsForCamera={brandsForCamera}
-                  resultsCount={buildResultsCount}
-                  onContinue={() => {
-                    // Capture a baseline for stage 2 on entry, without resetting
-                    useFilterStore.getState().captureStageBaseline(2);
-                    continueTo(2);
-                  }}
-                />
-              </Section>
-            </motion.div>
-          )}
-
-          {stage === 2 && (
-            <motion.div key="requirements-section" ref={reqRef} initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }} transition={{ duration: 0.18, ease: 'easeOut' }}>
-              <Section title="Set your filters" actions={(
-                <div className="flex items-center gap-2">
-                  <span className={BADGE_COUNT}>Showing {resultsCount} matches</span>
-                  <Button variant="secondary" size="sm" onClick={() => {
-                    // Reset only this stage back to its baseline
-                    useFilterStore.getState().resetToStageBaseline(2);
-                  }}>Reset filters</Button>
-                  <Button variant="secondary" size="sm" onClick={() => setHelpOpen(true)} title="How to use hard specs">?</Button>
-                </div>
-              )}>
-                <React.Suspense fallback={<Loading text="Loading requirements…" />}>
-                  {/* Always show mode card here so user can switch modes within the Requirements step */}
-                  <ModeCard />
-                  {isPro ? (
-                    <LazyProRequirements
-                      cameras={cameras}
-                      brandsForCamera={brandsForCamera}
-                      camera={camera}
-                      cameraName={cameraName}
-                      lenses={lenses}
-                      resultsCount={resultsCount}
-                      onContinue={() => continueTo(3)}
-                    />
-                  ) : (
-                    <LazySimpleRequirements
-                      cameras={cameras}
-                      brandsForCamera={brandsForCamera}
-                      camera={camera}
-                      cameraName={cameraName}
-                      lenses={lenses}
-                      resultsCount={resultsCount}
-                      onContinue={() => continueTo(3)}
-                    />
-                  )}
-                </React.Suspense>
-              </Section>
-              <Modal open={helpOpen} title="How to use hard specs" onClose={() => setHelpOpen(false)}>
-                <ul>
-                  <li><strong>Coverage</strong>: Choose FF/APS‑C/Any to match your camera’s sensor.</li>
-                  <li><strong>Focal range</strong>: Set the range you need. Results must cover your min..max.</li>
-                  <li><strong>Max aperture</strong>: Pick the fastest f‑stop you’re comfortable with.</li>
-                  <li><strong>Price/Weight</strong>: Use ranges to fit budget and portability. Soft mode treats them as preferences.</li>
-                  <li><strong>Video constraints</strong>: Limit distortion and set a minimum focus‑breathing score.</li>
-                  <li><strong>Modes</strong>: Off disables a filter; Soft prefers but doesn’t exclude; Req filters strictly.</li>
-                </ul>
-              </Modal>
-            </motion.div>
-          )}
-
-          {stage === 3 && (
-            <motion.div key="compare-or-top" ref={compareRef} initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }} transition={{ duration: 0.18, ease: 'easeOut' }} className={STACK_Y}>
-              <div className="mb-1 text-lg font-semibold text-[var(--text-color)]">Candidates to compare</div>
-              <div className="text-sm text-[var(--text-muted)] mb-2">Add up to 3 to compare side‑by‑side.</div>
-              <ExploreGrid items={resultsForGrid} />
-              <CompareTray />
-              {compareList.length >= 2 && (
-                <CompareShowdown
-                  camera={camera}
-                  selected={results.filter(r => compareList.includes(resultId(r)))}
-                />
-              )}
-            </motion.div>
-          )}
-
-          {stage === 4 && (
-            <motion.div key="report-section" ref={reportRef} initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }} transition={{ duration: 0.18, ease: 'easeOut' }} className={STACK_Y}>
-              <div className="mb-1 text-lg font-semibold text-[var(--text-color)]">Summary & decision</div>
-              <CollapsibleMessage variant="info" title="How to make the call" defaultOpen={false}>
+        subheaderSlot={(
+          <CollapsibleMessage variant="info" title="About this tool & how it works" defaultOpen={false} className="w-full">
+            <MessageTwoColumn
+              leftTitle="What this tool does"
+              rightTitle="How it works"
+              variant="info"
+              bare
+              left={(
                 <ul className="list-disc pl-5 text-sm space-y-1">
-                  <li><strong>Start</strong>: Note Top Performer, Best Value, and Best Portability badges.</li>
-                  <li><strong>Chart</strong>: Prefer lenses near the top‑left (more Score for less CHF). Stay within budget.</li>
-                  <li><strong>Break ties</strong>: Use Low Light, Video, Portability, and Value bars on each card.</li>
-                  <li><strong>Total kit</strong>: Check combined price and weight with your camera are acceptable.</li>
-                  <li><strong>Refine</strong>: Adjust weights/filters or revisit Compare to inspect candidates side‑by‑side.</li>
+                  <li>Evaluates lenses for your camera and goals</li>
+                  <li>Visualizes trade‑offs (price, weight, performance)</li>
+                  <li>Helps shortlist and compare up to three picks</li>
                 </ul>
-              </CollapsibleMessage>
-              <Card title="Report" subtitle="Generated summary">
-                <Report
-                  report={report}
-                  camera={camera}
-                  selected={selected}
-                  goalWeights={goalWeights}
-                  topResults={results.slice(0, 3)}
-                  onEditPreferences={() => { continueTo(2); }}
-                />
-              </Card>
-              <div className={ROW_END}>
-                <Button onClick={() => continueTo(0)}>Start Over</Button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              )}
+              right={(
+                <ol className="list-decimal pl-5 text-sm space-y-1">
+                  <li>Choose your mode</li>
+                  <li>Set build & capabilities</li>
+                  <li>Refine filters</li>
+                  <li>Add up to 3 lenses to compare</li>
+                  <li>View the report for a clear recommendation</li>
+                </ol>
+              )}
+            />
+          </CollapsibleMessage>
+        )}
+        actionsSlot={(
+          showDebug ? (
+            <div className="flex items-center gap-2">
+              <button className="rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent text-xs px-2 py-1 bg-[var(--control-bg)] border border-[var(--control-border)] text-[var(--text-color)] hover:bg-[color-mix(in_oklab,var(--control-bg),white_8%)]" onClick={() => setShowDebug(v => !v)}>
+                Hide debug
+              </button>
+            </div>
+          ) : null
+        )}
+      >
 
-        {/* Report moved into step 4 */}
-      </div>
-    </PageBase>
+        {(fatalError || forceOutage) && (
+          <OutageScreen title="Service temporarily unavailable" message={fatalError || 'Reconnecting…'} />
+        )}
+
+        {/* No main-app retry or recovered banners; overlay handles outage UX */}
+
+        {/* Header actions moved to PageBase actionsSlot */}
+
+        {/* Flow content with animated transitions - render only current stage to avoid duplicates */}
+        <div className={SECTION_STACK}>
+          {import.meta.env.DEV && showDebug && debugCounts && (
+            <DebugFilterPanel
+              counts={debugCounts}
+              cameraMount={camera?.mount}
+              brand={brand}
+              lensType={lensType}
+              sealed={sealed}
+              isMacro={isMacro}
+              priceRange={priceRange}
+              weightRange={weightRange}
+              proCoverage={proCoverage}
+              proFocalMin={proFocalMin}
+              proFocalMax={proFocalMax}
+              proMaxApertureF={proMaxApertureF}
+              proRequireOIS={proRequireOIS}
+              proRequireSealed={proRequireSealed}
+              proRequireMacro={proRequireMacro}
+              proPriceMax={proPriceMax}
+              proWeightMax={proWeightMax}
+              proDistortionMaxPct={proDistortionMaxPct}
+              proBreathingMinScore={proBreathingMinScore}
+              softDistortion={softDistortion}
+              softBreathing={softBreathing}
+              distributions={debugDist || undefined}
+              perCameraCounts={debugPerCam || undefined}
+            />
+          )}
+          <AnimatePresence initial={false} mode="wait">
+            {stage === 0 && (
+              <motion.div key="mode-section" ref={modeRef} initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }} transition={{ duration: 0.18, ease: 'easeOut' }}>
+                <Section title="Choose your mode">
+                  <ModeSelect onContinue={() => {
+                    // Entering stage 1: reset filters to defaults once and capture a clean baseline for stage 1
+                    useFilterStore.getState().captureStageBaseline(1, { resetOnEntry: true });
+                    continueTo(1);
+                  }} />
+                </Section>
+              </motion.div>
+            )}
+
+            {stage === 1 && (
+              <motion.div key="build-capabilities" initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }} transition={{ duration: 0.18, ease: 'easeOut' }}>
+                <Section title="Build and Capabilities">
+                  <BuildCapabilities
+                    cameras={cameras}
+                    brandsForCamera={brandsForCamera}
+                    resultsCount={buildResultsCount}
+                    onContinue={() => {
+                      // Capture a baseline for stage 2 on entry, without resetting
+                      useFilterStore.getState().captureStageBaseline(2);
+                      continueTo(2);
+                    }}
+                  />
+                </Section>
+              </motion.div>
+            )}
+
+            {stage === 2 && (
+              <motion.div key="requirements-section" ref={reqRef} initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }} transition={{ duration: 0.18, ease: 'easeOut' }}>
+                <Section title="Set your filters" actions={(
+                  <div className="flex items-center gap-2">
+                    <span className={BADGE_COUNT}>Showing {resultsCount} matches</span>
+                    <Button variant="secondary" size="sm" onClick={() => {
+                      // Reset only this stage back to its baseline
+                      useFilterStore.getState().resetToStageBaseline(2);
+                    }}>Reset filters</Button>
+                    <Button variant="secondary" size="sm" onClick={() => setHelpOpen(true)} title="How to use hard specs">?</Button>
+                  </div>
+                )}>
+                  <React.Suspense fallback={<Loading text="Loading requirements…" />}>
+                    {/* Always show mode card here so user can switch modes within the Requirements step */}
+                    <ModeCard />
+                    {isPro ? (
+                      <LazyProRequirements
+                        cameras={cameras}
+                        brandsForCamera={brandsForCamera}
+                        camera={camera}
+                        cameraName={cameraName}
+                        lenses={lenses}
+                        resultsCount={resultsCount}
+                        onContinue={() => continueTo(3)}
+                      />
+                    ) : (
+                      <LazySimpleRequirements
+                        cameras={cameras}
+                        brandsForCamera={brandsForCamera}
+                        camera={camera}
+                        cameraName={cameraName}
+                        lenses={lenses}
+                        resultsCount={resultsCount}
+                        onContinue={() => continueTo(3)}
+                      />
+                    )}
+                  </React.Suspense>
+                </Section>
+                <Modal open={helpOpen} title="How to use hard specs" onClose={() => setHelpOpen(false)}>
+                  <ul>
+                    <li><strong>Coverage</strong>: Choose FF/APS‑C/Any to match your camera’s sensor.</li>
+                    <li><strong>Focal range</strong>: Set the range you need. Results must cover your min..max.</li>
+                    <li><strong>Max aperture</strong>: Pick the fastest f‑stop you’re comfortable with.</li>
+                    <li><strong>Price/Weight</strong>: Use ranges to fit budget and portability. Soft mode treats them as preferences.</li>
+                    <li><strong>Video constraints</strong>: Limit distortion and set a minimum focus‑breathing score.</li>
+                    <li><strong>Modes</strong>: Off disables a filter; Soft prefers but doesn’t exclude; Req filters strictly.</li>
+                  </ul>
+                </Modal>
+              </motion.div>
+            )}
+
+            {stage === 3 && (
+              <motion.div key="compare-or-top" ref={compareRef} initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }} transition={{ duration: 0.18, ease: 'easeOut' }} className={STACK_Y}>
+                <div className="mb-1 text-lg font-semibold text-[var(--text-color)]">Candidates to compare</div>
+                <div className="text-sm text-[var(--text-muted)] mb-2">Add up to 3 to compare side‑by‑side.</div>
+                <ExploreGrid items={resultsForGrid} />
+                <CompareTray />
+                {compareList.length >= 2 && (
+                  <CompareShowdown
+                    camera={camera}
+                    selected={results.filter(r => compareList.includes(resultId(r)))}
+                  />
+                )}
+              </motion.div>
+            )}
+
+            {stage === 4 && (
+              <motion.div key="report-section" ref={reportRef} initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }} transition={{ duration: 0.18, ease: 'easeOut' }} className={STACK_Y}>
+                <div className="mb-1 text-lg font-semibold text-[var(--text-color)]">Summary & decision</div>
+                <CollapsibleMessage variant="info" title="How to make the call" defaultOpen={false}>
+                  <ul className="list-disc pl-5 text-sm space-y-1">
+                    <li><strong>Start</strong>: Note Top Performer, Best Value, and Best Portability badges.</li>
+                    <li><strong>Chart</strong>: Prefer lenses near the top‑left (more Score for less CHF). Stay within budget.</li>
+                    <li><strong>Break ties</strong>: Use Low Light, Video, Portability, and Value bars on each card.</li>
+                    <li><strong>Total kit</strong>: Check combined price and weight with your camera are acceptable.</li>
+                    <li><strong>Refine</strong>: Adjust weights/filters or revisit Compare to inspect candidates side‑by‑side.</li>
+                  </ul>
+                </CollapsibleMessage>
+                <Card title="Report" subtitle="Generated summary">
+                  <Report
+                    report={report}
+                    camera={camera}
+                    selected={selected}
+                    goalWeights={goalWeights}
+                    topResults={results.slice(0, 3)}
+                    onEditPreferences={() => { continueTo(2); }}
+                  />
+                </Card>
+                <div className={ROW_END}>
+                  <Button onClick={() => continueTo(0)}>Start Over</Button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Report moved into step 4 */}
+        </div>
+      </PageBase>
+    </PlotProvider>
   );
 }
 

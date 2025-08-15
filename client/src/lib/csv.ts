@@ -1,7 +1,7 @@
 import type { Result } from '../types';
 
-export function downloadCSV(rows: Result[]) {
-  if (!rows || rows.length === 0) return;
+export function buildResultsCSV(rows: Result[]): string {
+  if (!rows || rows.length === 0) return '';
   const headers = [
     'Name', 'Focal(mm)', 'Aperture(f/)', 'Eq.Focal(mm)', 'FoV H(deg)', 'DoF Total(m)', 'Weight(g)', 'Price(CHF)', 'Stabilized', 'Sealed', 'Macro', 'Score'
   ];
@@ -19,15 +19,9 @@ export function downloadCSV(rows: Result[]) {
     r.is_macro ? '✅' : '❌',
     r.score_total.toFixed(0)
   ]);
-  const csv = [headers, ...lines]
+  return [headers, ...lines]
     .map((line) => line.map((v) => (typeof v === 'string' && v.includes(',') ? '"' + v + '"' : v)).join(','))
     .join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = 'lens_results.csv';
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
 }
 
 

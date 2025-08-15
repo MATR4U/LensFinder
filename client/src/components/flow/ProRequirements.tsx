@@ -7,7 +7,7 @@ import LabeledCheckbox from '../ui/fields/LabeledCheckbox';
 import CheckboxGroup from '../ui/fields/CheckboxGroup';
 import Checkbox from '../ui/Checkbox';
 import LabeledRange from '../ui/fields/LabeledRange';
-import MetricRange from '../ui/fields/MetricRange';
+import MetricRange from './MetricRange';
 import LabeledSegmentedControl, { type SegmentOption } from '../ui/fields/LabeledSegmentedControl';
 import LabeledSlider from '../ui/fields/LabeledSlider';
 import Button from '../ui/Button';
@@ -25,7 +25,8 @@ import CollapsibleMessage from '../ui/CollapsibleMessage';
 import BaseRequirements from './BaseRequirements';
 import StageHeader from '../ui/StageHeader';
 import StageNav from '../ui/StageNav';
-import FocalRange from '../ui/fields/FocalRange';
+import FocalRange from './FocalRange';
+import { AvailabilityProvider, useAvailability } from '../../context/AvailabilityContext';
 // Inline warnings replace the standalone block; remove NoticeZeroResults usage
 
 type Props = {
@@ -164,16 +165,33 @@ export default function ProRequirements(props: Props) {
       proBreathingMinScore: breathingMinScore,
     };
     // Price density: ignore current price/weight cuts
-    const pricePool = applyFilters({
+    const sObj: any = {
       lenses,
       cameraName,
-      cameraMount: camera?.mount,
       ...baseFilters,
       priceRange: { ...caps.priceBounds },
       weightRange: { ...caps.weightBounds },
+      proCoverage: coverage,
+      proFocalMin: focalMin,
+      proFocalMax: focalMax,
+      proMaxApertureF: maxApertureF,
+      proRequireOIS: requireOIS,
+      proRequireSealed: sealed,
+      proRequireMacro: isMacro,
       proPriceMax: caps.priceBounds.max,
       proWeightMax: caps.weightBounds.max,
-    });
+      proDistortionMaxPct: distortionMaxPct,
+      proBreathingMinScore: breathingMinScore,
+      softPrice: true,
+      softWeight: true,
+      softDistortion: true,
+      softBreathing: true,
+      enablePrice: true,
+      enableWeight: true,
+      enableDistortion: true,
+      enableBreathing: true,
+    };
+    const pricePool = applyFilters(buildFilterInput(sObj, camera?.mount));
     const priceVals = pricePool.map(l => l.price_chf).filter(v => Number.isFinite(v));
     const priceNorm = computeNormalizedHistogram(priceVals, caps.priceBounds.min, caps.priceBounds.max);
     const priceTrackStyle: React.CSSProperties = gradientStyleFromNormalized(priceNorm);
@@ -239,7 +257,6 @@ export default function ProRequirements(props: Props) {
       onBack={onBack}
       onReset={onReset}
       onContinue={onContinue}
-      stageNumber={2}
     >
       <StageHeader
         title="Your requirements"

@@ -10,17 +10,18 @@ type Props = {
   onBack: () => void;
   onReset?: () => void;
   onContinue: () => void;
-  stageNumber: number;
+  canForward?: boolean;
+  continueLabel?: string;
   headerRight?: React.ReactNode;
   className?: string;
 };
 
-export default function StageLayout({ title, resultsCount, children, onBack, onReset, onContinue, stageNumber, headerRight, className = '' }: Props) {
+export default function StageLayout({ title, resultsCount, children, onBack, onReset, onContinue, canForward = true, continueLabel = 'Continue', headerRight, className = '' }: Props) {
   return (
     <div className={`${CARD_PADDED} ${className}`}>
       <StageHeader title={title} resultsCount={resultsCount} right={headerRight} />
       {children}
-      <StageNav className="mt-2" onBack={onBack} onReset={onReset} onContinue={onContinue} stageNumber={stageNumber} />
+      <StageNav className="mt-2" onBack={onBack} onReset={onReset} onContinue={onContinue} canForward={canForward} continueLabel={continueLabel} />
     </div>
   );
 }

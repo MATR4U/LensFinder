@@ -1,9 +1,9 @@
 import React from 'react';
-import LabeledRange from './LabeledRange';
-import type { FieldStatus } from './FieldContainer';
-import { useMetricConfig } from '../../../hooks/useMetricConfig';
-import { tickFormatterFromUnit, formatCurrencyCHF, formatGrams, formatPercent, formatMm, parseFromUnit } from '../../../lib/formatters';
-import { FIELD_HELP } from '../fieldHelp';
+import LabeledRange from '../ui/fields/LabeledRange';
+import type { FieldStatus } from '../ui/fields/FieldContainer';
+import { useMetricConfig } from '../../hooks/useMetricConfig';
+import { formatCurrencyCHF, formatPercent, parseFromUnit } from '../../lib/formatters';
+import { FIELD_HELP } from '../ui/fieldHelp';
 
 type Metric = 'price' | 'weight' | 'distortion' | 'breathing';
 

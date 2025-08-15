@@ -7,6 +7,7 @@ import { useCompareSelection } from '../../hooks/useCompareSelection';
 import Button from '../ui/Button';
 import { resultId } from '../../lib/ids';
 import { bestFor, tagFromBestFor } from '../../lib/tags';
+import { formatFocalRange } from '../../lib/lens';
 import { useStageLifecycle } from '../../hooks/useStageLifecycle';
 
 type Props = {
@@ -82,7 +83,7 @@ export default function ExploreGrid({ items }: Props) {
             {openDetailsId === id && (
               <div id={`details-${id}`} className="mt-2 text-xs text-[var(--text-muted)] space-y-1">
                 <div>Coverage: {r.coverage || '—'}</div>
-                <div>Focal: {r.focal_min_mm === r.focal_max_mm ? `${r.focal_min_mm}mm` : `${r.focal_min_mm}–${r.focal_max_mm}mm`}</div>
+                <div>Focal: {formatFocalRange(r)}</div>
                 <div>Max aperture: f/{Number(r.aperture_min).toFixed(1)}</div>
                 <div>Stabilization: {r.ois ? 'OIS' : '—'} • Sealed: {r.weather_sealed ? 'Yes' : 'No'} • Macro: {r.is_macro ? 'Yes' : 'No'}</div>
                 <div>Distortion ≤ {r.distortion_pct ?? 0}% • Breathing score ≥ {r.focus_breathing_score ?? 0}</div>

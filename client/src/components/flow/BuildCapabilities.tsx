@@ -4,6 +4,7 @@ import { useFilterStore } from '../../stores/filterStore';
 import { CARD_PADDED, GRID_TWO_GAP3 } from '../ui/styles';
 import StageHeader from '../ui/StageHeader';
 import StageNav from '../ui/StageNav';
+import StageLayout from '../ui/StageLayout';
 import BuildFeatures from '../ui/BuildFeatures';
 import { useBuildFeatureAvailability } from '../../hooks/useBuildFeatureAvailability';
 import { useAvailabilityOptions } from '../../hooks/useAvailabilityOptions';
@@ -154,7 +155,6 @@ function BuildCapabilitiesBody({ cameras = [], brandsForCamera = [], resultsCoun
         onReset={useStageReset(1)}
         onContinue={onContinue}
         continueLabel="Continue"
-        stageNumber={1}
       />
     </div>
   );

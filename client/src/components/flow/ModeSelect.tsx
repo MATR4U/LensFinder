@@ -28,6 +28,7 @@ export default function ModeSelect({ onContinue }: Props) {
           selected={!isPro}
           onSelect={() => { setIsPro(false); }}
           ariaLabel="Beginner"
+          testId="mode-beginner"
         />
         <SelectableCard
           title="Pro"
@@ -37,6 +38,7 @@ export default function ModeSelect({ onContinue }: Props) {
           selected={isPro}
           onSelect={() => { setIsPro(true); }}
           ariaLabel="Pro"
+          testId="mode-pro"
         />
       </div>
       <StageNav className="mt-2" onBack={() => continueTo(0)} onContinue={() => continueTo(1)} />

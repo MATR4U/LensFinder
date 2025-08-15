@@ -1,8 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { computeHistogram, type HistogramBin } from '../../lib/hist';
-import useMeasure from '../../hooks/useMeasure';
-import useScales from '../../hooks/useScales';
+import { scaleBand, scaleLinear } from '@visx/scale';
 
 type Props = {
   values: number[]; // dynamic foreground values
@@ -22,15 +21,25 @@ export default function Histogram({ values, totalValues, min, max, buckets = 24,
   const bg = React.useMemo<HistogramBin[]>(() => (totalValues ? computeHistogram(totalValues, min, max, buckets) : []), [totalValues, min, max, buckets]);
   const fg = React.useMemo<HistogramBin[]>(() => computeHistogram(values, min, max, buckets), [values, min, max, buckets]);
   const height = 40;
-  const itemVariants = {
-    initial: { height: 0 },
-    animate: (h: number) => ({ height: h, transition: { type: 'spring', stiffness: 220, damping: 24 } }),
-  } as const;
-  const { ref, width } = useMeasure<HTMLDivElement>();
-  const { x, y } = useScales(width, height, fg.length || buckets);
+  const containerRef = React.useRef<HTMLDivElement | null>(null);
+  const [width, setWidth] = React.useState(0);
+  React.useEffect(() => {
+    if (!containerRef.current) return;
+    const el = containerRef.current;
+    const ro = new ResizeObserver((entries) => {
+      for (const e of entries) {
+        setWidth(Math.round(e.contentRect.width));
+      }
+    });
+    ro.observe(el);
+    setWidth(Math.round(el.getBoundingClientRect().width));
+    return () => ro.disconnect();
+  }, []);
+  const x = React.useMemo(() => scaleBand({ domain: Array.from({ length: fg.length || buckets }, (_, i) => i), range: [0, Math.max(0, width)], paddingInner: 0.02, paddingOuter: 0.01 }), [width, fg.length, buckets]);
+  const y = React.useMemo(() => scaleLinear({ domain: [0, 1], range: [0, Math.max(0, height)] }), [height]);
   const maxCount = React.useMemo(() => Math.max(1, ...fg.map((b) => b.count)), [fg]);
   return (
-    <div ref={ref} className={`relative w-full h-[${height}px]`} aria-hidden>
+    <div ref={containerRef} className={`relative w-full h-[${height}px]`} aria-hidden>
       {/* Background (static) */}
       {bg.length > 0 && (
         <svg className="absolute inset-0 w-full h-full">

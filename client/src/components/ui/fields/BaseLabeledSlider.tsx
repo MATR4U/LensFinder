@@ -9,7 +9,6 @@ import FilterModeSwitch, { type FilterMode } from '../FilterModeSwitch';
 import Histogram from '../Histogram';
 import { stableIdFromLabel } from './id';
 import { computeNormalizedHistogram } from '../../../lib/hist';
-import { useLabeledIds } from '../../../hooks/useLabeledIds';
 
 type Range = { min: number; max: number };
 
@@ -73,7 +72,10 @@ export default function BaseLabeledSlider(props: Props) {
   } = props;
 
   const derivedPrefix = idPrefix ?? stableIdFromLabel(label);
-  const { labelId: effectiveId, inputId: effectiveInputId } = useLabeledIds(label, derivedPrefix);
+  const autoLblId = React.useId();
+  const autoInputId = React.useId();
+  const effectiveId = derivedPrefix ? `${derivedPrefix}-label` : autoLblId;
+  const effectiveInputId = derivedPrefix ? `${derivedPrefix}-input` : autoInputId;
   const isSingle = typeof (props as SingleMode).singleValue === 'number';
   const [isDragging, setIsDragging] = React.useState(false);
   const densityNorm = React.useMemo(() => (histogramTotalValues && histogramTotalValues.length ? computeNormalizedHistogram(histogramTotalValues, min, max) : undefined), [histogramTotalValues, min, max]);

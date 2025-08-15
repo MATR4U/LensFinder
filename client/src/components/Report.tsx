@@ -2,8 +2,9 @@ import React from 'react';
 import { TEXT_XS_MUTED, LINK_HOVER_ACCENT, PANEL_BASE, PANEL_NEUTRAL, TEXT_SM, CARD_PADDED, GRID_LG_TWO_GAP6 } from './ui/styles';
 import BaseReport from './report/BaseReport';
 import { useReportLifecycle } from './report/useReportLifecycle';
-import { downloadCSV } from '../lib/csv';
+import { buildResultsCSV } from '../lib/csv';
 import LazyPlot from './ui/LazyPlot';
+import { usePlotConfig } from '../context/PlotProvider';
 import { computeParetoFrontier } from '../lib/optics';
 import type { ReportResponse } from '../lib/api';
 import type { Camera, Result } from '../types';
@@ -57,6 +58,7 @@ export default function Report({ report, camera, selected, goalWeights, topResul
   useReportLifecycle('Personalized lens report', report);
   const { onEnter } = useStageLifecycle(4, { resetOnEntry: false });
   React.useEffect(() => { onEnter(); }, [onEnter]);
+  const plotCfg = usePlotConfig();
 
   // Helpers
 
@@ -94,7 +96,16 @@ export default function Report({ report, camera, selected, goalWeights, topResul
   }));
 
   return (
-    <BaseReport title="Your personalized lens report" onExportCSV={() => downloadCSV(items as any)}>
+    <BaseReport title="Your personalized lens report" onExportCSV={() => {
+      const csv = buildResultsCSV(items as any);
+      if (!csv) return;
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'lens_results.csv';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }}>
       {/* Section 1: Personalized summary */}
       <SummaryHeader cameraName={cameraName} goal={goal} onEditPreferences={onEditPreferences} />
 
@@ -166,14 +177,12 @@ export default function Report({ report, camera, selected, goalWeights, topResul
                 ] as any;
               })()}
               layout={{
-                paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
-                margin: { l: 60, r: 20, t: 10, b: 50 },
-                font: { color: 'var(--plot-font)' },
-                xaxis: { title: 'Price (CHF)', gridcolor: 'var(--plot-grid)' },
-                yaxis: { title: 'Score', gridcolor: 'var(--plot-grid)' }
+                ...plotCfg.layoutDefaults,
+                xaxis: { ...(plotCfg.layoutDefaults?.xaxis || {}), title: 'Price (CHF)' },
+                yaxis: { ...(plotCfg.layoutDefaults?.yaxis || {}), title: 'Score' },
               } as any}
               style={{ width: '100%', height: 260 }}
-              config={{ displayModeBar: false }}
+              config={{ ...plotCfg.configDefaults }}
             />
             <p className={`${TEXT_XS_MUTED} mt-2`}>Lenses in the top‑left give you the most performance for your money.</p>
           </div>

@@ -21,7 +21,7 @@ export const unitsRegistry: Record<Unit, Formatters> = {
     ariaValueText: (v) => `CHF ${Math.round(v)}`,
   },
   g: {
-    format: (v) => `${Math.round(v)} g`;
+    format: (v) => `${Math.round(v)} g`,
     parse: (s) => parseNumeric(s),
     tickFormatter: (v) => `${Math.round(v)}`,
     ariaValueText: (v) => `${Math.round(v)} grams`,
