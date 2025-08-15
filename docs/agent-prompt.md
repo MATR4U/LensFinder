@@ -76,7 +76,7 @@ Autonomous session executor that continues work, maintains memory hygiene, and k
 - Color policy: Avoid hardcoded colors in any component; route styling through centralized tokens (`ui/styles.ts`). [ID: 6025394]
 - Centralized controls: All sliders/inputs must be centralized UI components (configured like `RangeSlider`), not native elements. [ID: 6023759]
 - Test location: All client unit tests under `client/tests/**`. [ID: 6023194]
-- Env strategy: Centralized `.env.dev` and `.env.prod`. [ID: 5961323]
+- Env strategy: Single `.env` across environments; switch via `DEPLOYMENT=development|production`. [ID: 6318994]
 - Product vision: Guided 4-step journey (conversation-driven filtering; exploration via Bento Grid and 2D map; side-by-side showdown; AI Verdict). UI: glassmorphism, premium motion. Perf: SSR/ISR, caching, optimized images. Personalization: saved profiles. Accessibility: keyboard-first, ARIA, WCAG AAA. Progressive disclosure. [ID: 5906234]
 - DB: Use Postgres only; no SQLite. [ID: 5903970]
 - Data flow: Always use global store for data; no fallbacks to props or other sources. [ID: 5903960]

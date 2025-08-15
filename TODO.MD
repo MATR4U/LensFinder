@@ -180,6 +180,21 @@ What to add
 
 4) PageBase [Status: In Progress → partial]
 
+## UI/Layout TODO
+
+- Standardize sections and cards
+  - Use `components/ui/Section.tsx` for page sections (title + spacing)
+  - Use `components/ui/Card.tsx` for content blocks inside sections
+- Remove redundant inline headers
+  - Route top-level page title/CTA/result count via `PageBase` `headerSlot`/`actionsSlot`
+- Spacing
+  - Section vertical rhythm via `SECTION_STACK` / `STACK_Y`
+  - Grid gaps via tokens (`GRID_*`); avoid ad-hoc margins
+- Navigation header
+  - Keep a single, consistent site header (nav) separate from page content
+- Future
+  - Add `HeroSection` pattern for marketing/landing pages when needed
+
 - Implemented: page shell, head/meta, keyboard "skip to content", ErrorBoundary + Suspense wrapper, optional `onView` analytics hook in `client/src/components/pages/PageBase.tsx`.
 - Next: consider stage guard hook (no auto-advance already enforced at store/flow level), expose `actionsSlot` patterns where needed, and migrate any additional pages if introduced later.
 - Current migration: `pages/App.tsx` uses `PageBase`.
@@ -208,3 +223,17 @@ Benefits
 - Easier theming and future redesigns.
 - Deterministic IDs for e2e; fewer flaky tests.
 - Centralized analytics/telemetry and loading/error standards.
+
+### Pattern proposal: SelectableCard generalization [Status: Open]
+
+- Design note: We now use `SelectableCard` for Beginner/Pro. Generalize this pattern for other screens (e.g., presets, camera choices).
+- Approach:
+  - Extend `components/ui/SelectableCard.tsx` with optional `rightActions?: React.ReactNode` to place chips/buttons on the right.
+  - Add optional `icon?: React.ReactNode | string` prop (string → internal icon map) to render a leading visual.
+  - Keep API minimal: `title`, `description`, `bullets`, `selected`, `onSelect`, `icon`, `rightActions`.
+- Affected:
+  - `client/src/components/ui/SelectableCard.tsx`
+  - Callers under `client/src/components/flow/*` where choices are shown (presets, camera choices, future wizards).
+- Tests:
+  - Snapshot and interaction tests for selected/unselected states and keyboard activation.
+  - Verify a11y roles (button), `aria-pressed` semantics if toggled.

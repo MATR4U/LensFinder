@@ -2,16 +2,19 @@
 
 ## Production deployment (Docker Compose)
 
-Run the full stack (client build, server, Postgres, pgAdmin) with a single command:
+Run the full stack (client build, server, Postgres, Redis, pgAdmin) with a single command:
 
 ```bash
-cp env.prod.example .env.prod
+cp env.prod.example .env
 
-# Generate deployment assets (single source of truth: .env.prod)
+# Add deployment type to .env (single source of truth)
+echo "DEPLOYMENT=production" >> .env
+
+# Generate deployment assets
 npm run deploy:gen
 
-# Bring up full stack
-docker compose -f infra/docker/docker-compose.yml --env-file .env.prod up -d --build
+# Bring up full stack (Docker)
+npm run deploy:compose:up
 ```
 
 ## Kubernetes deployment (Kustomize)
@@ -38,22 +41,23 @@ kubectl -n lensfinder port-forward svc/server 8081:3001
 Services:
 
 - server: Node API (serves built client), exposes `${PORT}` (3001 default)
+- client: Vite preview served by Nginx in container (built)
 - postgres: Postgres 16 with persistent volume
+- redis: Redis 7 for caching
 - pgadmin: optional admin UI on port 5050
 
 Stop and remove volumes:
 
 ```bash
-docker compose -f infra/docker/docker-compose.yml --env-file .env.prod down -v
-docker compose -f infra/docker/docker-compose.client.yml down -v
-docker compose -f infra/docker/docker-compose.db.yml down -v
-docker compose -f infra/docker/docker-compose.server.yml down -v
+# Entire stack down + remove volumes
+npm run deploy:compose:down
 ```
 
 Environment (centralized):
 
-- Use `.env.dev` for development, `.env.prod` for production. These files are the source of truth for Docker/K8s.
+- Use a single `.env` for all environments. Set `DEPLOYMENT=development|production` in `.env` to control behavior.
 - `DATABASE_URL` must be set (no hardcoded fallbacks in generation scripts). In Docker, point to `postgres`: `postgres://lens:lens@postgres:5432/lensfinder`.
+- `REDIS_URL` should point to `redis://redis:6379` for Compose.
 - Client uses same-origin by default. Set `VITE_API_BASE_URL` in env to override.
 
 ## Overview
@@ -89,7 +93,9 @@ npm install
 
 ## Run in development
 
-Runs API first, then client for HMR; kills any prior servers on the ports.
+Two options:
+
+1) Node dev servers (HMR): API first, then client; ports auto-cleared.
 
 ```bash
 npm run dev
@@ -107,6 +113,15 @@ Dev servers:
 - API: `http://localhost:${PORT}` (default 3001)
 - Client: `http://localhost:${CLIENT_PORT}` (default 3000)
 
+2) Dockerized dev stack (single `.env`):
+
+```bash
+npm run stack:up:docker   # generate manifests, build as needed, bring up stack
+npm run stack:logs:docker # follow logs
+npm run stack:down:docker # stop containers (preserve volumes)
+npm run stack:clean:docker # stop and remove volumes
+```
+
 ### Outage and degraded states (UX)
 
 - Full-screen glass overlay blocks interactions when services are unavailable; background shines through
@@ -114,15 +129,12 @@ Dev servers:
 - Preview outage overlay without breaking services by setting `VITE_FORCE_OUTAGE=1` for the client build/dev
 - Glass tokens live in `client/src/components/ui/styles.ts` (`GLASS_PANEL`, `AURA_ACCENT`, `GLASS_CARD_SM`)
 
-### Dev redeploy
+### Redeploy helpers
 
-- Regenerate manifests from `.env.dev`:
-  - `npm run deploy:gen:dev`
-- Docker Compose dev stack:
-  - `docker compose -f infra/docker/docker-compose.yml --env-file .env.dev up -d --build`
-- Kubernetes dev namespace:
-  - `kubectl apply -k infra/k8s/`
-  - On code changes: `kubectl rollout restart deploy/server && kubectl rollout restart deploy/client`
+- Regenerate manifests from `.env`: `npm run deploy:gen`
+- Docker Compose stack: `npm run deploy:compose:up`
+- Kubernetes namespace: `kubectl apply -k infra/k8s/`
+- On code changes: `kubectl rollout restart deploy/server && kubectl rollout restart deploy/client`
 
 ## Production build
 
