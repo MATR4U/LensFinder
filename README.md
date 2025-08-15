@@ -162,6 +162,12 @@ Full verification (build + unit + e2e; e2e skipped when Docker not running):
 npm run ci:verify
 ```
 
+Run only the e2e smoke locally:
+
+```bash
+npm run test:e2e:smoke
+```
+
 ## Server-only commands
 
 From the `server/` workspace:
