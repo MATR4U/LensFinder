@@ -29,6 +29,7 @@ export default function CompareShowdown({ camera, selected }: Props) {
   const pts = rows.map(r => ({ name: r.name, x: r.price_chf, y: r.score_total, label: r.name }));
   return (
     <div className="space-y-4">
+      <h2 className="text-xl font-semibold text-[var(--text-color)]">Compare</h2>
       <CollapsibleMessage variant="info" title="How to read these results" defaultOpen={false}>
         <ul className="list-disc pl-5 text-sm space-y-1">
           <li><strong>Score</strong>: Overall performance matched to your priorities. Higher is better.</li>

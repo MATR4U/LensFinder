@@ -7,6 +7,7 @@ import LazyPlot from './ui/LazyPlot';
 import { computeParetoFrontier } from '../lib/optics';
 import type { ReportResponse } from '../lib/api';
 import type { Camera, Result } from '../types';
+import { useSelectedResults } from '../hooks/useSelectedResults';
 import { useFilterStore } from '../stores/filterStore';
 import { clientConfig } from '../config';
 import SummaryHeader from './report/SummaryHeader';
@@ -14,6 +15,7 @@ import Recommendations from './report/Recommendations';
 import RankingWeights from './report/RankingWeights';
 import CollapsibleMessage from './ui/CollapsibleMessage';
 import Info from './ui/Info';
+import { useStageLifecycle } from '../hooks/useStageLifecycle';
 
 type Props = {
   report: ReportResponse | null;
@@ -24,16 +26,46 @@ type Props = {
   onEditPreferences?: () => void;
 };
 
+type DisplayItem = { name: string; score: number; type: string; weight_g: number; price_chf: number; rank: number };
+
+function fromResults(results: Result[]): DisplayItem[] {
+  return results.map((r, idx) => ({
+    name: r.name,
+    score: r.score_total,
+    type: (r.focal_min_mm === r.focal_max_mm) ? 'prime' : 'zoom',
+    weight_g: r.weight_g,
+    price_chf: r.price_chf,
+    rank: idx + 1,
+  }));
+}
+
+function fromReportItems(items: ReportResponse['items']): DisplayItem[] {
+  return items.map(i => ({
+    name: i.name,
+    score: i.score,
+    type: i.type,
+    weight_g: i.weight_g,
+    price_chf: i.price_chf,
+    rank: i.rank,
+  }));
+}
+
 export default function Report({ report, camera, selected, goalWeights, topResults = [], onEditPreferences }: Props) {
   if (!report) return null;
   const { cameraName, goal, items } = report;
 
   useReportLifecycle('Personalized lens report', report);
+  const { onEnter } = useStageLifecycle(4, { resetOnEntry: false });
+  React.useEffect(() => { onEnter(); }, [onEnter]);
 
   // Helpers
 
   // Compute derived metrics
-  const top3 = items.slice(0, 3);
+  // Reflect current selection order if available
+  const selectedNow = useSelectedResults(topResults as any);
+  const selectedDisplay = fromResults(selectedNow as unknown as Result[]);
+  const itemsDisplay = fromReportItems(items);
+  const top3 = (selectedDisplay.length > 0 ? selectedDisplay : itemsDisplay).slice(0, 3);
   const valueScores = top3.map(i => ({ i, v: i.price_chf > 0 ? i.score / i.price_chf : 0 }));
   const bestValue = valueScores.slice().sort((a, b) => b.v - a.v)[0]?.i;
   const topPerformer = top3.slice().sort((a, b) => b.score - a.score)[0];
@@ -54,8 +86,8 @@ export default function Report({ report, camera, selected, goalWeights, topResul
   const bars = Object.fromEntries(top3.map(t => {
     const valueIndex = t.price_chf > 0 ? (t.score / t.price_chf) : 0;
     return [t.name, {
-      lowLight: toBar(Number((topResults.find(r => r.name === t.name) as any)?.low_light ?? 0)),
-      video: toBar(Number((topResults.find(r => r.name === t.name) as any)?.video_excellence ?? 0)),
+      lowLight: toBar(Number((itemsDisplay.find(r => r.name === t.name) as any)?.low_light ?? 0)),
+      video: toBar(Number((itemsDisplay.find(r => r.name === t.name) as any)?.video_excellence ?? 0)),
       portability: toPortabilityBar(t.weight_g || 0),
       value: toBar(maxValueIndex ? (valueIndex / maxValueIndex) * 10 : 0)
     }];

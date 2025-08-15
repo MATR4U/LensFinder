@@ -1,28 +1,19 @@
 import React from 'react';
 import type { Camera } from '../../types';
 import { useFilterStore } from '../../stores/filterStore';
-import LabeledSelect from '../ui/fields/LabeledSelect';
-import CheckboxGroup from '../ui/fields/CheckboxGroup';
-import { ACTION_ROW, BADGE_COUNT, CARD_PADDED, GRID_TWO_GAP3, ROW_BETWEEN, TITLE_H2 } from '../ui/styles';
-import { FIELD_HELP } from '../ui/fieldHelp';
-import Button from '../ui/Button';
-import { coverageMatches } from '../../lib/availability';
-import { applyFilters } from '../../lib/filters';
+import { CARD_PADDED, GRID_TWO_GAP3 } from '../ui/styles';
 import StageHeader from '../ui/StageHeader';
 import StageNav from '../ui/StageNav';
 import BuildFeatures from '../ui/BuildFeatures';
 import { useBuildFeatureAvailability } from '../../hooks/useBuildFeatureAvailability';
 import { useAvailabilityOptions } from '../../hooks/useAvailabilityOptions';
-import { useStageBaseline } from '../../hooks/useStageBaseline';
 import { useStageLifecycle } from '../../hooks/useStageLifecycle';
-import { useAvailabilityCounts } from '../../hooks/useAvailabilityCounts';
 import { useAutoCorrectSelections } from '../../hooks/useAutoCorrectSelections';
 import { useStageReset } from '../../hooks/useStageReset';
 import AvailabilitySelect from '../ui/AvailabilitySelect';
-import { lensTypeFromFocal } from '../../lib/optics';
 import { useAvailableBodies } from '../../hooks/useAvailableBodies';
 import { useCountsOptions } from '../../hooks/useCountsOptions';
-import { useOptionsSuperset } from '../../hooks/useOptionsSuperset';
+import { AvailabilityProvider, useAvailability } from '../../context/AvailabilityContext';
 
 type Props = {
   cameras?: Camera[];
@@ -31,7 +22,7 @@ type Props = {
   onContinue: () => void;
 };
 
-export default function BuildCapabilities({ cameras = [], brandsForCamera = [], resultsCount, onContinue }: Props) {
+function BuildCapabilitiesBody({ cameras = [], brandsForCamera = [], resultsCount, onContinue }: Props) {
   const {
     isPro,
     cameraName, setCameraName,
@@ -64,12 +55,6 @@ export default function BuildCapabilities({ cameras = [], brandsForCamera = [], 
   }));
 
   const onBack = () => continueTo(0);
-  const resetAll = useFilterStore(s => s.resetAll);
-  const resetFilters = useFilterStore(s => s.resetFilters);
-
-  const brandOptions = caps?.brands || brandsForCamera || [];
-  const lensTypeOptions = caps?.lensTypes || ['Any', 'Prime', 'Zoom'];
-  const coverageOptions = caps?.coverage || ['Any', 'Full Frame', 'APS-C'];
 
   // Dynamic availability (react to current selections, ignoring step-2 constraints)
   const { camera, dynamicAvail, lenses } = useAvailabilityOptions({ cameras });
@@ -78,19 +63,20 @@ export default function BuildCapabilities({ cameras = [], brandsForCamera = [], 
   const { onEnter } = useStageLifecycle(1, { resetOnEntry: true });
   React.useEffect(() => { onEnter(); }, [onEnter]);
 
-  // Disable options that lead to 0; keep supersets from caps for visibility
-  const { supBrands, supLensTypes, supCoverage } = useOptionsSuperset({ caps, brandsForCamera });
+  // Pull from availability context
+  const { dynamicAvail: availCtx, counts, supBrands, supLensTypes, supCoverage } = useAvailability();
+  const dyn = (availCtx as any) || (dynamicAvail as any);
 
   // Auto-correct unavailable selections
-  useAutoCorrectSelections({ dynamicAvail, brand, setBrand, lensType, setLensType, coverage, setCoverage });
+  useAutoCorrectSelections({ dynamicAvail: dyn, brand, setBrand, lensType, setLensType, coverage, setCoverage });
 
   // Ensure a clean baseline on first entry handled by Mode stage; StageNav reset uses useStageBaseline
 
   // Compute availability of camera bodies under current selections
   const availableBodies = useAvailableBodies({ cameras, lenses, brand, lensType: lensType as any, isPro, coverage, isMacro, sealed, requireOIS });
 
-  // Option counts under current selections (ignore step-2 constraints like ranges)
-  const counts = useAvailabilityCounts({ cameras, supBrands, supLensTypes, supCoverage });
+  // Option counts provided by context
+  const countsEff = counts as any;
 
   // Auto-correct camera if it becomes unavailable
   React.useEffect(() => {
@@ -116,8 +102,8 @@ export default function BuildCapabilities({ cameras = [], brandsForCamera = [], 
           value={cameraName}
           onChange={setCameraName}
           options={[
-            { value: 'Any', label: 'Any', count: counts.cameraCounts['Any'] },
-            ...cameras.map(c => ({ value: c.name, label: c.name, count: counts.cameraCounts[c.name] ?? 0, disabled: !availableBodies[c.name] }))
+            { value: 'Any', label: 'Any', count: countsEff.cameraCounts['Any'] },
+            ...cameras.map(c => ({ value: c.name, label: c.name, count: countsEff.cameraCounts[c.name] ?? 0, disabled: !availableBodies[c.name] }))
           ]}
         />
       </div>
@@ -128,7 +114,7 @@ export default function BuildCapabilities({ cameras = [], brandsForCamera = [], 
             label="Lens Brand"
             value={brand}
             onChange={setBrand}
-            options={useCountsOptions('brands', supBrands, dynamicAvail as any, counts as any)}
+            options={useCountsOptions('brands', supBrands, dyn, countsEff)}
           />
         </div>
         <div>
@@ -136,7 +122,7 @@ export default function BuildCapabilities({ cameras = [], brandsForCamera = [], 
             label="Lens Type"
             value={lensType}
             onChange={setLensType}
-            options={useCountsOptions('lensTypes', supLensTypes, dynamicAvail as any, counts as any)}
+            options={useCountsOptions('lensTypes', supLensTypes, dyn, countsEff)}
           />
         </div>
       </div>
@@ -147,7 +133,7 @@ export default function BuildCapabilities({ cameras = [], brandsForCamera = [], 
             label="Sensor Coverage"
             value={coverage}
             onChange={setCoverage}
-            options={useCountsOptions('coverage', supCoverage, dynamicAvail as any, counts as any)}
+            options={useCountsOptions('coverage', supCoverage, dyn, countsEff)}
           />
         </div>
       )}
@@ -171,6 +157,16 @@ export default function BuildCapabilities({ cameras = [], brandsForCamera = [], 
         stageNumber={1}
       />
     </div>
+  );
+}
+
+export default function BuildCapabilities(props: Props) {
+  const caps = useFilterStore(s => s.availabilityCaps);
+  const { cameras = [], brandsForCamera = [] } = props;
+  return (
+    <AvailabilityProvider cameras={cameras} caps={caps as any} brandsForCamera={brandsForCamera}>
+      <BuildCapabilitiesBody {...props} />
+    </AvailabilityProvider>
   );
 }
 

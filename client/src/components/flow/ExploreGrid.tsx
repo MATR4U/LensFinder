@@ -38,6 +38,11 @@ export default function ExploreGrid({ items }: Props) {
             data-testid="lens-card"
             data-name={r.name}
             className={`relative ${CARD_BASE} ${CARD_NEUTRAL} ${CARD_BODY} ${selectedNow ? 'ring-2 ring-[var(--accent)] border-[color-mix(in_oklab,var(--accent),black_30%)] bg-[color-mix(in_oklab,var(--accent),transparent_88%)]' : ''}`}
+            onClick={(e) => {
+              const target = e.target as HTMLElement;
+              if (target.closest('[data-testid=compare-toggle]') || target.closest('button')) return;
+              if (selectedNow) remove(id); else select(id);
+            }}
           >
             {selectedNow && (
               <div className="absolute -top-2 -right-2 h-6 min-w-6 px-2 rounded-full bg-[var(--accent)] text-[var(--accent-contrast)] text-xs grid place-items-center border border-[color-mix(in_oklab,var(--accent),white_40%)] shadow">
@@ -83,17 +88,7 @@ export default function ExploreGrid({ items }: Props) {
                 <div>Distortion ≤ {r.distortion_pct ?? 0}% • Breathing score ≥ {r.focus_breathing_score ?? 0}</div>
               </div>
             )}
-            {/* Click anywhere on card (except buttons) toggles selection */}
-            <div
-              className="absolute inset-0"
-              aria-hidden
-              onClick={(e) => {
-                const target = e.target as HTMLElement;
-                if (target.closest('[data-testid=compare-toggle]') || target.closest('button')) return;
-                if (selectedNow) remove(id); else select(id);
-              }}
-              style={{ pointerEvents: 'auto' }}
-            />
+            {/* Click handled on container; no overlay to block buttons */}
           </motion.div>
         );
       })}

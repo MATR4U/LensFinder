@@ -4,18 +4,12 @@ import { INPUT_STYLE } from './styles';
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'warning';
 export type ButtonSize = 'xs' | 'sm' | 'md';
 
-type Props = {
-  children: React.ReactNode;
-  onClick?: React.MouseEventHandler<HTMLButtonElement>;
-  type?: 'button' | 'submit' | 'reset';
+type Props = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: ButtonVariant;
   size?: ButtonSize;
-  className?: string;
-  disabled?: boolean;
-  title?: string;
 };
 
-export default function Button({ children, onClick, type = 'button', variant = 'primary', size = 'md', className = '', disabled = false, title }: Props) {
+export default function Button({ children, onClick, type = 'button', variant = 'primary', size = 'md', className = '', disabled = false, title, ...rest }: Props) {
   const base = 'rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent';
   const sizeCls = size === 'xs' ? 'text-xs px-2 py-1' : size === 'sm' ? 'text-sm px-3 py-1.5' : 'text-sm px-4 py-2';
   const variants: Record<ButtonVariant, string> = {
@@ -26,7 +20,7 @@ export default function Button({ children, onClick, type = 'button', variant = '
   };
   const cls = `${base} ${sizeCls} ${variants[variant]} ${className}`;
   return (
-    <button type={type} className={cls} onClick={onClick} disabled={disabled} title={title}>
+    <button type={type} className={cls} onClick={onClick} disabled={disabled} title={title} {...rest}>
       {children}
     </button>
   );
