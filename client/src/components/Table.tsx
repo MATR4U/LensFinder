@@ -10,6 +10,7 @@ import {
 } from '@tanstack/react-table';
 import type { Result } from '../types';
 import { useFilterStore } from '../stores/filterStore';
+import { resultId } from '../lib/ids';
 
 type Props = {
   data: Result[];
@@ -37,8 +38,8 @@ export default function Table({ data, onSelect, onCheckPrice, advanced = true, p
         { id: 'eq', header: 'Eq. Focal', cell: ({ row }) => `${row.original.eq_focal_ff_mm.toFixed(1)} mm` },
         {
           id: 'compare', header: '', cell: ({ row }) => (
-            <Button size="xs" onClick={(e) => { e.stopPropagation(); toggleCompare(row.original.name); }}>
-              {compareList.includes(row.original.name) ? 'Remove' : '+ Compare'}
+            <Button size="xs" onClick={(e) => { e.stopPropagation(); toggleCompare(resultId(row.original)); }}>
+              {compareList.includes(resultId(row.original)) ? 'Remove' : '+ Compare'}
             </Button>
           )
         },
@@ -94,8 +95,8 @@ export default function Table({ data, onSelect, onCheckPrice, advanced = true, p
       { header: 'Score', accessorKey: 'score_total' },
       {
         id: 'compare', header: '', cell: ({ row }) => (
-          <Button size="xs" onClick={(e) => { e.stopPropagation(); toggleCompare(row.original.name); }}>
-            {compareList.includes(row.original.name) ? 'Remove' : '+ Compare'}
+          <Button size="xs" onClick={(e) => { e.stopPropagation(); toggleCompare(resultId(row.original)); }}>
+            {compareList.includes(resultId(row.original)) ? 'Remove' : '+ Compare'}
           </Button>
         )
       },
