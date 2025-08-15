@@ -4,7 +4,11 @@ import { TITLE_H2, CARD_PADDED, GRID_TWO_GAP3, INLINE_CHIPS_ROW, ROW_BETWEEN, BA
 import PageBase from '../pages/PageBase';
 import Button from '../ui/Button';
 import LabeledSelect from '../ui/fields/LabeledSelect';
+import { useStageLifecycle } from '../../hooks/useStageLifecycle';
+import AvailabilitySelect from '../ui/AvailabilitySelect';
+import { useFilterStore } from '../../stores/filterStore';
 import CheckboxGroup from '../ui/fields/CheckboxGroup';
+import StageNav from '../ui/StageNav';
 
 type ToggleItem = { key: string; label: string; checked: boolean; onChange: (v: boolean) => void; id: string; infoText?: string };
 
@@ -39,8 +43,10 @@ type Props = {
   goalSection?: React.ReactNode;
   // Actions
   onBack: () => void;
-  onReset: () => void;
+  onReset?: () => void;
   onContinue: () => void;
+  // Stage number for baseline-aware resets (e.g., 2 for Requirements)
+  stageNumber?: number;
 };
 
 export default function BaseRequirements(props: Props) {
@@ -52,21 +58,17 @@ export default function BaseRequirements(props: Props) {
     showPrimarySelectors = true,
     sealed, setSealed, isMacro, setIsMacro, extraToggles,
     chipsRow, children, goalSection,
-    onBack, onReset, onContinue,
+    onBack, onReset, onContinue, stageNumber = 2,
   } = props;
 
-  const footer = (
-    <div className={`${ROW_BETWEEN}`}>
-      <div className={ACTION_ROW}>
-        <Button variant="secondary" onClick={onBack}>Back</Button>
-        <Button variant="secondary" onClick={onReset}>Reset</Button>
-      </div>
-      <Button onClick={onContinue} aria-label="See results">See results ({resultsCount})</Button>
-    </div>
-  );
-
+  const { onEnter } = useStageLifecycle(2, { resetOnEntry: false });
+  React.useEffect(() => { onEnter(); }, [onEnter]);
   return (
-    <PageBase title={title} actionsSlot={<span className={BADGE_COUNT}>{resultsCount} matches</span>} footerSlot={footer}>
+    <PageBase
+      title={title}
+      actionsSlot={<span className={BADGE_COUNT}>{resultsCount} matches</span>}
+      footerSlot={<StageNav onBack={onBack} onReset={onReset} onContinue={onContinue} stageNumber={stageNumber} />}
+    >
       <div className={CARD_PADDED}>
         {info}
 
@@ -76,40 +78,36 @@ export default function BaseRequirements(props: Props) {
 
         {cameras && showPrimarySelectors && (
           <div>
-            <LabeledSelect label="Camera Body" value={cameraName} onChange={setCameraName}>
-              <option key="Any" value="Any">Any</option>
-              {cameras.map((c) => (
-                <option key={c.name} value={c.name}>{c.name}</option>
-              ))}
-            </LabeledSelect>
+            <AvailabilitySelect
+              label="Camera Body"
+              value={cameraName}
+              onChange={setCameraName}
+              options={[{ value: 'Any', label: 'Any' }, ...cameras.map(c => ({ value: c.name, label: c.name }))]}
+            />
           </div>
         )}
 
-        {showPrimarySelectors && (
-          <div className={GRID_TWO_GAP3}>
-            <div>
-              <LabeledSelect label="Brand" value={brand} onChange={setBrand}>
-                {brandOptions.map((b) => <option key={b} value={b}>{b}</option>)}
-              </LabeledSelect>
-            </div>
-            <div>
-              <LabeledSelect label="Lens Type" value={lensType} onChange={setLensType}>
-                {lensTypeOptions.map((t) => <option key={t} value={t}>{t}</option>)}
-              </LabeledSelect>
-            </div>
+        <div className={GRID_TWO_GAP3}>
+          <div>
+            <AvailabilitySelect label="Lens Brand" value={brand} onChange={setBrand} options={brandOptions.map(b => ({ value: b, label: b }))} />
           </div>
-        )}
+          <div>
+            <AvailabilitySelect label="Lens Type" value={lensType} onChange={setLensType} options={lensTypeOptions.map(t => ({ value: t, label: t }))} />
+          </div>
+        </div>
 
-        {/* Build & capabilities moved earlier in the flow (BuildCapabilities step). Keep optional extension items if provided. */}
-        {extraToggles && extraToggles.length > 0 && (
-          <CheckboxGroup
-            label="Additional build options"
-            items={extraToggles}
-          />
-        )}
+        <CheckboxGroup
+          label="Build features"
+          items={[
+            { key: 'sealed', id: 'sealed', label: 'Weather sealed', checked: sealed, onChange: setSealed },
+            { key: 'macro', id: 'macro', label: 'Macro', checked: isMacro, onChange: setIsMacro },
+            ...((extraToggles || []).map(t => ({ key: t.key, id: t.id, label: t.label, checked: t.checked, onChange: t.onChange, infoText: t.infoText }))),
+          ]}
+        />
+
+        {goalSection}
 
         {children}
-        {goalSection}
       </div>
     </PageBase>
   );

@@ -13,6 +13,9 @@ import GoalPresetWeights from '../ui/fields/GoalPresetWeights';
 import { FIELD_HELP } from '../ui/fieldHelp';
 import CollapsibleMessage from '../ui/CollapsibleMessage';
 import BaseRequirements from './BaseRequirements';
+import StageHeader from '../ui/StageHeader';
+import StageNav from '../ui/StageNav';
+import { computeNormalizedHistogram, gradientStyleFromNormalized } from '../../lib/hist';
 
 type Props = {
   cameras: Camera[];
@@ -89,17 +92,6 @@ export default function SimpleRequirements(props: Props) {
   // Density tracks for price and weight (Simple)
   const { priceTrackStyle, weightTrackStyle, currentPriceBounds, currentWeightBounds } = React.useMemo(() => {
     if (!caps || lenses.length === 0) return { priceTrackStyle: {} as React.CSSProperties, weightTrackStyle: {} as React.CSSProperties };
-    const makeDensity = (vals: number[], minVal: number, maxVal: number, buckets = 24) => {
-      if (maxVal <= minVal) return [] as number[];
-      const hist = new Array(buckets).fill(0);
-      const span = maxVal - minVal;
-      vals.forEach(v => {
-        const i = Math.min(buckets - 1, Math.max(0, Math.floor(((v - minVal) / span) * buckets)));
-        hist[i] += 1;
-      });
-      const maxCount = Math.max(1, ...hist);
-      return hist.map(h => h / maxCount);
-    };
     const baseFilters = { brand, lensType, sealed, isMacro };
     const pool = applyFilters({
       lenses,
@@ -121,23 +113,11 @@ export default function SimpleRequirements(props: Props) {
       proBreathingMinScore: 0,
     });
     const priceVals = pool.map(l => l.price_chf).filter(v => Number.isFinite(v));
-    const priceDensity = makeDensity(priceVals, caps.priceBounds.min, caps.priceBounds.max);
-    const priceStops = priceDensity.map((a, i, arr) => {
-      const start = (i / arr.length) * 100;
-      const end = ((i + 1) / arr.length) * 100;
-      const alpha = (0.1 + 0.35 * a).toFixed(3);
-      return `rgba(var(--accent-rgb),${alpha}) ${start}%, rgba(var(--accent-rgb),${alpha}) ${end}%`;
-    }).join(',');
-    const priceTrackStyle: React.CSSProperties = priceDensity.length ? { backgroundImage: `linear-gradient(90deg, ${priceStops})` } : {};
+    const priceNorm = computeNormalizedHistogram(priceVals, caps.priceBounds.min, caps.priceBounds.max);
+    const priceTrackStyle: React.CSSProperties = gradientStyleFromNormalized(priceNorm);
     const weightVals = pool.map(l => l.weight_g).filter(v => Number.isFinite(v));
-    const weightDensity = makeDensity(weightVals, caps.weightBounds.min, caps.weightBounds.max);
-    const weightStops = weightDensity.map((a, i, arr) => {
-      const start = (i / arr.length) * 100;
-      const end = ((i + 1) / arr.length) * 100;
-      const alpha = (0.1 + 0.35 * a).toFixed(3);
-      return `rgba(var(--accent-rgb),${alpha}) ${start}%, rgba(var(--accent-rgb),${alpha}) ${end}%`;
-    }).join(',');
-    const weightTrackStyle: React.CSSProperties = weightDensity.length ? { backgroundImage: `linear-gradient(90deg, ${weightStops})` } : {};
+    const weightNorm = computeNormalizedHistogram(weightVals, caps.weightBounds.min, caps.weightBounds.max);
+    const weightTrackStyle: React.CSSProperties = gradientStyleFromNormalized(weightNorm);
     const currentPriceBounds = priceVals.length ? { min: Math.min(...priceVals), max: Math.max(...priceVals) } : { ...caps.priceBounds };
     const currentWeightBounds = weightVals.length ? { min: Math.min(...weightVals), max: Math.max(...weightVals) } : { ...caps.weightBounds };
     return { priceTrackStyle, weightTrackStyle, currentPriceBounds, currentWeightBounds };
@@ -186,8 +166,12 @@ export default function SimpleRequirements(props: Props) {
       onBack={onBack}
       onReset={onReset}
       onContinue={onContinue}
-      goalSection={(
-        <div>
+      stageNumber={2}
+    >
+      <StageHeader
+        title="Your requirements"
+        resultsCount={resultsCount}
+        right={(
           <GoalPresetWeights
             preset={goalPreset}
             onChangePreset={setGoalPreset}
@@ -195,10 +179,16 @@ export default function SimpleRequirements(props: Props) {
             onChangeWeights={() => { }}
             presets={PRESETS}
             showWeights={false}
+            optionSuffixMap={React.useMemo(() => {
+              const map: Record<string, number> = {};
+              Object.keys(PRESETS).forEach((k) => { map[k] = resultsCount; });
+              return map;
+            }, [resultsCount])}
           />
-        </div>
-      )}
-    >
+        )}
+        className="mb-4"
+      />
+
       <div>
         <MetricRange metric="price" />
       </div>

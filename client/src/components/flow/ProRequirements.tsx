@@ -16,10 +16,16 @@ import { useFilterStore } from '../../stores/filterStore';
 import { PRESETS } from '../../lib/recommender';
 import { shallow } from 'zustand/shallow';
 import { applyFilters } from '../../lib/filters';
+import { computeNormalizedHistogram, gradientStyleFromNormalized } from '../../lib/hist';
+import { useLastChangedDiff } from '../../hooks/useLastChangedDiff';
+import { usePredictiveSuggestions } from '../../hooks/usePredictiveSuggestions';
 import GoalPresetWeights from '../ui/fields/GoalPresetWeights';
 import { FIELD_HELP } from '../ui/fieldHelp';
 import CollapsibleMessage from '../ui/CollapsibleMessage';
 import BaseRequirements from './BaseRequirements';
+import StageHeader from '../ui/StageHeader';
+import StageNav from '../ui/StageNav';
+import FocalRange from '../ui/fields/FocalRange';
 // Inline warnings replace the standalone block; remove NoticeZeroResults usage
 
 type Props = {
@@ -127,114 +133,10 @@ export default function ProRequirements(props: Props) {
   };
 
   // Track the last changed filter and its human-formatted value for contextual zero-results notice
-  const lastChangedLabel = React.useCallback((): string | undefined => {
-    const anyState = useFilterStore.getState() as unknown as Record<string, any>;
-    const hist: any[] = (anyState['__history__'] as any[]) || [];
-    if (hist.length === 0) return undefined;
-    const prev = hist[hist.length - 1];
-    const cur = useFilterStore.getState();
-    const diffs: Array<{ k: string; label: string; detail: string }> = [];
-    const fmtRange = (r: { min: number; max: number }, unit?: string) => `${r.min}${unit ? ' ' + unit : ''}–${r.max}${unit ? ' ' + unit : ''}`;
-    if (prev.priceRange.min !== cur.priceRange.min || prev.priceRange.max !== cur.priceRange.max) diffs.push({ k: 'priceRange', label: 'Price range', detail: `CHF ${fmtRange(cur.priceRange)}` });
-    if (prev.weightRange.min !== cur.weightRange.min || prev.weightRange.max !== cur.weightRange.max) diffs.push({ k: 'weightRange', label: 'Weight range', detail: fmtRange(cur.weightRange, 'g') });
-    if (prev.proFocalMin !== cur.proFocalMin || prev.proFocalMax !== cur.proFocalMax) diffs.push({ k: 'focalRange', label: 'Focal range', detail: `${cur.proFocalMin}–${cur.proFocalMax} mm` });
-    if (prev.proMaxApertureF !== cur.proMaxApertureF) diffs.push({ k: 'aperture', label: 'Max aperture', detail: `f/${cur.proMaxApertureF.toFixed(1)}` });
-    if (prev.proDistortionMaxPct !== cur.proDistortionMaxPct) diffs.push({ k: 'distortion', label: 'Distortion max', detail: `${cur.proDistortionMaxPct.toFixed(1)}%` });
-    if (prev.proBreathingMinScore !== cur.proBreathingMinScore) diffs.push({ k: 'breathing', label: 'Breathing min score', detail: cur.proBreathingMinScore.toFixed(1) });
-    if (prev.proRequireOIS !== cur.proRequireOIS) diffs.push({ k: 'ois', label: 'Require OIS', detail: cur.proRequireOIS ? 'On' : 'Off' });
-    if (prev.sealed !== cur.sealed) diffs.push({ k: 'sealed', label: 'Weather sealed', detail: cur.sealed ? 'On' : 'Off' });
-    if (prev.isMacro !== cur.isMacro) diffs.push({ k: 'macro', label: 'Macro capable', detail: cur.isMacro ? 'On' : 'Off' });
-    const last = diffs[diffs.length - 1];
-    return last?.label;
-  }, []);
-
-  const lastChangedDetail = React.useCallback((): string | undefined => {
-    const anyState = useFilterStore.getState() as unknown as Record<string, any>;
-    const hist: any[] = (anyState['__history__'] as any[]) || [];
-    if (hist.length === 0) return undefined;
-    const prev = hist[hist.length - 1];
-    const cur = useFilterStore.getState();
-    const diffs: Array<{ k: string; label: string; detail: string }> = [];
-    const fmtRange = (r: { min: number; max: number }, unit?: string) => `${r.min}${unit ? ' ' + unit : ''}–${r.max}${unit ? ' ' + unit : ''}`;
-    if (prev.priceRange.min !== cur.priceRange.min || prev.priceRange.max !== cur.priceRange.max) diffs.push({ k: 'priceRange', label: 'Price range', detail: `CHF ${fmtRange(cur.priceRange)}` });
-    if (prev.weightRange.min !== cur.weightRange.min || prev.weightRange.max !== cur.weightRange.max) diffs.push({ k: 'weightRange', label: 'Weight range', detail: fmtRange(cur.weightRange, 'g') });
-    if (prev.proFocalMin !== cur.proFocalMin || prev.proFocalMax !== cur.proFocalMax) diffs.push({ k: 'focalRange', label: 'Focal range', detail: `${cur.proFocalMin}–${cur.proFocalMax} mm` });
-    if (prev.proMaxApertureF !== cur.proMaxApertureF) diffs.push({ k: 'aperture', label: 'Max aperture', detail: `f/${cur.proMaxApertureF.toFixed(1)}` });
-    if (prev.proDistortionMaxPct !== cur.proDistortionMaxPct) diffs.push({ k: 'distortion', label: 'Distortion max', detail: `${cur.proDistortionMaxPct.toFixed(1)}%` });
-    if (prev.proBreathingMinScore !== cur.proBreathingMinScore) diffs.push({ k: 'breathing', label: 'Breathing min score', detail: cur.proBreathingMinScore.toFixed(1) });
-    if (prev.proRequireOIS !== cur.proRequireOIS) diffs.push({ k: 'ois', label: 'Require OIS', detail: cur.proRequireOIS ? 'On' : 'Off' });
-    if (prev.sealed !== cur.sealed) diffs.push({ k: 'sealed', label: 'Weather sealed', detail: cur.sealed ? 'On' : 'Off' });
-    if (prev.isMacro !== cur.isMacro) diffs.push({ k: 'macro', label: 'Macro capable', detail: cur.isMacro ? 'On' : 'Off' });
-    const last = diffs[diffs.length - 1];
-    return last?.detail;
-  }, []);
+  const { getLabel: lastChangedLabel, getDetail: lastChangedDetail } = useLastChangedDiff();
 
   // Predictive impact: compute counts if this single control is relaxed to its availability bound
-  const predictive = useMemo(() => {
-    if (!caps || lenses.length === 0) return null as null | Record<string, { count: number; apply: () => void; label: string }>;
-    const base = {
-      brand, lensType, sealed, isMacro,
-      priceRange, weightRange,
-      proCoverage: coverage,
-      proFocalMin: focalMin,
-      proFocalMax: focalMax,
-      proMaxApertureF: maxApertureF,
-      proRequireOIS: requireOIS,
-      proRequireSealed: sealed,
-      proRequireMacro: isMacro,
-      proPriceMax: priceRange.max,
-      proWeightMax: weightRange.max,
-      proDistortionMaxPct: distortionMaxPct,
-      proBreathingMinScore: breathingMinScore,
-    };
-
-    const countWith = (over: Partial<typeof base>) => applyFilters({
-      lenses,
-      cameraName: selectedCameraName,
-      cameraMount: camera?.mount,
-      ...base,
-      ...over,
-    }).length;
-
-    const suggestions: Record<string, { count: number; apply: () => void; label: string }> = {};
-    // Price range → full bounds
-    suggestions.priceRange = {
-      count: countWith({ priceRange: { ...caps.priceBounds } }),
-      apply: () => setPriceRange({ ...caps.priceBounds }),
-      label: `CHF ${caps.priceBounds.min}–${caps.priceBounds.max}`,
-    };
-    // Weight range → full bounds
-    suggestions.weightRange = {
-      count: countWith({ weightRange: { ...caps.weightBounds } }),
-      apply: () => setWeightRange({ ...caps.weightBounds }),
-      label: `${caps.weightBounds.min}–${caps.weightBounds.max} g`,
-    };
-    // Focal range → full bounds
-    suggestions.focalRange = {
-      count: countWith({ proFocalMin: caps.focalBounds.min, proFocalMax: caps.focalBounds.max }),
-      apply: () => { setFocalMin(caps.focalBounds.min); setFocalMax(caps.focalBounds.max); },
-      label: `${caps.focalBounds.min}–${caps.focalBounds.max} mm`,
-    };
-    // Aperture → looser (max allowed)
-    suggestions.aperture = {
-      count: countWith({ proMaxApertureF: caps.apertureMaxMax }),
-      apply: () => setMaxApertureF(caps.apertureMaxMax),
-      label: `f/${caps.apertureMaxMax.toFixed(1)}`,
-    };
-    // Distortion → looser (max allowed)
-    suggestions.distortion = {
-      count: countWith({ proDistortionMaxPct: caps.distortionMaxMax }),
-      apply: () => setDistortionMaxPct(caps.distortionMaxMax),
-      label: `${caps.distortionMaxMax.toFixed(1)}%`,
-    };
-    // Breathing → looser (min allowed)
-    suggestions.breathing = {
-      count: countWith({ proBreathingMinScore: caps.breathingMinMin }),
-      apply: () => setBreathingMinScore(caps.breathingMinMin),
-      label: `${caps.breathingMinMin.toFixed(1)}`,
-    };
-    return suggestions;
-  }, [caps, lenses, camera, selectedCameraName, brand, lensType, sealed, isMacro, priceRange, weightRange, coverage, focalMin, focalMax, maxApertureF, requireOIS, distortionMaxPct, breathingMinScore]);
+  const predictive = usePredictiveSuggestions({ lenses, camera, cameraName: selectedCameraName });
 
   // Density tracks for price and weight
   const { priceTrackStyle, weightTrackStyle, currentPriceBounds, currentWeightBounds } = useMemo(() => {
@@ -273,30 +175,14 @@ export default function ProRequirements(props: Props) {
       proWeightMax: caps.weightBounds.max,
     });
     const priceVals = pricePool.map(l => l.price_chf).filter(v => Number.isFinite(v));
-    const priceDensity = makeDensity(priceVals, caps.priceBounds.min, caps.priceBounds.max);
-    const priceStops = priceDensity.map((a, i, arr) => {
-      const start = (i / arr.length) * 100;
-      const end = ((i + 1) / arr.length) * 100;
-      const alpha = (0.1 + 0.35 * a).toFixed(3);
-      return `rgba(var(--accent-rgb),${alpha}) ${start}%, rgba(var(--accent-rgb),${alpha}) ${end}%`;
-    }).join(',');
-    const priceTrackStyle: React.CSSProperties = priceDensity.length
-      ? { backgroundImage: `linear-gradient(90deg, ${priceStops})` }
-      : {};
+    const priceNorm = computeNormalizedHistogram(priceVals, caps.priceBounds.min, caps.priceBounds.max);
+    const priceTrackStyle: React.CSSProperties = gradientStyleFromNormalized(priceNorm);
 
     // Weight density
     const weightPool = pricePool; // same pool is fine
     const weightVals = weightPool.map(l => l.weight_g).filter(v => Number.isFinite(v));
-    const weightDensity = makeDensity(weightVals, caps.weightBounds.min, caps.weightBounds.max);
-    const weightStops = weightDensity.map((a, i, arr) => {
-      const start = (i / arr.length) * 100;
-      const end = ((i + 1) / arr.length) * 100;
-      const alpha = (0.1 + 0.35 * a).toFixed(3);
-      return `rgba(var(--accent-rgb),${alpha}) ${start}%, rgba(var(--accent-rgb),${alpha}) ${end}%`;
-    }).join(',');
-    const weightTrackStyle: React.CSSProperties = weightDensity.length
-      ? { backgroundImage: `linear-gradient(90deg, ${weightStops})` }
-      : {};
+    const weightNorm = computeNormalizedHistogram(weightVals, caps.weightBounds.min, caps.weightBounds.max);
+    const weightTrackStyle: React.CSSProperties = gradientStyleFromNormalized(weightNorm);
 
     const currentPriceBounds = priceVals.length ? { min: Math.min(...priceVals), max: Math.max(...priceVals) } : { ...caps.priceBounds };
     const currentWeightBounds = weightVals.length ? { min: Math.min(...weightVals), max: Math.max(...weightVals) } : { ...caps.weightBounds };
@@ -353,7 +239,28 @@ export default function ProRequirements(props: Props) {
       onBack={onBack}
       onReset={onReset}
       onContinue={onContinue}
+      stageNumber={2}
     >
+      <StageHeader
+        title="Your requirements"
+        resultsCount={resultsCount}
+        right={(
+          <GoalPresetWeights
+            preset={goalPreset}
+            onChangePreset={setGoalPreset}
+            weights={goalWeights}
+            onChangeWeights={setGoalWeights}
+            presets={PRESETS}
+            showWeights={false}
+            optionSuffixMap={React.useMemo(() => {
+              const map: Record<string, number> = {};
+              Object.keys(PRESETS).forEach((k) => { map[k] = resultsCount; });
+              return map;
+            }, [resultsCount])}
+          />
+        )}
+        className="mb-4"
+      />
       {/** compute foreground arrays from current filtered results */}
       {(() => null)()}
       <CollapsibleMessage variant="info" title="How to use hard specs" defaultOpen={false}>
@@ -400,22 +307,9 @@ export default function ProRequirements(props: Props) {
       </div>
 
       <div>
-        <LabeledRange
-          label="Desired focal range (mm)"
-          infoText={caps?.focalBounds ? `${FIELD_HELP.focalRange} Available ${caps.focalBounds.min}–${caps.focalBounds.max} mm.` : FIELD_HELP.focalRange}
-          min={caps?.focalBounds?.min ?? 8}
-          max={caps?.focalBounds?.max ?? 1200}
-          step={1}
-          value={{ min: focalMin, max: focalMax }}
-          onChange={(r) => { setFocalMin(r.min); setFocalMax(r.max); }}
-          format={(v) => String(v)}
-          ticks={caps?.focalTicks}
-          snap
+        <FocalRange
           warningTip={(resultsCount === 0 && lastChangedLabel() === 'Focal range' && lastChangedDetail()) ? `No matches after adjusting Focal range to ${lastChangedDetail()}.` : undefined}
           status={(resultsCount === 0 && lastChangedLabel() === 'Focal range') ? 'blocking' : undefined}
-          idPrefix="focal"
-          histogramTotalValues={lenses.map(l => Number((l.focal_min_mm + l.focal_max_mm) / 2))}
-          histogramValues={currentFiltered.map((l: any) => Number((l.focal_min_mm + l.focal_max_mm) / 2))}
         />
       </div>
 
@@ -447,17 +341,9 @@ export default function ProRequirements(props: Props) {
 
       {/* Build & capabilities are now part of the pre-stage screen. */}
 
-      <div className={DIVIDER_T}>
-        <GoalPresetWeights
-          preset={goalPreset}
-          onChangePreset={setGoalPreset}
-          weights={goalWeights}
-          onChangeWeights={setGoalWeights}
-          presets={PRESETS}
-        />
-      </div>
+      {/* Moved GoalPresetWeights to top */}
 
-      {/* actions rendered by BaseRequirements */}
+      <StageNav className="mt-4" onBack={onBack} onReset={onReset} onContinue={onContinue} />
     </BaseRequirements>
   );
 }

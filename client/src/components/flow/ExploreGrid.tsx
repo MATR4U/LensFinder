@@ -3,18 +3,21 @@ import { TEXT_XS_MUTED, CARD_BASE, CARD_NEUTRAL, TEXT_MUTED, GRID_AUTOFILL, CARD
 import type { Result } from '../../types';
 import { motion } from 'framer-motion';
 import { useFilterStore } from '../../stores/filterStore';
+import { useCompareSelection } from '../../hooks/useCompareSelection';
 import Button from '../ui/Button';
 import { resultId } from '../../lib/ids';
+import { bestFor, tagFromBestFor } from '../../lib/tags';
+import { useStageLifecycle } from '../../hooks/useStageLifecycle';
 
 type Props = {
   items: Result[];
 };
 
 export default function ExploreGrid({ items }: Props) {
-  const compareList = useFilterStore(s => s.compareList);
-  const toggleCompare = useFilterStore(s => s.toggleCompare);
+  const { onEnter } = useStageLifecycle(2, { resetOnEntry: false });
+  React.useEffect(() => { onEnter(); }, [onEnter]);
   const setSelected = useFilterStore(s => s.setSelected);
-  const setCompareList = useFilterStore(s => s.setCompareList);
+  const { compareList, atCapacity, isSelected, select, remove, ctaLabel } = useCompareSelection(3);
   const [openDetailsId, setOpenDetailsId] = React.useState<string | null>(null);
   const MAX_COMPARE = 3;
   return (
@@ -22,9 +25,8 @@ export default function ExploreGrid({ items }: Props) {
       {items.map((r) => {
         const id = resultId(r);
         const selectedIndex = compareList.indexOf(id);
-        const isSelected = selectedIndex >= 0;
-        const atCapacity = !isSelected && compareList.length >= MAX_COMPARE;
-        const cta = isSelected ? 'Remove from comparison' : (atCapacity ? `Replace #${MAX_COMPARE} with this` : 'Add to comparison');
+        const selectedNow = isSelected(id);
+        const cta = ctaLabel(id);
         return (
           <motion.div
             layout
@@ -35,9 +37,9 @@ export default function ExploreGrid({ items }: Props) {
             whileHover={{ scale: 1.01 }}
             data-testid="lens-card"
             data-name={r.name}
-            className={`relative ${CARD_BASE} ${CARD_NEUTRAL} ${CARD_BODY} ${isSelected ? 'ring-2 ring-[var(--accent)] border-[color-mix(in_oklab,var(--accent),black_30%)] bg-[color-mix(in_oklab,var(--accent),transparent_88%)]' : ''}`}
+            className={`relative ${CARD_BASE} ${CARD_NEUTRAL} ${CARD_BODY} ${selectedNow ? 'ring-2 ring-[var(--accent)] border-[color-mix(in_oklab,var(--accent),black_30%)] bg-[color-mix(in_oklab,var(--accent),transparent_88%)]' : ''}`}
           >
-            {isSelected && (
+            {selectedNow && (
               <div className="absolute -top-2 -right-2 h-6 min-w-6 px-2 rounded-full bg-[var(--accent)] text-[var(--accent-contrast)] text-xs grid place-items-center border border-[color-mix(in_oklab,var(--accent),white_40%)] shadow">
                 {selectedIndex + 1}
               </div>
@@ -67,18 +69,10 @@ export default function ExploreGrid({ items }: Props) {
               <Button
                 size="xs"
                 onClick={() => {
-                  if (isSelected) {
-                    toggleCompare(id);
-                  } else if (compareList.length >= MAX_COMPARE) {
-                    const next = [...compareList];
-                    next[MAX_COMPARE - 1] = id;
-                    setCompareList(next);
-                  } else {
-                    toggleCompare(id);
-                  }
+                  if (selectedNow) remove(id); else select(id);
                 }}
                 data-testid="compare-toggle"
-              >{isSelected ? 'Remove' : (atCapacity ? `Replace #${MAX_COMPARE}` : 'Select')}</Button>
+              >{selectedNow ? 'Remove' : (atCapacity ? `Replace #${MAX_COMPARE}` : 'Select')}</Button>
             </div>
             {openDetailsId === id && (
               <div id={`details-${id}`} className="mt-2 text-xs text-[var(--text-muted)] space-y-1">
@@ -96,15 +90,7 @@ export default function ExploreGrid({ items }: Props) {
               onClick={(e) => {
                 const target = e.target as HTMLElement;
                 if (target.closest('[data-testid=compare-toggle]') || target.closest('button')) return;
-                if (isSelected) {
-                  toggleCompare(id);
-                } else if (compareList.length >= MAX_COMPARE) {
-                  const next = [...compareList];
-                  next[MAX_COMPARE - 1] = id;
-                  setCompareList(next);
-                } else {
-                  toggleCompare(id);
-                }
+                if (selectedNow) remove(id); else select(id);
               }}
               style={{ pointerEvents: 'auto' }}
             />
@@ -115,24 +101,6 @@ export default function ExploreGrid({ items }: Props) {
   );
 }
 
-function bestFor(name: string, type?: string) {
-  if (/macro/i.test(name)) return 'Macro & close-ups';
-  if (/70-200|100-400|100-500|200-600/i.test(name)) return 'Sports & wildlife';
-  if (/85mm|90mm/i.test(name)) return 'Portraits & low light';
-  if (/50mm|35mm|24-70/i.test(name)) return 'Everyday & travel';
-  if (/14-24|14mm|16mm|8-16/i.test(name)) return 'Landscapes & astro';
-  if (type && /tele/i.test(type)) return 'Reach & action';
-  if (type && /wide/i.test(type)) return 'Landscapes & interiors';
-  return 'All‑round';
-}
-
-function tagFromBestFor(label: string) {
-  if (/macro/i.test(label)) return 'Macro';
-  if (/wildlife|sports/i.test(label)) return 'Action';
-  if (/portrait/i.test(label)) return 'Portrait';
-  if (/travel|everyday/i.test(label)) return 'Travel';
-  if (/landscapes|astro/i.test(label)) return 'Landscape';
-  return 'General';
-}
+// moved to lib/tags
 
 

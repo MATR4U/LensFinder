@@ -1,12 +1,14 @@
 import React from 'react';
 import LazyPlot from '../ui/LazyPlot';
 import type { Result, Camera } from '../../types';
+import { useSelectedResults } from '../../hooks/useSelectedResults';
 import { useFilterStore } from '../../stores/filterStore';
 import CollapsibleMessage from '../ui/CollapsibleMessage';
 import Info from '../ui/Info';
 import Button from '../ui/Button';
 import { CARD_BASE, CARD_NEUTRAL, TEXT_SM, TEXT_MUTED } from '../ui/styles';
 import Table from '../Table';
+import { useStageLifecycle } from '../../hooks/useStageLifecycle';
 
 type Props = {
   camera?: Camera | null;
@@ -14,10 +16,12 @@ type Props = {
 };
 
 export default function CompareShowdown({ camera, selected }: Props) {
+  const { onEnter } = useStageLifecycle(3, { resetOnEntry: false });
+  React.useEffect(() => { onEnter(); }, [onEnter]);
   const compareList = useFilterStore(s => s.compareList);
   const toggleCompare = useFilterStore(s => s.toggleCompare);
   const setSelected = useFilterStore(s => s.setSelected);
-  const rows = selected;
+  const rows = useSelectedResults(selected);
   const table = (
     <Table data={rows as any} columnsMode="compare-minimal" onSelect={(r) => setSelected(r)} />
   );
