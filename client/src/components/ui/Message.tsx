@@ -9,6 +9,7 @@ type Props = {
   children?: React.ReactNode;
   right?: React.ReactNode;
   className?: string;
+  live?: boolean;
 };
 
 const byVariant: Record<Variant, string> = {
@@ -19,9 +20,9 @@ const byVariant: Record<Variant, string> = {
   info: CARD_INFO,
 };
 
-export default function Message({ variant = 'neutral', title, children, right, className = '' }: Props) {
+export default function Message({ variant = 'neutral', title, children, right, className = '', live = true }: Props) {
   return (
-    <div className={`${CARD_BASE} ${byVariant[variant]} ${className}`} role="status" aria-live="polite">
+    <div className={`${CARD_BASE} ${byVariant[variant]} ${className}`} {...(live ? { role: 'status', 'aria-live': 'polite' } : {})}>
       {(title || right) && (
         <div className={`${ROW_BETWEEN} mb-2`}>
           {title && <h4 className="font-semibold">{title}</h4>}

@@ -27,6 +27,11 @@ export type FiltersInput = {
   softWeight?: boolean;
   softDistortion?: boolean;
   softBreathing?: boolean;
+  // Enabled flags to fully disable a filter (Off mode)
+  enablePrice?: boolean;
+  enableWeight?: boolean;
+  enableDistortion?: boolean;
+  enableBreathing?: boolean;
 };
 
 export function applyFilters(input: FiltersInput): Lens[] {
@@ -64,8 +69,8 @@ export function applyFilters(input: FiltersInput): Lens[] {
     })
     .filter((l) => (sealed ? l.weather_sealed : true))
     .filter((l) => (isMacro ? l.is_macro : true))
-    .filter((l) => (input.softPrice ? true : (l.price_chf >= priceRange.min && l.price_chf <= priceRange.max)))
-    .filter((l) => (input.softWeight ? true : (l.weight_g >= weightRange.min && l.weight_g <= weightRange.max)))
+    .filter((l) => (input.enablePrice === false ? true : (input.softPrice ? true : (l.price_chf >= priceRange.min && l.price_chf <= priceRange.max))))
+    .filter((l) => (input.enableWeight === false ? true : (input.softWeight ? true : (l.weight_g >= weightRange.min && l.weight_g <= weightRange.max))))
     .filter((l) => coverageMatches(l.coverage, proCoverage))
     .filter((l) => !applyFocalRange ? true : ((l.focal_min_mm ?? 0) <= proFocalMin && (l.focal_max_mm ?? 0) >= proFocalMax))
     .filter((l) => (l.aperture_min ?? 99) <= proMaxApertureF)
@@ -74,8 +79,8 @@ export function applyFilters(input: FiltersInput): Lens[] {
     .filter((l) => (proRequireMacro ? !!l.is_macro : true))
     .filter((l) => (l.price_chf ?? Infinity) <= proPriceMax)
     .filter((l) => (l.weight_g ?? Infinity) <= proWeightMax)
-    .filter((l) => (input.softDistortion ? true : ((l.distortion_pct ?? 0) <= proDistortionMaxPct)))
-    .filter((l) => (input.softBreathing ? true : ((l.focus_breathing_score ?? 0) >= proBreathingMinScore)));
+    .filter((l) => (input.enableDistortion === false ? true : (input.softDistortion ? true : ((l.distortion_pct ?? 0) <= proDistortionMaxPct))))
+    .filter((l) => (input.enableBreathing === false ? true : (input.softBreathing ? true : ((l.focus_breathing_score ?? 0) >= proBreathingMinScore))));
 }
 
 

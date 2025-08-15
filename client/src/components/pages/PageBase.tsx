@@ -1,20 +1,27 @@
 import React from 'react';
 import { APP_BACKGROUND, PAGE_CONTAINER, SECTION_STACK, ROW_BETWEEN, TITLE_H1 } from '../ui/styles';
+import GLBackground from '../ui/GLBackground';
+import { useFilterStore } from '../../stores/filterStore';
 
 type Props = {
   title?: string;
   metaDescription?: string;
   headerSlot?: React.ReactNode;
   actionsSlot?: React.ReactNode;
+  bannerSlot?: React.ReactNode;
+  subheaderSlot?: React.ReactNode; // full-width block rendered below the header
   children: React.ReactNode;
+  footerSlot?: React.ReactNode;
   // Optional UX/telemetry utilities
   errorFallback?: React.ReactNode;
   suspenseFallback?: React.ReactNode;
   onView?: (path: string) => void;
 };
 
-class Boundary extends React.Component<{ fallback?: React.ReactNode }, { hasError: boolean }> {
-  constructor(props: { fallback?: React.ReactNode }) {
+type BoundaryProps = { fallback?: React.ReactNode; children?: React.ReactNode };
+
+class Boundary extends React.Component<BoundaryProps, { hasError: boolean }> {
+  constructor(props: BoundaryProps) {
     super(props);
     this.state = { hasError: false };
   }
@@ -26,7 +33,11 @@ class Boundary extends React.Component<{ fallback?: React.ReactNode }, { hasErro
   }
 }
 
-export default function PageBase({ title, metaDescription, headerSlot, actionsSlot, children, errorFallback, suspenseFallback, onView }: Props) {
+export default function PageBase({ title, metaDescription, headerSlot, actionsSlot, bannerSlot, subheaderSlot, children, footerSlot, errorFallback, suspenseFallback, onView }: Props) {
+  const canUndo = useFilterStore(s => s.historyLength > 0);
+  const canRedo = useFilterStore(s => s.redoLength > 0);
+  const undo = useFilterStore(s => s.undoLastFilter);
+  const redo = useFilterStore(s => s.redoLastFilter);
   React.useEffect(() => {
     if (title) document.title = `LensFinder – ${title}`;
     if (metaDescription) {
@@ -42,24 +53,56 @@ export default function PageBase({ title, metaDescription, headerSlot, actionsSl
 
   return (
     <main className={APP_BACKGROUND}>
-      <a href="#content" className="sr-only focus:not-sr-only">Skip to content</a>
-      <div className={PAGE_CONTAINER}>
-        {(headerSlot || title || actionsSlot) && (
-          <header className={`${ROW_BETWEEN} mb-4`}>
-            <div>
-              {title && <h1 className={TITLE_H1}>{title}</h1>}
-              {headerSlot}
+      <GLBackground />
+      {/* Global readability overlay sits above canvas (z-1) and below content (z-10) */}
+      <div aria-hidden className="pointer-events-none fixed inset-0 z-1 bg-[radial-gradient(ellipse_at_center,rgba(0,0,0,0.22)_0%,rgba(0,0,0,0.33)_40%,rgba(0,0,0,0.46)_100%)]" />
+      <div className="relative z-10">
+        <a href="#content" className="sr-only focus:not-sr-only">Skip to content</a>
+        {bannerSlot && (
+          <div className="w-full border-b border-[var(--control-border)] bg-[color-mix(in_oklab,var(--card-bg),white_6%)]/80 backdrop-blur supports-[backdrop-filter]:bg-[color-mix(in_oklab,var(--card-bg),transparent_20%)]">
+            <div className={`${PAGE_CONTAINER} py-3`}>
+              {bannerSlot}
             </div>
-            {actionsSlot}
-          </header>
+          </div>
         )}
-        <Boundary fallback={errorFallback}>
-          <React.Suspense fallback={suspenseFallback ?? null}>
-            <div id="content" className={SECTION_STACK}>
-              {children}
+        <div className={PAGE_CONTAINER}>
+          {(headerSlot || title || actionsSlot) && (
+            <header className={`${ROW_BETWEEN} mb-4`}>
+              <div>
+                {title && <h1 className={TITLE_H1}>{title}</h1>}
+                {headerSlot}
+              </div>
+              {actionsSlot}
+            </header>
+          )}
+          {subheaderSlot && (
+            <div className="mb-4">
+              {subheaderSlot}
             </div>
-          </React.Suspense>
-        </Boundary>
+          )}
+          <Boundary fallback={errorFallback}>
+            <React.Suspense fallback={suspenseFallback ?? null}>
+              <div id="content" className={SECTION_STACK}>
+                {children}
+              </div>
+            </React.Suspense>
+          </Boundary>
+          {footerSlot && (
+            <footer className="sticky bottom-0 left-0 right-0 border-t border-[var(--control-border)] bg-[var(--app-bg)]/90 backdrop-blur supports-[backdrop-filter]:bg-[color-mix(in_oklab,var(--app-bg),transparent_20%)] mt-6">
+              <div className={`${PAGE_CONTAINER} py-3`}>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <button className={`px-3 py-2 rounded border border-[var(--control-border)] text-sm ${!canUndo ? 'opacity-50 cursor-not-allowed' : ''}`} onClick={() => canUndo && undo()} aria-disabled={!canUndo}>Back</button>
+                    <button className={`px-3 py-2 rounded border border-[var(--control-border)] text-sm ${!canRedo ? 'opacity-50 cursor-not-allowed' : ''}`} onClick={() => canRedo && redo()} aria-disabled={!canRedo}>Forward</button>
+                  </div>
+                  <div>
+                    {footerSlot}
+                  </div>
+                </div>
+              </div>
+            </footer>
+          )}
+        </div>
       </div>
     </main>
   );

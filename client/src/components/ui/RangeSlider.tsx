@@ -34,6 +34,7 @@ type Props = {
   ariaLabelMax?: string;
   ariaLabelledBy?: string;
   density?: 'sm' | 'md' | 'lg';
+  onDraggingChange?: (dragging: boolean) => void;
 };
 
 export default function RangeSlider({
@@ -58,6 +59,7 @@ export default function RangeSlider({
   ariaLabelMax = 'Maximum',
   ariaLabelledBy,
   density = 'md',
+  onDraggingChange,
 }: Props) {
   const { isSingle, safeMin, safeMax, values, onValueChange, onValueCommit } = useSliderLogic({
     min,
@@ -79,9 +81,13 @@ export default function RangeSlider({
     (ticks as number[]).some((t) => Math.abs(t - min) < 1e-6) &&
     (ticks as number[]).some((t) => Math.abs(t - max) < 1e-6)
   );
+  const [activeThumb, setActiveThumb] = React.useState<number | null>(null);
+  const posRef = React.useRef<{ x: number; t: number } | null>(null);
+  const velocityRef = React.useRef<number>(0);
+  const formatValue = (n: number) => (format ? format(n) : String(n));
 
   return (
-    <div className={className}>
+    <div className={`pb-5 ${className}`}>
       <Slider.Root
         className={`${SLIDER_ROOT_BASE} ${densityClass} ${disabled ? 'opacity-50' : ''}`}
         value={values}
@@ -89,11 +95,34 @@ export default function RangeSlider({
         max={max}
         step={step}
         disabled={disabled}
-        onValueChange={onValueChange}
+        onValueChange={(arr) => { onDraggingChange?.(true); onValueChange(arr); }}
         onValueCommit={onValueCommit}
         aria-label={ariaLabelledBy ? undefined : 'Range'}
         aria-labelledby={ariaLabelledBy}
         aria-disabled={disabled}
+        onKeyDown={(e) => {
+          if (disabled) return;
+          const stepBase = step || 1;
+          const big = stepBase * 10;
+          const k = e.key;
+          if (e.shiftKey && (k === 'ArrowLeft' || k === 'ArrowRight')) {
+            e.preventDefault();
+            const sign = k === 'ArrowLeft' ? -1 : 1;
+            const delta = big * sign;
+            const next = isSingle
+              ? [Math.min(max, Math.max(min, (values[0] ?? safeMin) + delta))]
+              : [Math.min(max, Math.max(min, (values[0] ?? safeMin))), Math.min(max, Math.max(min, (values[1] ?? safeMax) + delta))];
+            onValueChange(next as number[]);
+          }
+          if (k === 'Home' || k === 'End') {
+            e.preventDefault();
+            const next = isSingle
+              ? [k === 'Home' ? min : max]
+              : [k === 'Home' ? min : (values[0] ?? safeMin), k === 'Home' ? (values[1] ?? safeMax) : max];
+            onValueChange(next as number[]);
+            onValueCommit(next as number[]);
+          }
+        }}
       >
         <Slider.Track className={SLIDER_TRACK_BASE} style={trackStyle}>
           <Slider.Range className={SLIDER_RANGE_BASE} />
@@ -104,6 +133,16 @@ export default function RangeSlider({
           aria-labelledby={ariaLabelledBy}
           aria-valuetext={format ? format(isSingle ? (values[0] ?? safeMin) : safeMin) : undefined}
           className={SLIDER_THUMB_BASE}
+          onPointerDown={(e) => { setActiveThumb(0); posRef.current = { x: e.clientX, t: performance.now() }; onDraggingChange?.(true); }}
+          onPointerMove={(e) => {
+            if (posRef.current) {
+              const dt = Math.max(1, performance.now() - posRef.current.t);
+              const dx = e.clientX - posRef.current.x;
+              velocityRef.current = dx / dt; // px/ms
+              posRef.current = { x: e.clientX, t: performance.now() };
+            }
+          }}
+          onPointerUp={() => { setActiveThumb((i) => (i === 0 ? null : i)); posRef.current = null; onDraggingChange?.(false); }}
         />
         {!isSingle && (
           <Slider.Thumb
@@ -111,11 +150,29 @@ export default function RangeSlider({
             aria-labelledby={ariaLabelledBy}
             aria-valuetext={format ? format(values[1] ?? safeMax) : undefined}
             className={SLIDER_THUMB_BASE}
+            onPointerDown={(e) => { setActiveThumb(1); posRef.current = { x: e.clientX, t: performance.now() }; onDraggingChange?.(true); }}
+            onPointerMove={(e) => {
+              if (posRef.current) {
+                const dt = Math.max(1, performance.now() - posRef.current.t);
+                const dx = e.clientX - posRef.current.x;
+                velocityRef.current = dx / dt;
+                posRef.current = { x: e.clientX, t: performance.now() };
+              }
+            }}
+            onPointerUp={() => { setActiveThumb((i) => (i === 1 ? null : i)); posRef.current = null; onDraggingChange?.(false); }}
           />
+        )}
+        {/* Live value tooltips */}
+        {activeThumb !== null && !disabled && (
+          <div className="pointer-events-none absolute -translate-x-1/2 bottom-full mb-1 rounded-md border border-[var(--control-border)] bg-[var(--control-bg)] px-2 py-0.5 text-xs text-[var(--text-color)] shadow transition-transform duration-150 ease-out">
+            <span style={{ position: 'relative', left: `${toPct(values[activeThumb] ?? (activeThumb === 0 ? safeMin : safeMax))}%` }}>
+              {formatValue(values[activeThumb] ?? (activeThumb === 0 ? safeMin : safeMax))}
+            </span>
+          </div>
         )}
       </Slider.Root>
       {ticksPresent && showTickLabels && (
-        <TickLabels ticks={ticks} toPct={toPct} format={format} tickFormatter={tickFormatter} />
+        <TickLabels ticks={ticks} toPct={toPct} format={format} tickFormatter={tickFormatter} min={min} max={max} />
       )}
       {!isSingle && !(showTickLabels && ticksPresent && includesExtremes) && (
         <div className={`mt-2 flex justify-between ${TEXT_XS_MUTED}`}>

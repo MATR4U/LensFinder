@@ -29,7 +29,7 @@ export default function NoticeZeroResults({ changedLabel, changedDetail, suggest
             <div className={INLINE_CHIPS_ROW}>
               {entries.map(([key, s]) => (
                 <Button key={key} variant="warning" size="xs" onClick={s.apply}>
-                  {key}: {s.label} → {s.count}
+                  {key}: {s.label} · Matches: {s.count}
                 </Button>
               ))}
             </div>

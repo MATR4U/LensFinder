@@ -1,7 +1,7 @@
 import React from 'react';
 import FieldContainer, { type FieldStatus } from './FieldContainer';
 import Info from '../Info';
-import Checkbox from '../Checkbox';
+import Toggle from '../Toggle';
 
 type Item = {
   key: string;
@@ -10,6 +10,7 @@ type Item = {
   onChange: (v: boolean) => void;
   id?: string; // stable id for e2e and aria
   infoText?: string;
+  disabled?: boolean;
 };
 
 type Props = {
@@ -34,13 +35,8 @@ export default function CheckboxGroup({ label, infoText, items, layout = 'row', 
           const hideText = !showItemLabels && items.length === 1;
           return (
             <div key={item.key} className="inline-flex items-center gap-2 text-sm text-[var(--text-muted)] px-4 first:pl-0">
-              <label
-                role="checkbox"
-                aria-checked={ariaChecked}
-                htmlFor={checkboxId}
-                className="inline-flex items-center gap-2 cursor-pointer select-none"
-              >
-                <Checkbox checked={item.checked} onChange={item.onChange} inputProps={{ id: checkboxId, 'aria-labelledby': groupLabelId, 'aria-label': roleLabel }} />
+              <label htmlFor={checkboxId} className="inline-flex items-center gap-2 cursor-pointer select-none">
+                <Toggle checked={item.checked} onChange={item.onChange} disabled={!!item.disabled && !item.checked} className="focus:outline-none focus:ring-2 focus:ring-[var(--accent)]" />
                 {!hideText && <span>{item.label}</span>}
               </label>
               {item.infoText && (

@@ -7,6 +7,8 @@ import LabeledCheckbox from '../ui/fields/LabeledCheckbox';
 import CheckboxGroup from '../ui/fields/CheckboxGroup';
 import Checkbox from '../ui/Checkbox';
 import LabeledRange from '../ui/fields/LabeledRange';
+import MetricRange from '../ui/fields/MetricRange';
+import LabeledSegmentedControl, { type SegmentOption } from '../ui/fields/LabeledSegmentedControl';
 import LabeledSlider from '../ui/fields/LabeledSlider';
 import Button from '../ui/Button';
 import { TITLE_H2, TEXT_XS_MUTED, GRID_TWO_GAP3, STACK_Y, DIVIDER_T, TEXT_2XS_MUTED, INLINE_LABEL_MUTED_XS } from '../ui/styles';
@@ -58,6 +60,8 @@ export default function ProRequirements(props: Props) {
     softWeight, setSoftWeight,
     softDistortion, setSoftDistortion,
     softBreathing, setSoftBreathing,
+    enablePrice, enableWeight, enableDistortion, enableBreathing,
+    setEnablePrice, setEnableWeight, setEnableDistortion, setEnableBreathing,
   } = useFilterStore((s) => ({
     cameraName: s.cameraName,
     setCameraName: s.setCameraName,
@@ -103,9 +107,17 @@ export default function ProRequirements(props: Props) {
     setSoftDistortion: s.setSoftDistortion,
     softBreathing: s.softBreathing,
     setSoftBreathing: s.setSoftBreathing,
+    enablePrice: s.enablePrice,
+    enableWeight: s.enableWeight,
+    enableDistortion: s.enableDistortion,
+    enableBreathing: s.enableBreathing,
+    setEnablePrice: s.setEnablePrice,
+    setEnableWeight: s.setEnableWeight,
+    setEnableDistortion: s.setEnableDistortion,
+    setEnableBreathing: s.setEnableBreathing,
   }), shallow);
 
-  const onBack = () => continueTo(0);
+  const onBack = () => continueTo(1);
   const onReset = () => {
     if (caps) {
       resetFilters({ priceBounds: caps.priceBounds, weightBounds: caps.weightBounds });
@@ -291,6 +303,35 @@ export default function ProRequirements(props: Props) {
     return { priceTrackStyle, weightTrackStyle, currentPriceBounds, currentWeightBounds };
   }, [caps, lenses, camera, selectedCameraName, brand, lensType, sealed, isMacro, coverage, focalMin, focalMax, maxApertureF, requireOIS, distortionMaxPct, breathingMinScore]);
 
+  // Current filtered list for histogram foregrounds
+  const currentFiltered = useMemo(() => {
+    const filters = {
+      cameraName: selectedCameraName,
+      brand,
+      lensType,
+      sealed,
+      isMacro,
+      priceRange,
+      weightRange,
+      proCoverage: coverage,
+      proFocalMin: focalMin,
+      proFocalMax: focalMax,
+      proMaxApertureF: maxApertureF,
+      proRequireOIS: requireOIS,
+      proRequireSealed: sealed,
+      proRequireMacro: isMacro,
+      proPriceMax: priceRange.max,
+      proWeightMax: weightRange.max,
+      proDistortionMaxPct: distortionMaxPct,
+      proBreathingMinScore: breathingMinScore,
+      softPrice,
+      softWeight,
+      softDistortion,
+      softBreathing,
+    } as any;
+    return applyFilters({ lenses: lenses || [], cameraName: selectedCameraName, cameraMount: camera?.mount, ...filters });
+  }, [lenses, selectedCameraName, camera, brand, lensType, sealed, isMacro, priceRange, weightRange, coverage, focalMin, focalMax, maxApertureF, requireOIS, distortionMaxPct, breathingMinScore, softPrice, softWeight, softDistortion, softBreathing]);
+
   return (
     <BaseRequirements
       title="Your requirements"
@@ -304,6 +345,7 @@ export default function ProRequirements(props: Props) {
       lensTypeOptions={(caps?.lensTypes || ['Any', 'Prime', 'Zoom'])}
       lensType={lensType}
       setLensType={setLensType}
+      showPrimarySelectors={false}
       sealed={sealed}
       setSealed={setSealed}
       isMacro={isMacro}
@@ -312,7 +354,8 @@ export default function ProRequirements(props: Props) {
       onReset={onReset}
       onContinue={onContinue}
     >
-
+      {/** compute foreground arrays from current filtered results */}
+      {(() => null)()}
       <CollapsibleMessage variant="info" title="How to use hard specs" defaultOpen={false}>
         <ul className="list-disc pl-5 text-sm space-y-1">
           <li><strong>Coverage</strong>: {FIELD_HELP.coverage}</li>
@@ -331,32 +374,29 @@ export default function ProRequirements(props: Props) {
       {/* Quick reset limiting filters: pick top 1–3 suggestions when results shrink or hit zero */}
       {/* Optional micro-hint row can remain for positive counts if desired; omit for now */}
 
+      {/* Coverage is selected in the Build & capabilities pre-stage */}
       <div>
-        <LabeledSelect label="Coverage" infoText={FIELD_HELP.coverage} value={coverage} onChange={setCoverage} idPrefix="coverage">
-          {(caps?.coverage || ['Any', 'Full Frame', 'APS-C']).map(c => <option key={c} value={c}>{c}</option>)}
-        </LabeledSelect>
-      </div>
-      <div>
-        <LabeledSlider
-          label="Max aperture (f/)"
-          infoText={FIELD_HELP.maxAperture}
-          min={0.7}
-          max={caps?.apertureMaxMax ?? 16}
-          step={0.1}
-          value={maxApertureF}
-          onChange={(v) => setMaxApertureF(v)}
-          format={(v) => `f/${v.toFixed(1)}`}
-          hint={caps && maxApertureF >= (caps.apertureMaxMax ?? 16) ? 'at limit' : undefined}
-          warningTip={(resultsCount === 0 && lastChangedLabel() === 'Max aperture' && lastChangedDetail()) ? `No matches after setting ${lastChangedDetail()}. Try loosening related filters.` : undefined}
-          status={(function () {
-            if (!caps) return undefined;
-            // Tight when at bounds; normal when free
-            const atEdge = maxApertureF <= 0.7 || maxApertureF >= (caps.apertureMaxMax ?? 16);
-            return atEdge ? 'warning' as const : 'normal' as const;
-          })()}
-          // Inline hover message when results drop to zero because of latest change
-          right={undefined}
-        />
+        {(() => {
+          const values = [1.4, 1.8, 2.0, 2.8, 3.5, 4.0, 5.6, 8.0, 11.0, 16.0].filter(v => (caps?.apertureMaxMax ? v <= caps.apertureMaxMax : true));
+          const ticks = values.map(v => Number(v.toFixed(1)));
+          const minTick = ticks[0] ?? 1.4;
+          const maxTick = ticks[ticks.length - 1] ?? (caps?.apertureMaxMax ?? 16.0);
+          return (
+            <LabeledSlider
+              label="Max aperture (f/)"
+              infoText={FIELD_HELP.maxAperture}
+              min={minTick}
+              max={maxTick}
+              step={0.1}
+              value={maxApertureF}
+              onChange={(v) => setMaxApertureF(Number(v))}
+              ticks={ticks}
+              snap
+              format={(v) => v.toFixed(1)}
+              idPrefix="aperture"
+            />
+          );
+        })()}
       </div>
 
       <div>
@@ -368,140 +408,44 @@ export default function ProRequirements(props: Props) {
           step={1}
           value={{ min: focalMin, max: focalMax }}
           onChange={(r) => { setFocalMin(r.min); setFocalMax(r.max); }}
-          format={(v) => `${v} mm`}
+          format={(v) => String(v)}
           ticks={caps?.focalTicks}
           snap
-          hint={caps && focalMin <= (caps.focalBounds?.min ?? -Infinity) && focalMax >= (caps.focalBounds?.max ?? Infinity) ? 'at limit' : undefined}
           warningTip={(resultsCount === 0 && lastChangedLabel() === 'Focal range' && lastChangedDetail()) ? `No matches after adjusting Focal range to ${lastChangedDetail()}.` : undefined}
-          status={(function () {
-            if (!caps) return undefined;
-            const tight = focalMin <= (caps.focalBounds?.min ?? -Infinity) || focalMax >= (caps.focalBounds?.max ?? Infinity);
-            return tight ? 'warning' as const : 'normal' as const;
-          })()}
+          status={(resultsCount === 0 && lastChangedLabel() === 'Focal range') ? 'blocking' : undefined}
           idPrefix="focal"
+          histogramTotalValues={lenses.map(l => Number((l.focal_min_mm + l.focal_max_mm) / 2))}
+          histogramValues={currentFiltered.map((l: any) => Number((l.focal_min_mm + l.focal_max_mm) / 2))}
         />
       </div>
 
       <div className={STACK_Y}>
         <div>
-          <LabeledRange
-            label="Price (CHF)"
-            infoText={caps ? `${FIELD_HELP.price} Available now ${currentPriceBounds?.min ?? caps.priceBounds.min}–${currentPriceBounds?.max ?? caps.priceBounds.max}.` : FIELD_HELP.price}
-            min={caps?.priceBounds.min ?? 0}
-            max={caps?.priceBounds.max ?? 10000}
-            step={50}
-            value={{ min: priceRange.min, max: priceRange.max }}
-            onChange={(r) => setPriceRange(r)}
-            format={(v) => `CHF ${v}`}
-            ticks={caps?.priceTicks}
-            snap
-            trackStyle={priceTrackStyle}
-            right={predictive ? <span className={TEXT_2XS_MUTED}>→ {predictive.priceRange?.count ?? 0}</span> : undefined}
-            hint={undefined}
-            warningTip={(function () {
-              if (resultsCount !== 0) return undefined;
-              const label = lastChangedLabel();
-              const detail = lastChangedDetail();
-              if (label === 'Price range' && detail) return `No matches after setting ${detail}.`;
-              return 'No matches with the current filters. Try loosening this range.';
-            })()}
-            status={(function () {
-              if (!caps) return undefined;
-              const tight = priceRange.min <= (caps.priceBounds.min) || priceRange.max >= (caps.priceBounds.max);
-              return tight ? 'warning' as const : 'normal' as const;
-            })()}
-            softPreference={{ checked: softPrice, onChange: setSoftPrice, id: 'soft-price', label: 'Soft preference' }}
-            idPrefix="price"
+          <MetricRange
+            metric="price"
+            warningTip={resultsCount === 0
+              ? (lastChangedLabel() === 'Price range' && lastChangedDetail()
+                ? `No matches after adjusting Price range to ${lastChangedDetail()}.`
+                : 'No matches with current filters.')
+              : undefined}
+            status={resultsCount === 0 && lastChangedLabel() === 'Price range' ? 'blocking' : undefined}
           />
         </div>
         <div>
-          <LabeledRange
-            label="Weight (g)"
-            infoText={caps ? `${FIELD_HELP.weight} Available now ${currentWeightBounds?.min ?? caps.weightBounds.min}–${currentWeightBounds?.max ?? caps.weightBounds.max}.` : FIELD_HELP.weight}
-            min={caps?.weightBounds.min ?? 0}
-            max={caps?.weightBounds.max ?? 5000}
-            step={10}
-            value={{ min: weightRange.min, max: weightRange.max }}
-            onChange={(r) => setWeightRange(r)}
-            format={(v) => `${v} g`}
-            ticks={caps?.weightTicks}
-            snap
-            trackStyle={weightTrackStyle}
-            right={predictive ? <span className={TEXT_2XS_MUTED}>→ {predictive.weightRange?.count ?? 0}</span> : undefined}
-            hint={undefined}
-            warningTip={(function () {
-              if (resultsCount !== 0) return undefined;
-              const label = lastChangedLabel();
-              const detail = lastChangedDetail();
-              if (label === 'Weight range' && detail) return `No matches after setting ${detail}.`;
-              return 'No matches with the current filters. Try loosening this range.';
-            })()}
-            status={(function () {
-              if (!caps) return undefined;
-              const tight = weightRange.min <= (caps.weightBounds.min) || weightRange.max >= (caps.weightBounds.max);
-              return tight ? 'warning' as const : 'normal' as const;
-            })()}
-            softPreference={{ checked: softWeight, onChange: setSoftWeight, id: 'soft-weight', label: 'Soft preference' }}
-            idPrefix="weight"
-          />
+          <MetricRange metric="weight" warningTip={(resultsCount === 0 && lastChangedLabel() === 'Weight range' && lastChangedDetail()) ? `No matches after adjusting Weight range to ${lastChangedDetail()}.` : undefined} status={(resultsCount === 0 && lastChangedLabel() === 'Weight range') ? 'blocking' : undefined} />
         </div>
       </div>
 
       <div className={STACK_Y}>
         <div>
-          <LabeledSlider
-            label="Distortion max (%)"
-            infoText={FIELD_HELP.distortionMax}
-            min={0}
-            max={caps?.distortionMaxMax ?? 10}
-            step={0.1}
-            value={distortionMaxPct}
-            onChange={(v) => setDistortionMaxPct(v)}
-            format={(v) => `${v.toFixed(1)}%`}
-            right={undefined}
-            hint={undefined}
-            warningTip={(resultsCount === 0 && lastChangedLabel() === 'Distortion max' && lastChangedDetail()) ? `No matches after setting Distortion to ${lastChangedDetail()}.` : undefined}
-            status={(function () {
-              if (!caps) return undefined;
-              const tight = distortionMaxPct >= (caps.distortionMaxMax ?? 10) || distortionMaxPct <= 0;
-              return tight ? 'warning' as const : 'normal' as const;
-            })()}
-            softPreference={{ checked: softDistortion, onChange: setSoftDistortion, id: 'soft-distortion', label: 'Soft preference' }}
-            idPrefix="distortion"
-          />
+          <MetricRange metric="distortion" warningTip={(resultsCount === 0 && lastChangedLabel() === 'Distortion max' && lastChangedDetail()) ? `No matches after adjusting Distortion max to ${lastChangedDetail()}.` : undefined} status={(resultsCount === 0 && lastChangedLabel() === 'Distortion max') ? 'blocking' : undefined} />
         </div>
         <div>
-          <LabeledSlider
-            label="Focus breathing score min"
-            infoText={FIELD_HELP.breathingMin}
-            min={caps?.breathingMinMin ?? 0}
-            max={10}
-            step={0.5}
-            value={breathingMinScore}
-            onChange={(v) => setBreathingMinScore(v)}
-            format={(v) => v.toFixed(1)}
-            right={undefined}
-            warningTip={(resultsCount === 0 && lastChangedLabel() === 'Breathing min score' && lastChangedDetail()) ? `No matches after setting Breathing score to ${lastChangedDetail()}.` : undefined}
-            status={(function () {
-              if (!caps) return undefined;
-              const tight = breathingMinScore <= (caps.breathingMinMin ?? 0) || breathingMinScore >= 10;
-              return tight ? 'warning' as const : 'normal' as const;
-            })()}
-            softPreference={{ checked: softBreathing, onChange: setSoftBreathing, id: 'soft-breathing', label: 'Soft preference' }}
-            idPrefix="breathing"
-          />
+          <MetricRange metric="breathing" warningTip={(resultsCount === 0 && lastChangedLabel() === 'Breathing min score' && lastChangedDetail()) ? `No matches after adjusting Breathing min score to ${lastChangedDetail()}.` : undefined} status={(resultsCount === 0 && lastChangedLabel() === 'Breathing min score') ? 'blocking' : undefined} />
         </div>
       </div>
 
-      <CheckboxGroup
-        label="Build and capabilities"
-        infoText="Quick toggles for key build features."
-        items={[
-          { key: 'sealed', label: 'Weather sealed', checked: sealed, onChange: setSealed, id: 'opt-sealed', infoText: 'Only include lenses with weather sealing/gaskets for better environmental protection.' },
-          { key: 'macro', label: 'Macro', checked: isMacro, onChange: setIsMacro, id: 'opt-macro', infoText: 'Only include lenses capable of close‑focus macro work (1:1 or close).' },
-          { key: 'ois', label: 'Require OIS', checked: requireOIS, onChange: setRequireOIS, id: 'opt-ois', infoText: FIELD_HELP.requireOIS },
-        ]}
-      />
+      {/* Build & capabilities are now part of the pre-stage screen. */}
 
       <div className={DIVIDER_T}>
         <GoalPresetWeights

@@ -63,25 +63,13 @@ export const makeResultsSelector = () =>
       softDistortion: f.softDistortion,
       softBreathing: f.softBreathing,
     });
-    if (!camera) {
-      // Fallback: return minimally-augmented results without camera-specific scoring
-      return filtered.map((lens) => {
-        const focal_used_mm = (lens.focal_min_mm + lens.focal_max_mm) / 2;
-        return {
-          ...lens,
-          focal_used_mm,
-          max_aperture_at_focal: lens.aperture_min,
-          eq_focal_ff_mm: focal_used_mm,
-          fov_h_deg: 0,
-          dof_total_m: 0,
-          stabilization: lens.ois ? '✅' : '❌',
-          score_total: 0,
-        } as Result;
-      });
-    }
+    const effectiveCamera = camera ?? {
+      name: 'Any', brand: 'Any', mount: 'Any', ibis: false, price_chf: 0, weight_g: 0, source_url: '',
+      sensor: { name: 'FF', width_mm: 36, height_mm: 24, coc_mm: 0.03, crop: 1 },
+    };
     return computeResults({
       lenses: filtered,
-      camera,
+      camera: effectiveCamera,
       goal_weights: f.goalWeights,
       focal_choice: f.focalChoice,
       isProMode: f.isPro,

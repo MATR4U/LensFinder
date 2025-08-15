@@ -29,7 +29,7 @@ export default function FieldContainer({ label, info, status = 'normal', hint, a
   const bgCls = status === 'blocking' ? FIELD_CONTAINER_BG_BLOCKING : status === 'limit' ? FIELD_CONTAINER_BG_LIMIT : status === 'warning' ? FIELD_CONTAINER_BG_WARNING : FIELD_CONTAINER_BG_NORMAL;
   return (
     <div
-      className={`${FIELD_CONTAINER_BASE} ${bgCls}`}
+      className={`${FIELD_CONTAINER_BASE} ${bgCls} overflow-visible ${disabled ? 'opacity-50 pointer-events-none' : ''}`}
       role="group"
       aria-labelledby={labelId}
       aria-required={required || undefined}

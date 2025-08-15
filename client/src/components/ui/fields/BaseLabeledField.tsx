@@ -1,5 +1,6 @@
 import React from 'react';
 import FieldContainer, { type FieldStatus } from './FieldContainer';
+import { stableIdFromLabel } from './id';
 import Info from '../Info';
 
 type Props = {
@@ -24,7 +25,7 @@ type Props = {
 export default function BaseLabeledField({ label, infoText, status, hint, right, children, labelId, htmlFor, warningTip, idPrefix, validationState = 'none', required, disabled, readOnly, testId }: Props) {
   const autoInputId = React.useId();
   const autoLabelId = React.useId();
-  const base = idPrefix ?? '';
+  const base = idPrefix ?? stableIdFromLabel(label);
   const derivedInputId = base ? `${base}-input` : autoInputId;
   const derivedLabelId = base ? `${base}-label` : autoLabelId;
   const effectiveLabelId = labelId ?? derivedLabelId;

@@ -36,6 +36,22 @@ describe('URL sync (hydrate and write-back)', () => {
     expect(params.get('cameraName')).toBe('FooCam');
     expect(params.get('isPro')).toBe('1');
   });
+
+  it('clears URL when full reset is called', async () => {
+    const mod = await import('../src/stores/filterStore');
+    const s = mod.useFilterStore.getState();
+    s.setCameraName('FooCam');
+    s.setIsPro(false);
+    // ensure params present first
+    expect(new URLSearchParams(window.location.search).get('cameraName')).toBe('FooCam');
+    // move to stage > 0 to allow URL writing
+    s.setStage(1);
+    // Now reset all
+    s.resetAll();
+    // Stage 0 with defaults should clear URL per subscription logic
+    const params = new URLSearchParams(window.location.search);
+    expect(params.toString()).toBe('');
+  });
 });
 
 

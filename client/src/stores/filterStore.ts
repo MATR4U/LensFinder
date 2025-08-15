@@ -73,6 +73,11 @@ export interface FilterState {
   softWeight: boolean;
   softDistortion: boolean;
   softBreathing: boolean;
+  // Per-filter enabled flags (Off disables hard filter application)
+  enablePrice: boolean;
+  enableWeight: boolean;
+  enableDistortion: boolean;
+  enableBreathing: boolean;
 
   // Goals
   goalPreset: string;
@@ -124,6 +129,10 @@ export interface FilterState {
   setSoftWeight: (v: boolean) => void;
   setSoftDistortion: (v: boolean) => void;
   setSoftBreathing: (v: boolean) => void;
+  setEnablePrice: (v: boolean) => void;
+  setEnableWeight: (v: boolean) => void;
+  setEnableDistortion: (v: boolean) => void;
+  setEnableBreathing: (v: boolean) => void;
 
   setGoalPreset: (p: string) => void;
   setGoalWeights: (w: Record<string, number>) => void;
@@ -135,11 +144,18 @@ export interface FilterState {
     priceBounds: Range;
     weightBounds: Range;
   }) => void;
+  resetAll: () => void;
+
+  // Stage-scoped baselines and resets
+  captureStageBaseline: (stage: number, opts?: { resetOnEntry?: boolean }) => void;
+  resetToStageBaseline: (stage?: number) => void;
 
   // History
   pushHistory: () => void;
   undoLastFilter: () => void;
   redoLastFilter: () => void;
+  historyLength: number;
+  redoLength: number;
 
   // Report state
   report: ReportResponse | null;
@@ -149,8 +165,8 @@ export interface FilterState {
   selected: Result | null;
   setSelected: (r: Result | null) => void;
   compareList: string[];
-  setCompareList: (names: string[]) => void;
-  toggleCompare: (name: string) => void;
+  setCompareList: (ids: string[]) => void;
+  toggleCompare: (id: string) => void;
   clearCompare: () => void;
 
   // Pricing overrides (UI/data aid)
@@ -161,8 +177,8 @@ export interface FilterState {
 export const useFilterStore = createWithEqualityFn<FilterState>()(persist((set, get) => ({
   // Journey
   stage: 0,
-  setStage: (n) => set({ stage: n }),
-  continueTo: (n) => set({ stage: n }),
+  setStage: (n) => { get().pushHistory(); set({ stage: n }); },
+  continueTo: (n) => { get().pushHistory(); set({ stage: n }); },
   // Initial State
   cameraName: 'Any',
   setCameraName: (name) => set({ cameraName: name }),
@@ -192,6 +208,10 @@ export const useFilterStore = createWithEqualityFn<FilterState>()(persist((set, 
   softWeight: false,
   softDistortion: false,
   softBreathing: false,
+  enablePrice: true,
+  enableWeight: true,
+  enableDistortion: true,
+  enableBreathing: true,
 
   goalPreset: 'Balanced',
   goalWeights: { ...PRESETS['Balanced'] },
@@ -204,7 +224,7 @@ export const useFilterStore = createWithEqualityFn<FilterState>()(persist((set, 
    availabilityCaps: undefined,
 
   // Actions
-  setIsPro: (v) => set({ isPro: v }),
+  setIsPro: (v) => { get().pushHistory(); set({ isPro: v }); },
   setBrand: (v) => {
     get().pushHistory();
     const caps = get().availabilityCaps;
@@ -322,6 +342,10 @@ export const useFilterStore = createWithEqualityFn<FilterState>()(persist((set, 
   setSoftWeight: (v) => { get().pushHistory(); set({ softWeight: v }); },
   setSoftDistortion: (v) => { get().pushHistory(); set({ softDistortion: v }); },
   setSoftBreathing: (v) => { get().pushHistory(); set({ softBreathing: v }); },
+  setEnablePrice: (v: boolean) => { get().pushHistory(); set({ enablePrice: v }); },
+  setEnableWeight: (v: boolean) => { get().pushHistory(); set({ enableWeight: v }); },
+  setEnableDistortion: (v: boolean) => { get().pushHistory(); set({ enableDistortion: v }); },
+  setEnableBreathing: (v: boolean) => { get().pushHistory(); set({ enableBreathing: v }); },
 
   setGoalPreset: (p) => { get().pushHistory(); set({ goalPreset: p, goalWeights: { ...PRESETS[p] } }); },
   setGoalWeights: (w) => { get().pushHistory(); set({ goalWeights: { ...w } }); },
@@ -338,6 +362,7 @@ export const useFilterStore = createWithEqualityFn<FilterState>()(persist((set, 
 
   resetFilters: (availability) => {
     const defaults = {
+      cameraName: 'Any',
       brand: 'Any',
       lensType: 'Any',
       sealed: false,
@@ -359,10 +384,145 @@ export const useFilterStore = createWithEqualityFn<FilterState>()(persist((set, 
     set(defaults);
   },
 
-  // History (simple stack of snapshots)
+  resetAll: () => {
+    // Single set to avoid intermediate URL writes
+    const defaults = {
+      stage: 0,
+      cameraName: 'Any',
+      isPro: true,
+      brand: 'Any',
+      lensType: 'Any',
+      sealed: false,
+      isMacro: false,
+      priceRange: { min: 0, max: 1_000_000 },
+      weightRange: { min: 0, max: 100_000 },
+      proCoverage: 'Any',
+      proFocalMin: 0,
+      proFocalMax: 9999,
+      proMaxApertureF: 99,
+      proRequireOIS: false,
+      proRequireSealed: false,
+      proRequireMacro: false,
+      proPriceMax: 1_000_000,
+      proWeightMax: 100_000,
+      proDistortionMaxPct: 100,
+      proBreathingMinScore: 0,
+      softPrice: false,
+      softWeight: false,
+      softDistortion: false,
+      softBreathing: false,
+      enablePrice: true,
+      enableWeight: true,
+      enableDistortion: true,
+      enableBreathing: true,
+      goalPreset: 'Balanced',
+      goalWeights: { ...PRESETS['Balanced'] },
+      focalChoice: 50,
+      subjectDistanceM: 3.0,
+      selected: null,
+      compareList: [],
+    } as const;
+    set(defaults as unknown as Partial<FilterState>);
+  },
+
+  // Capture a snapshot as a stage baseline and optionally reset first
+  captureStageBaseline: (stageNum, opts) => {
+    // Optionally reset before capturing
+    if (opts && opts.resetOnEntry) {
+      const caps = get().availabilityCaps;
+      if (caps) {
+        get().resetFilters({ priceBounds: caps.priceBounds, weightBounds: caps.weightBounds });
+      } else {
+        get().resetFilters();
+      }
+    }
+    const s = get();
+    const baseline = {
+      cameraName: s.cameraName,
+      isPro: s.isPro,
+      brand: s.brand,
+      lensType: s.lensType,
+      sealed: s.sealed,
+      isMacro: s.isMacro,
+      priceRange: { ...s.priceRange },
+      weightRange: { ...s.weightRange },
+      proCoverage: s.proCoverage,
+      proFocalMin: s.proFocalMin,
+      proFocalMax: s.proFocalMax,
+      proMaxApertureF: s.proMaxApertureF,
+      proRequireOIS: s.proRequireOIS,
+      proRequireSealed: s.proRequireSealed,
+      proRequireMacro: s.proRequireMacro,
+      proPriceMax: s.proPriceMax,
+      proWeightMax: s.proWeightMax,
+      proDistortionMaxPct: s.proDistortionMaxPct,
+      proBreathingMinScore: s.proBreathingMinScore,
+      softPrice: s.softPrice,
+      softWeight: s.softWeight,
+      softDistortion: s.softDistortion,
+      softBreathing: s.softBreathing,
+      enablePrice: s.enablePrice,
+      enableWeight: s.enableWeight,
+      enableDistortion: s.enableDistortion,
+      enableBreathing: s.enableBreathing,
+      goalPreset: s.goalPreset,
+      goalWeights: { ...s.goalWeights },
+      focalChoice: s.focalChoice,
+      subjectDistanceM: s.subjectDistanceM,
+    };
+    const key = `__baseline_${stageNum}__` as unknown as keyof FilterState;
+    set({ [key]: baseline } as unknown as Partial<FilterState>);
+  },
+
+  // Reset current (or specified) stage back to its captured baseline
+  resetToStageBaseline: (stageNum) => {
+    const currentStage = typeof stageNum === 'number' ? stageNum : get().stage;
+    const key = `__baseline_${currentStage}__` as unknown as keyof FilterState;
+    const anyState = get() as unknown as Record<string, any>;
+    const baseline = anyState[key];
+    if (!baseline) return;
+    set({
+      cameraName: baseline.cameraName,
+      isPro: baseline.isPro,
+      brand: baseline.brand,
+      lensType: baseline.lensType,
+      sealed: baseline.sealed,
+      isMacro: baseline.isMacro,
+      priceRange: { ...baseline.priceRange },
+      weightRange: { ...baseline.weightRange },
+      proCoverage: baseline.proCoverage,
+      proFocalMin: baseline.proFocalMin,
+      proFocalMax: baseline.proFocalMax,
+      proMaxApertureF: baseline.proMaxApertureF,
+      proRequireOIS: baseline.proRequireOIS,
+      proRequireSealed: baseline.proRequireSealed,
+      proRequireMacro: baseline.proRequireMacro,
+      proPriceMax: baseline.proPriceMax,
+      proWeightMax: baseline.proWeightMax,
+      proDistortionMaxPct: baseline.proDistortionMaxPct,
+      proBreathingMinScore: baseline.proBreathingMinScore,
+      softPrice: baseline.softPrice,
+      softWeight: baseline.softWeight,
+      softDistortion: baseline.softDistortion,
+      softBreathing: baseline.softBreathing,
+      enablePrice: baseline.enablePrice,
+      enableWeight: baseline.enableWeight,
+      enableDistortion: baseline.enableDistortion,
+      enableBreathing: baseline.enableBreathing,
+      goalPreset: baseline.goalPreset,
+      goalWeights: { ...baseline.goalWeights },
+      focalChoice: baseline.focalChoice,
+      subjectDistanceM: baseline.subjectDistanceM,
+    } as unknown as Partial<FilterState>);
+  },
+
+  // History (simple stack of snapshots) and counters for UI enable/disable
+  historyLength: 0,
+  redoLength: 0,
   pushHistory: () => {
     const s = get();
     const snapshot = {
+      stage: s.stage,
       cameraName: s.cameraName,
       brand: s.brand,
       lensType: s.lensType,
@@ -394,7 +554,7 @@ export const useFilterStore = createWithEqualityFn<FilterState>()(persist((set, 
     const last = hist[hist.length - 1];
     const nextHist = last && JSON.stringify(last) === JSON.stringify(snapshot) ? hist : [...hist, snapshot].slice(-100);
     // clear redo when new history entry is pushed
-    set({ [histKey]: nextHist, [redoKey]: [] } as unknown as Partial<FilterState>);
+    set({ [histKey]: nextHist, [redoKey]: [], historyLength: nextHist.length, redoLength: 0 } as unknown as Partial<FilterState>);
   },
   undoLastFilter: () => {
     const histKey = '__history__' as unknown as keyof FilterState;
@@ -405,6 +565,7 @@ export const useFilterStore = createWithEqualityFn<FilterState>()(persist((set, 
     const next = hist.slice(0, -1);
     const prev = hist[hist.length - 1];
     const cur = {
+      stage: currentAny.stage,
       cameraName: currentAny.cameraName,
       brand: currentAny.brand,
       lensType: currentAny.lensType,
@@ -430,6 +591,7 @@ export const useFilterStore = createWithEqualityFn<FilterState>()(persist((set, 
     };
     const redo: any[] = Array.isArray(currentAny[redoKey]) ? currentAny[redoKey] : [];
     set({
+      stage: prev.stage,
       cameraName: prev.cameraName,
       brand: prev.brand,
       lensType: prev.lensType,
@@ -454,6 +616,8 @@ export const useFilterStore = createWithEqualityFn<FilterState>()(persist((set, 
       softBreathing: prev.softBreathing,
       [histKey]: next,
       [redoKey]: [...redo, cur].slice(-100),
+      historyLength: next.length,
+      redoLength: (redo.length + 1),
     } as unknown as Partial<FilterState>);
   },
   redoLastFilter: () => {
@@ -466,6 +630,7 @@ export const useFilterStore = createWithEqualityFn<FilterState>()(persist((set, 
     const nextState = redo[redo.length - 1];
     const remainingRedo = redo.slice(0, -1);
     const cur = {
+      stage: currentAny.stage,
       cameraName: currentAny.cameraName,
       brand: currentAny.brand,
       lensType: currentAny.lensType,
@@ -490,6 +655,7 @@ export const useFilterStore = createWithEqualityFn<FilterState>()(persist((set, 
       softBreathing: currentAny.softBreathing,
     };
     set({
+      stage: nextState.stage,
       cameraName: nextState.cameraName,
       brand: nextState.brand,
       lensType: nextState.lensType,
@@ -514,6 +680,8 @@ export const useFilterStore = createWithEqualityFn<FilterState>()(persist((set, 
       softBreathing: nextState.softBreathing,
       [histKey]: [...hist, cur].slice(-100),
       [redoKey]: remainingRedo,
+      historyLength: (hist.length + 1),
+      redoLength: remainingRedo.length,
     } as unknown as Partial<FilterState>);
   },
   report: null,
@@ -521,11 +689,11 @@ export const useFilterStore = createWithEqualityFn<FilterState>()(persist((set, 
   selected: null,
   setSelected: (r) => set({ selected: r }),
   compareList: [],
-  setCompareList: (names) => set({ compareList: [...names] }),
-  toggleCompare: (name) => {
+  setCompareList: (ids) => set({ compareList: [...ids] }),
+  toggleCompare: (id) => {
     const current = get().compareList;
-    const exists = current.includes(name);
-    const next = exists ? current.filter(n => n !== name) : [...current, name];
+    const exists = current.includes(id);
+    const next = exists ? current.filter(n => n !== id) : [...current, id];
     set({ compareList: next });
   },
   clearCompare: () => set({ compareList: [] }),
@@ -537,6 +705,9 @@ export const useFilterStore = createWithEqualityFn<FilterState>()(persist((set, 
   migrate: (persisted: any) => {
     if (persisted && typeof persisted === 'object') {
       if ('stage' in persisted) delete persisted.stage;
+      // Do not persist compare selections across sessions
+      if ('compareList' in persisted) delete persisted.compareList;
+      if ('selected' in persisted) delete persisted.selected;
     }
     return persisted;
   },
@@ -565,14 +736,37 @@ export const useFilterStore = createWithEqualityFn<FilterState>()(persist((set, 
     goalWeights: state.goalWeights,
     focalChoice: state.focalChoice,
     subjectDistanceM: state.subjectDistanceM,
-    selected: state.selected,
-    compareList: state.compareList,
+    // Intentionally do not persist compare selections or current selection
     // Do not persist availability caps, history, or report
   }),
 }));
 
 // URL sync subscription (store-level): hydrate on load and write on state changes
 if (typeof window !== 'undefined') {
+  // New session handling: when there are no URL parameters on first load of a
+  // browser session, drop any persisted filters and start from clean defaults.
+  try {
+    const p = new URLSearchParams(window.location.search);
+    const hasFilterParams = (
+      p.has('cameraName') || p.has('isPro') || p.has('brand') || p.has('lensType') ||
+      p.has('sealed') || p.has('isMacro') || p.has('pmin') || p.has('pmax') ||
+      p.has('wmin') || p.has('wmax') || p.has('goal')
+    );
+    const sessionKey = 'lf_session_started_v1';
+    const firstInSession = !sessionStorage.getItem(sessionKey);
+    if (firstInSession) sessionStorage.setItem(sessionKey, '1');
+    // If URL has no filter params, always start from clean defaults (ignore persisted state)
+    if (!hasFilterParams) {
+      try { localStorage.removeItem('camera-filter-storage'); } catch {}
+      const s = useFilterStore.getState();
+      s.setCameraName('Any');
+      s.setBrand('Any');
+      s.setLensType('Any');
+      s.setSealed(false);
+      s.setIsMacro(false);
+      s.resetFilters();
+    }
+  } catch {}
   // Hydrate from URL once
   const params = new URLSearchParams(window.location.search);
   const s = useFilterStore.getState();
@@ -596,16 +790,53 @@ if (typeof window !== 'undefined') {
   // Subscribe to changes and update URL
   let prev = useFilterStore.getState();
   useFilterStore.subscribe((next) => {
+    // Stage 0 (start): keep clean URL unless user deviates from defaults
+    if (next.stage === 0) {
+      const isDefault = (
+        next.cameraName === 'Any' &&
+        next.brand === 'Any' &&
+        next.lensType === 'Any' &&
+        next.sealed === false &&
+        next.isMacro === false &&
+        // Allow any goal preset as default varies; do not treat as deviation
+        true
+      );
+      if (isDefault) {
+        const clean = window.location.pathname;
+        if (window.location.search.length > 0) {
+          window.history.replaceState(null, '', clean);
+        }
+        prev = next;
+        return;
+      }
+      // If non-default on stage 0, write params as usual (helps tests/dev deep-linking)
+    }
+
+    // Detect changes across all filter inputs and reflect them in the URL
     const changed = (
       prev.cameraName !== next.cameraName || prev.isPro !== next.isPro ||
       prev.brand !== next.brand || prev.lensType !== next.lensType ||
       prev.sealed !== next.sealed || prev.isMacro !== next.isMacro ||
       prev.priceRange.min !== next.priceRange.min || prev.priceRange.max !== next.priceRange.max ||
       prev.weightRange.min !== next.weightRange.min || prev.weightRange.max !== next.weightRange.max ||
-      prev.goalPreset !== next.goalPreset
+      prev.goalPreset !== next.goalPreset ||
+      prev.proCoverage !== next.proCoverage ||
+      prev.proFocalMin !== next.proFocalMin || prev.proFocalMax !== next.proFocalMax ||
+      prev.proMaxApertureF !== next.proMaxApertureF ||
+      prev.proRequireOIS !== next.proRequireOIS ||
+      prev.proRequireSealed !== next.proRequireSealed ||
+      prev.proRequireMacro !== next.proRequireMacro ||
+      prev.proPriceMax !== next.proPriceMax ||
+      prev.proWeightMax !== next.proWeightMax ||
+      prev.proDistortionMaxPct !== next.proDistortionMaxPct ||
+      prev.proBreathingMinScore !== next.proBreathingMinScore ||
+      prev.softPrice !== next.softPrice || prev.softWeight !== next.softWeight ||
+      prev.softDistortion !== next.softDistortion || prev.softBreathing !== next.softBreathing ||
+      prev.enablePrice !== next.enablePrice || prev.enableWeight !== next.enableWeight ||
+      prev.enableDistortion !== next.enableDistortion || prev.enableBreathing !== next.enableBreathing
     );
     if (changed) {
-      const p = new URLSearchParams(window.location.search);
+      const p = new URLSearchParams();
       p.set('cameraName', next.cameraName);
       p.set('isPro', next.isPro ? '1' : '0');
       p.set('brand', next.brand);
@@ -617,6 +848,27 @@ if (typeof window !== 'undefined') {
       p.set('wmin', String(next.weightRange.min));
       p.set('wmax', String(next.weightRange.max));
       p.set('goal', next.goalPreset);
+      // Pro / advanced params
+      p.set('coverage', next.proCoverage);
+      p.set('fmin', String(next.proFocalMin));
+      p.set('fmax', String(next.proFocalMax));
+      p.set('apmax', String(next.proMaxApertureF));
+      p.set('ois', next.proRequireOIS ? '1' : '0');
+      p.set('reqSealed', next.proRequireSealed ? '1' : '0');
+      p.set('reqMacro', next.proRequireMacro ? '1' : '0');
+      p.set('pmaxHard', String(next.proPriceMax));
+      p.set('wmaxHard', String(next.proWeightMax));
+      p.set('distMax', String(next.proDistortionMaxPct));
+      p.set('breathMin', String(next.proBreathingMinScore));
+      // Soft/enable flags
+      p.set('softPrice', next.softPrice ? '1' : '0');
+      p.set('softWeight', next.softWeight ? '1' : '0');
+      p.set('softDist', next.softDistortion ? '1' : '0');
+      p.set('softBreath', next.softBreathing ? '1' : '0');
+      p.set('enPrice', next.enablePrice ? '1' : '0');
+      p.set('enWeight', next.enableWeight ? '1' : '0');
+      p.set('enDist', next.enableDistortion ? '1' : '0');
+      p.set('enBreath', next.enableBreathing ? '1' : '0');
       const nextUrl = `${window.location.pathname}?${p.toString()}`;
       window.history.replaceState(null, '', nextUrl);
     }

@@ -20,11 +20,11 @@ const f = {
 };
 
 describe('makeResultsSelector smoke', () => {
-  it('returns results without camera (score 0)', () => {
+  it('returns results without camera (falls back to FF sensor and computes score)', () => {
     const sel = makeResultsSelector();
     const res = sel(lenses as any, undefined as any, f);
     expect(res.length).toBe(1);
-    expect(res[0].score_total).toBe(0);
+    expect(res[0].score_total).toBeGreaterThan(0);
   });
 
   it('returns scored results with camera', () => {

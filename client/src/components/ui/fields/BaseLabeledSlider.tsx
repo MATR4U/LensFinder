@@ -4,6 +4,10 @@ import Info from '../Info';
 import RangeSlider from '../RangeSlider';
 import { SLIDER_FIELD_STACK, INLINE_LABEL_MUTED_XS } from '../styles';
 import Checkbox from '../Checkbox';
+import NumberInput from '../NumberInput';
+import FilterModeSwitch, { type FilterMode } from '../FilterModeSwitch';
+import Histogram from '../Histogram';
+import { stableIdFromLabel } from './id';
 
 type Range = { min: number; max: number };
 
@@ -25,12 +29,17 @@ type CommonProps = {
   warningTip?: string;
   // Optional soft preference checkbox shown inline on the right
   softPreference?: { checked: boolean; onChange: (v: boolean) => void; id?: string; label?: string };
+  // Optional tri-state filter mode; when provided it supersedes softPreference
+  mode?: { value: FilterMode; onChange: (m: FilterMode) => void };
   // Extended a11y/validation and test hooks
   validationState?: 'none' | 'error' | 'success';
   required?: boolean;
   disabled?: boolean;
   readOnly?: boolean;
   testId?: string;
+  histogramValues?: number[];
+  histogramTotalValues?: number[];
+  dragging?: boolean;
 };
 
 type SingleMode = {
@@ -53,15 +62,18 @@ export default function BaseLabeledSlider(props: Props) {
   const {
     label, infoText, min, max, step,
     ticks, snap, format, trackStyle,
-    right, hint, status, id, warningTip, softPreference, idPrefix,
+    right, hint, status, id, warningTip, softPreference, mode, idPrefix,
     validationState = 'none', required, disabled, readOnly, testId,
+    histogramValues, histogramTotalValues, dragging,
   } = props;
 
   const autoLblId = React.useId();
   const autoInputId = React.useId();
-  const effectiveId = id ?? (idPrefix ? `${idPrefix}-label` : autoLblId);
-  const effectiveInputId = idPrefix ? `${idPrefix}-input` : autoInputId;
+  const derivedPrefix = idPrefix ?? stableIdFromLabel(label);
+  const effectiveId = id ?? (derivedPrefix ? `${derivedPrefix}-label` : autoLblId);
+  const effectiveInputId = derivedPrefix ? `${derivedPrefix}-input` : autoInputId;
   const isSingle = typeof (props as SingleMode).singleValue === 'number';
+  const [isDragging, setIsDragging] = React.useState(false);
 
   const atEdge = isSingle
     ? ((props as SingleMode).singleValue <= min || (props as SingleMode).singleValue >= max)
@@ -73,14 +85,9 @@ export default function BaseLabeledSlider(props: Props) {
     : [min, (min + max) / 4, (min + max) / 2, (3 * (min + max)) / 4, max];
 
   const composedRight = (
-    <div className="flex items-center gap-2">
+    <div className="hidden md:flex items-center gap-2">
       {right}
-      {softPreference && (
-        <label htmlFor={softPreference.id} className={INLINE_LABEL_MUTED_XS}>
-          <Checkbox checked={softPreference.checked} onChange={softPreference.onChange} inputProps={{ id: softPreference.id }} />
-          <span>{softPreference.label ?? 'Soft preference'}</span>
-        </label>
-      )}
+      {mode && <FilterModeSwitch mode={mode.value} onChange={mode.onChange} />}
     </div>
   );
 
@@ -101,6 +108,18 @@ export default function BaseLabeledSlider(props: Props) {
       testId={testId}
     >
       <div className={SLIDER_FIELD_STACK}>
+        {/* Hybrid histogram: background via totalValues, foreground via current values. Extensible via props later */}
+        {!isSingle && (histogramValues || histogramTotalValues) && (
+          <Histogram
+            values={histogramValues || []}
+            totalValues={histogramTotalValues}
+            min={min}
+            max={max}
+            selection={{ min: (props as RangeMode).value.min, max: (props as RangeMode).value.max }}
+            dragging={isDragging}
+            onSelectRange={(r) => (props as RangeMode).onChange({ ...(props as RangeMode).value, min: Math.max(min, Math.min(max, Math.round(r.min))), max: Math.max(min, Math.min(max, Math.round(r.max))) })}
+          />
+        )}
         {isSingle ? (
           <RangeSlider
             min={min}
@@ -125,7 +144,26 @@ export default function BaseLabeledSlider(props: Props) {
             format={format}
             trackStyle={trackStyle}
             ariaLabelledBy={effectiveId}
+            onDraggingChange={(v) => setIsDragging(v)}
           />
+        )}
+        {/* Mode control now lives in the header (right slot). Keep right column for numeric inputs only. */}
+        {/* Inline numeric inputs for precise control */}
+        {!isSingle && (
+          <div className="mt-2 flex items-center gap-2 md:col-span-2">
+            {(() => {
+              const rv = (props as RangeMode).value;
+              const viewMin = Math.min(Math.max(rv.min, min), max);
+              const viewMax = Math.min(Math.max(rv.max, min), max);
+              return (
+                <>
+                  <NumberInput value={viewMin} onChange={(v) => (props as RangeMode).onChange({ ...rv, min: v })} min={min} max={max} step={step} format={format} />
+                  <span className={INLINE_LABEL_MUTED_XS}>to</span>
+                  <NumberInput value={viewMax} onChange={(v) => (props as RangeMode).onChange({ ...rv, max: v })} min={min} max={max} step={step} format={format} />
+                </>
+              );
+            })()}
+          </div>
         )}
       </div>
     </FieldContainer>

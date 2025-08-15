@@ -8,11 +8,26 @@ type Props = {
   variant?: 'neutral' | 'error' | 'warning' | 'success' | 'info';
   defaultOpen?: boolean;
   className?: string;
+  // When provided, the section will auto-collapse after this many milliseconds
+  // of inactivity. The timer resets whenever the section is opened or any of
+  // the provided watchKeys change (e.g., selected mode), allowing reuse in
+  // other contexts where details should close after a stable period.
+  autoCollapseMs?: number;
+  watchKeys?: ReadonlyArray<unknown>;
 };
 
-export default function CollapsibleMessage({ title, children, variant = 'info', defaultOpen = false, className = '' }: Props) {
+export default function CollapsibleMessage({ title, children, variant = 'info', defaultOpen = false, className = '', autoCollapseMs, watchKeys = [] }: Props) {
   const [open, setOpen] = React.useState<boolean>(defaultOpen);
   const sectionId = React.useId();
+
+  // Auto-collapse after inactivity window
+  React.useEffect(() => {
+    if (!autoCollapseMs || !open) return;
+    const handle = window.setTimeout(() => setOpen(false), autoCollapseMs);
+    return () => window.clearTimeout(handle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, autoCollapseMs, ...watchKeys]);
+
   const toggle = (
     <button
       type="button"

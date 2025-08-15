@@ -4,6 +4,7 @@ import type { Camera, Lens } from '../../types';
 import Info from '../ui/Info';
 import { GRID_TWO_GAP3, INLINE_CHIPS_ROW } from '../ui/styles';
 import LabeledRange from '../ui/fields/LabeledRange';
+import MetricRange from '../ui/fields/MetricRange';
 import { useFilterStore } from '../../stores/filterStore';
 import { PRESETS } from '../../lib/recommender';
 import { shallow } from 'zustand/shallow';
@@ -40,6 +41,10 @@ export default function SimpleRequirements(props: Props) {
     undoLastFilter,
     continueTo,
     resetFilters,
+    softPrice, setSoftPrice,
+    softWeight, setSoftWeight,
+    enablePrice, setEnablePrice,
+    enableWeight, setEnableWeight,
   } = useFilterStore((s) => ({
     cameraName: s.cameraName,
     setCameraName: s.setCameraName,
@@ -62,9 +67,17 @@ export default function SimpleRequirements(props: Props) {
     undoLastFilter: s.undoLastFilter,
     continueTo: s.continueTo,
     resetFilters: s.resetFilters,
+    softPrice: s.softPrice,
+    setSoftPrice: s.setSoftPrice,
+    softWeight: s.softWeight,
+    setSoftWeight: s.setSoftWeight,
+    enablePrice: s.enablePrice,
+    setEnablePrice: s.setEnablePrice,
+    enableWeight: s.enableWeight,
+    setEnableWeight: s.setEnableWeight,
   }), shallow);
 
-  const onBack = () => continueTo(0);
+  const onBack = () => continueTo(1);
   const onReset = () => {
     if (caps) {
       resetFilters({ priceBounds: caps.priceBounds, weightBounds: caps.weightBounds });
@@ -164,6 +177,7 @@ export default function SimpleRequirements(props: Props) {
       lensTypeOptions={(caps?.lensTypes || ['Any', 'Prime', 'Zoom'])}
       lensType={lensType}
       setLensType={setLensType}
+      showPrimarySelectors={false}
       sealed={sealed}
       setSealed={setSealed}
       isMacro={isMacro}
@@ -186,37 +200,11 @@ export default function SimpleRequirements(props: Props) {
       )}
     >
       <div>
-        <LabeledRange
-          label="Price (CHF)"
-          infoText={caps ? `${FIELD_HELP.price} Available now ${currentPriceBounds?.min ?? caps.priceBounds.min}–${currentPriceBounds?.max ?? caps.priceBounds.max}.` : FIELD_HELP.price}
-          min={caps?.priceBounds.min ?? 0}
-          max={caps?.priceBounds.max ?? 8000}
-          step={50}
-          value={priceRange}
-          onChange={(r) => setPriceRange(r)}
-          format={(v) => `CHF ${v}`}
-          ticks={caps?.priceTicks}
-          snap
-          trackStyle={priceTrackStyle}
-          idPrefix="simple-price"
-        />
+        <MetricRange metric="price" />
       </div>
 
       <div>
-        <LabeledRange
-          label="Weight (g)"
-          infoText={caps ? `${FIELD_HELP.weight} Available now ${currentWeightBounds?.min ?? caps.weightBounds.min}–${currentWeightBounds?.max ?? caps.weightBounds.max}.` : FIELD_HELP.weight}
-          min={caps?.weightBounds.min ?? 0}
-          max={caps?.weightBounds.max ?? 3000}
-          step={10}
-          value={weightRange}
-          onChange={(r) => setWeightRange(r)}
-          format={(v) => `${v} g`}
-          ticks={caps?.weightTicks}
-          snap
-          trackStyle={weightTrackStyle}
-          idPrefix="simple-weight"
-        />
+        <MetricRange metric="weight" />
       </div>
     </BaseRequirements>
   );
