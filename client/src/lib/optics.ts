@@ -33,6 +33,20 @@ export const optics = {
   }
 };
 
+export function averageFocal(lens: { focal_min_mm?: number; focal_max_mm?: number }): number | null {
+  const a = Number(lens?.focal_min_mm);
+  const b = Number(lens?.focal_max_mm);
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return null;
+  return (a + b) / 2;
+}
+
+export function lensTypeFromFocal(lens: { focal_min_mm?: number; focal_max_mm?: number }): 'Prime' | 'Zoom' {
+  const a = Number(lens?.focal_min_mm);
+  const b = Number(lens?.focal_max_mm);
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return 'Zoom';
+  return a === b ? 'Prime' : 'Zoom';
+}
+
 // Returns Pareto frontier points for an array of points maximizing y for increasing x
 export function computeParetoFrontier(points: Array<{ x: number; y: number }>): Array<{ x: number; y: number }> {
   if (!points || points.length === 0) return [];
