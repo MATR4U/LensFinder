@@ -27,7 +27,6 @@ export function parseFromUnit(unit: 'CHF' | 'g' | 'mm' | '%') {
       .trim();
     const num = Number(normalized.replace(/[^0-9.+-]/g, ''));
     if (!Number.isFinite(num)) return NaN;
-    // Percent is plain numeric (already in % units in UI), mm and g plain ints, CHF numeric
     return num;
   };
 }

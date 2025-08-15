@@ -83,4 +83,37 @@ export function applyFilters(input: FiltersInput): Lens[] {
     .filter((l) => (input.enableBreathing === false ? true : (input.softBreathing ? true : ((l.focus_breathing_score ?? 0) >= proBreathingMinScore))));
 }
 
+export function buildFilterInput(s: any, cameraMount?: string): FiltersInput {
+  return {
+    lenses: s.lenses ?? [],
+    cameraName: s.cameraName,
+    cameraMount,
+    brand: s.brand,
+    lensType: s.lensType,
+    sealed: s.sealed,
+    isMacro: s.isMacro,
+    priceRange: s.priceRange,
+    weightRange: s.weightRange,
+    proCoverage: s.proCoverage,
+    proFocalMin: s.proFocalMin,
+    proFocalMax: s.proFocalMax,
+    proMaxApertureF: s.proMaxApertureF,
+    proRequireOIS: s.proRequireOIS,
+    proRequireSealed: s.proRequireSealed,
+    proRequireMacro: s.proRequireMacro,
+    proPriceMax: s.proPriceMax,
+    proWeightMax: s.proWeightMax,
+    proDistortionMaxPct: s.proDistortionMaxPct,
+    proBreathingMinScore: s.proBreathingMinScore,
+    softPrice: s.softPrice,
+    softWeight: s.softWeight,
+    softDistortion: s.softDistortion,
+    softBreathing: s.softBreathing,
+    enablePrice: s.enablePrice,
+    enableWeight: s.enableWeight,
+    enableDistortion: s.enableDistortion,
+    enableBreathing: s.enableBreathing,
+  } as FiltersInput;
+}
+
 
