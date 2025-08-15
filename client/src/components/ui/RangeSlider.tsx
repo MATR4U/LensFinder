@@ -4,6 +4,7 @@ import { SLIDER_ROOT_BASE, SLIDER_TRACK_BASE, SLIDER_RANGE_BASE, SLIDER_THUMB_BA
 import TicksOverlay from './range-slider/TicksOverlay';
 import TickLabels from './range-slider/TickLabels';
 import { useSliderLogic } from './range-slider/useSliderLogic';
+import { gradientStyleFromNormalized } from '../../lib/hist';
 
 type Range = { min: number; max: number };
 
@@ -24,6 +25,7 @@ type Props = {
   tickFormatter?: (v: number) => string;
   disabled?: boolean;
   trackStyle?: React.CSSProperties;
+  densityNormalized?: number[];
   ticks?: number[];
   snap?: boolean;
   showTickLabels?: boolean;
@@ -51,6 +53,7 @@ export default function RangeSlider({
   tickFormatter,
   disabled = false,
   trackStyle,
+  densityNormalized,
   ticks,
   snap = true,
   showTickLabels = true,
@@ -124,14 +127,14 @@ export default function RangeSlider({
           }
         }}
       >
-        <Slider.Track className={SLIDER_TRACK_BASE} style={trackStyle}>
+        <Slider.Track className={SLIDER_TRACK_BASE} style={{ ...(densityNormalized && densityNormalized.length ? gradientStyleFromNormalized(densityNormalized) : {}), ...(trackStyle || {}) }}>
           <Slider.Range className={SLIDER_RANGE_BASE} />
           <TicksOverlay ticks={ticks} toPct={toPct} />
         </Slider.Track>
         <Slider.Thumb
           aria-label={ariaLabelledBy ? undefined : (isSingle ? (ariaLabelMax ?? 'Value') : (ariaLabelMin || 'Minimum'))}
           aria-labelledby={ariaLabelledBy}
-          aria-valuetext={format ? format(isSingle ? (values[0] ?? safeMin) : safeMin) : undefined}
+          aria-valuetext={formatValue(isSingle ? (values[0] ?? safeMin) : safeMin)}
           className={SLIDER_THUMB_BASE}
           onPointerDown={(e) => { setActiveThumb(0); posRef.current = { x: e.clientX, t: performance.now() }; onDraggingChange?.(true); }}
           onPointerMove={(e) => {
@@ -148,7 +151,7 @@ export default function RangeSlider({
           <Slider.Thumb
             aria-label={ariaLabelledBy ? undefined : (ariaLabelMax || 'Maximum')}
             aria-labelledby={ariaLabelledBy}
-            aria-valuetext={format ? format(values[1] ?? safeMax) : undefined}
+            aria-valuetext={formatValue(values[1] ?? safeMax)}
             className={SLIDER_THUMB_BASE}
             onPointerDown={(e) => { setActiveThumb(1); posRef.current = { x: e.clientX, t: performance.now() }; onDraggingChange?.(true); }}
             onPointerMove={(e) => {

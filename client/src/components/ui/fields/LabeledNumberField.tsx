@@ -16,23 +16,39 @@ type Props = {
   hint?: string;
   status?: FieldStatus;
   idPrefix?: string;
+  format?: (v: number) => string;
+  parse?: (s: string) => number;
 };
 
-export default function LabeledNumberField({ label, infoText, value, onChange, min, max, step, placeholder, right, hint, status, idPrefix }: Props) {
+export default function LabeledNumberField({ label, infoText, value, onChange, min, max, step, placeholder, right, hint, status, idPrefix, format, parse }: Props) {
+  const [text, setText] = React.useState<string>(() => (Number.isFinite(value) ? (format ? format(value) : String(value)) : ''));
+  React.useEffect(() => {
+    setText(Number.isFinite(value) ? (format ? format(value) : String(value)) : '');
+  }, [value, format]);
+  function apply(raw: string) {
+    const parsed = parse ? parse(raw) : Number(raw.replace(/[^0-9.-]/g, ''));
+    if (!Number.isFinite(parsed)) return;
+    let v = parsed as number;
+    if (typeof min === 'number') v = Math.max(min, v);
+    if (typeof max === 'number') v = Math.min(max, v);
+    onChange(v);
+  }
   return (
     <BaseLabeledField label={label} infoText={infoText} right={right} hint={hint} status={status} idPrefix={idPrefix}>
       {({ inputId, labelId }) => (
         <input
           id={inputId}
           aria-labelledby={labelId}
-          type="number"
-          value={Number.isFinite(value) ? value : ''}
-          onChange={(e) => onChange(e.target.value === '' ? NaN : Number(e.target.value))}
+          type="text"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onBlur={() => apply(text)}
+          onKeyDown={(e) => { if (e.key === 'Enter') { (e.target as HTMLInputElement).blur(); } }}
           min={min}
           max={max}
-          step={step}
           placeholder={placeholder}
           className={`${INPUT_FORM} ${INPUT_STYLE}`}
+          inputMode="decimal"
         />
       )}
     </BaseLabeledField>

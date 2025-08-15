@@ -15,9 +15,10 @@ type Props = {
   selection?: { min: number; max: number } | null;
   dragging?: boolean;
   onSelectRange?: (r: { min: number; max: number }) => void;
+  showMaxLabel?: boolean;
 };
 
-export default function Histogram({ values, totalValues, min, max, buckets = 24, className = '', selection, dragging = false, onSelectRange }: Props) {
+export default function Histogram({ values, totalValues, min, max, buckets = 24, className = '', selection, dragging = false, onSelectRange, showMaxLabel = false }: Props) {
   const bg = React.useMemo<HistogramBin[]>(() => (totalValues ? computeHistogram(totalValues, min, max, buckets) : []), [totalValues, min, max, buckets]);
   const fg = React.useMemo<HistogramBin[]>(() => computeHistogram(values, min, max, buckets), [values, min, max, buckets]);
   const height = 40;
@@ -102,8 +103,9 @@ export default function Histogram({ values, totalValues, min, max, buckets = 24,
       </svg>
       {/* Thin grid baseline for legibility */}
       <div className="absolute inset-x-0 bottom-0 h-px bg-[var(--control-border)]/60" />
-      {/* Max scale indicator */}
-      <div className="absolute right-1 top-0 text-[10px] text-[var(--text-muted)]">max {maxCount}</div>
+      {showMaxLabel && (
+        <div className="absolute right-1 top-0 text-[10px] text-[var(--text-muted)]">max {maxCount}</div>
+      )}
     </div>
   );
 }

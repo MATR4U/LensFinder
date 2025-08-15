@@ -19,6 +19,7 @@ type Props = {
   step?: number;
   showWeights?: boolean;
   className?: string;
+  optionSuffixMap?: Record<string, string | number>;
 };
 
 export default function GoalPresetWeights({
@@ -32,6 +33,7 @@ export default function GoalPresetWeights({
   step = 0.05,
   showWeights = true,
   className = '',
+  optionSuffixMap,
 }: Props) {
   const presetKeys = React.useMemo(() => Object.keys(presets), [presets]);
 
@@ -60,9 +62,11 @@ export default function GoalPresetWeights({
             if (presets[p as string]) onChangeWeights({ ...presets[p as string] });
           }}
         >
-          {presetKeys.map((p) => (
-            <option key={p} value={p}>{p}</option>
-          ))}
+          {presetKeys.map((p) => {
+            const suffix = optionSuffixMap && (optionSuffixMap[p] ?? optionSuffixMap[p as string]);
+            const labelText = suffix !== undefined && suffix !== null && suffix !== '' ? `${p} (${suffix})` : p;
+            return <option key={p} value={p}>{labelText}</option>;
+          })}
           <option value="Custom">Custom</option>
         </Select>
 

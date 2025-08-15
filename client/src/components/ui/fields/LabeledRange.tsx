@@ -1,8 +1,10 @@
 import React from 'react';
 import { type FieldStatus } from './FieldContainer';
+import { atBoundsStatus } from './status';
 import BaseLabeledSlider from './BaseLabeledSlider';
 import type { FilterMode } from '../FilterModeSwitch';
 import { useFilterStore } from '../../../stores/filterStore';
+import { useFilterMode } from '../../../hooks/useFilterMode';
 import { shallow } from 'zustand/shallow';
 import { getCachedSnapshot } from '../../../lib/data';
 import { applyFilters } from '../../../lib/filters';
@@ -20,6 +22,8 @@ type Props = {
   ticks?: number[];
   snap?: boolean;
   format?: (v: number) => string;
+  tickFormatter?: (v: number) => string;
+  parse?: (s: string) => number;
   trackStyle?: React.CSSProperties;
   right?: React.ReactNode;
   hint?: string;
@@ -33,12 +37,12 @@ type Props = {
   disabled?: boolean;
   histogramValues?: number[];
   histogramTotalValues?: number[];
-  metric?: 'price' | 'weight' | 'distortion' | 'breathing';
+  metric?: 'price' | 'weight' | 'distortion' | 'breathing' | 'focal';
+  histogramShowMaxLabel?: boolean;
 };
 
-export default function LabeledRange({ label, infoText, min, max, step, value, onChange, ticks, snap, format, trackStyle, right, hint, status, id, warningTip, softPreference, mode, idPrefix, disabled, histogramValues, histogramTotalValues, metric }: Props) {
-  const atAnyEdge = value.min <= min || value.max >= max;
-  const fieldStatus = atAnyEdge ? (status ?? 'warning') : status;
+export default function LabeledRange({ label, infoText, min, max, step, value, onChange, ticks, snap, format, tickFormatter, parse, trackStyle, right, hint, status, id, warningTip, softPreference, mode, idPrefix, disabled, histogramValues, histogramTotalValues, metric, histogramShowMaxLabel }: Props) {
+  const fieldStatus = atBoundsStatus({ value, min, max, currentStatus: status });
   // Auto-compute histogram data from store + cached lenses if not provided
   const storeSlice = useFilterStore((s) => ({
     cameraName: s.cameraName,
@@ -112,6 +116,12 @@ export default function LabeledRange({ label, infoText, min, max, step, value, o
         case 'weight': return Number(obj?.weight_g ?? 0);
         case 'distortion': return Number(obj?.distortion_pct ?? 0);
         case 'breathing': return Number(obj?.focus_breathing_score ?? 0);
+        case 'focal': {
+          const a = Number(obj?.focal_min_mm);
+          const b = Number(obj?.focal_max_mm);
+          if (!Number.isFinite(a) || !Number.isFinite(b)) return null;
+          return (a + b) / 2;
+        }
         default: return null;
       }
     };
@@ -130,66 +140,11 @@ export default function LabeledRange({ label, infoText, min, max, step, value, o
     softBreathing: s.softBreathing,
   }), shallow);
 
-  const auto = React.useMemo((): null | { mode: { value: FilterMode; onChange: (m: FilterMode) => void }; disabled: boolean } => {
+  const auto = React.useMemo(() => {
     if (!metric || mode || typeof disabled === 'boolean') return null;
-    if (metric === 'price') {
-      const enable = enableSoftSlice.enablePrice;
-      const soft = enableSoftSlice.softPrice;
-      return {
-        mode: {
-          value: (enable ? (soft ? 'preferred' : 'required') : 'off') as FilterMode,
-          onChange: (m: FilterMode) => {
-            const { setEnablePrice, setSoftPrice } = useFilterStore.getState();
-            if (m === 'off') setEnablePrice(false); else { setEnablePrice(true); setSoftPrice(m === 'preferred'); }
-          },
-        },
-        disabled: !enable,
-      };
-    }
-    if (metric === 'weight') {
-      const enable = enableSoftSlice.enableWeight;
-      const soft = enableSoftSlice.softWeight;
-      return {
-        mode: {
-          value: (enable ? (soft ? 'preferred' : 'required') : 'off') as FilterMode,
-          onChange: (m: FilterMode) => {
-            const { setEnableWeight, setSoftWeight } = useFilterStore.getState();
-            if (m === 'off') setEnableWeight(false); else { setEnableWeight(true); setSoftWeight(m === 'preferred'); }
-          },
-        },
-        disabled: !enable,
-      };
-    }
-    if (metric === 'distortion') {
-      const enable = enableSoftSlice.enableDistortion;
-      const soft = enableSoftSlice.softDistortion;
-      return {
-        mode: {
-          value: (enable ? (soft ? 'preferred' : 'required') : 'off') as FilterMode,
-          onChange: (m: FilterMode) => {
-            const { setEnableDistortion, setSoftDistortion } = useFilterStore.getState();
-            if (m === 'off') setEnableDistortion(false); else { setEnableDistortion(true); setSoftDistortion(m === 'preferred'); }
-          },
-        },
-        disabled: !enable,
-      };
-    }
-    if (metric === 'breathing') {
-      const enable = enableSoftSlice.enableBreathing;
-      const soft = enableSoftSlice.softBreathing;
-      return {
-        mode: {
-          value: (enable ? (soft ? 'preferred' : 'required') : 'off') as FilterMode,
-          onChange: (m: FilterMode) => {
-            const { setEnableBreathing, setSoftBreathing } = useFilterStore.getState();
-            if (m === 'off') setEnableBreathing(false); else { setEnableBreathing(true); setSoftBreathing(m === 'preferred'); }
-          },
-        },
-        disabled: !enable,
-      };
-    }
-    return null;
-  }, [metric, mode, disabled, enableSoftSlice]);
+    const m = useFilterMode(metric as any);
+    return m ? { mode: { value: m.value, onChange: m.onChange }, disabled: m.disabled } : null;
+  }, [metric, mode, disabled]);
   return (
     <BaseLabeledSlider
       label={label}
@@ -202,6 +157,8 @@ export default function LabeledRange({ label, infoText, min, max, step, value, o
       ticks={ticks}
       snap={snap}
       format={format}
+      tickFormatter={tickFormatter}
+      parse={parse}
       trackStyle={trackStyle}
       right={right}
       hint={hint}
@@ -214,6 +171,7 @@ export default function LabeledRange({ label, infoText, min, max, step, value, o
       disabled={typeof disabled === 'boolean' ? disabled : (auto?.disabled ?? false)}
       histogramValues={histogramValues ?? autoHist?.values}
       histogramTotalValues={histogramTotalValues ?? autoHist?.total}
+      histogramShowMaxLabel={typeof histogramShowMaxLabel === 'boolean' ? histogramShowMaxLabel : (metric === 'price' || metric === 'weight')}
     />
   );
 }

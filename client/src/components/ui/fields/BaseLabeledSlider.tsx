@@ -8,6 +8,8 @@ import NumberInput from '../NumberInput';
 import FilterModeSwitch, { type FilterMode } from '../FilterModeSwitch';
 import Histogram from '../Histogram';
 import { stableIdFromLabel } from './id';
+import { computeNormalizedHistogram } from '../../../lib/hist';
+import { useLabeledIds } from '../../../hooks/useLabeledIds';
 
 type Range = { min: number; max: number };
 
@@ -20,6 +22,8 @@ type CommonProps = {
   ticks?: number[];
   snap?: boolean;
   format?: (v: number) => string;
+  tickFormatter?: (v: number) => string;
+  parse?: (s: string) => number;
   trackStyle?: React.CSSProperties;
   right?: React.ReactNode;
   hint?: string;
@@ -39,6 +43,7 @@ type CommonProps = {
   testId?: string;
   histogramValues?: number[];
   histogramTotalValues?: number[];
+  histogramShowMaxLabel?: boolean;
   dragging?: boolean;
 };
 
@@ -61,19 +66,17 @@ type Props = CommonProps & (SingleMode | RangeMode);
 export default function BaseLabeledSlider(props: Props) {
   const {
     label, infoText, min, max, step,
-    ticks, snap, format, trackStyle,
+    ticks, snap, format, tickFormatter, parse, trackStyle,
     right, hint, status, id, warningTip, softPreference, mode, idPrefix,
     validationState = 'none', required, disabled, readOnly, testId,
-    histogramValues, histogramTotalValues, dragging,
+    histogramValues, histogramTotalValues, histogramShowMaxLabel, dragging,
   } = props;
 
-  const autoLblId = React.useId();
-  const autoInputId = React.useId();
   const derivedPrefix = idPrefix ?? stableIdFromLabel(label);
-  const effectiveId = id ?? (derivedPrefix ? `${derivedPrefix}-label` : autoLblId);
-  const effectiveInputId = derivedPrefix ? `${derivedPrefix}-input` : autoInputId;
+  const { labelId: effectiveId, inputId: effectiveInputId } = useLabeledIds(label, derivedPrefix);
   const isSingle = typeof (props as SingleMode).singleValue === 'number';
   const [isDragging, setIsDragging] = React.useState(false);
+  const densityNorm = React.useMemo(() => (histogramTotalValues && histogramTotalValues.length ? computeNormalizedHistogram(histogramTotalValues, min, max) : undefined), [histogramTotalValues, min, max]);
 
   const atEdge = isSingle
     ? ((props as SingleMode).singleValue <= min || (props as SingleMode).singleValue >= max)
@@ -118,6 +121,7 @@ export default function BaseLabeledSlider(props: Props) {
             selection={{ min: (props as RangeMode).value.min, max: (props as RangeMode).value.max }}
             dragging={isDragging}
             onSelectRange={(r) => (props as RangeMode).onChange({ ...(props as RangeMode).value, min: Math.max(min, Math.min(max, Math.round(r.min))), max: Math.max(min, Math.min(max, Math.round(r.max))) })}
+            showMaxLabel={!!histogramShowMaxLabel}
           />
         )}
         {isSingle ? (
@@ -130,7 +134,9 @@ export default function BaseLabeledSlider(props: Props) {
             ticks={effectiveTicks}
             snap={snap}
             format={format}
+            tickFormatter={tickFormatter}
             ariaLabelledBy={effectiveId}
+            densityNormalized={densityNorm}
           />
         ) : (
           <RangeSlider
@@ -142,9 +148,11 @@ export default function BaseLabeledSlider(props: Props) {
             ticks={effectiveTicks}
             snap={snap}
             format={format}
+            tickFormatter={tickFormatter}
             trackStyle={trackStyle}
             ariaLabelledBy={effectiveId}
             onDraggingChange={(v) => setIsDragging(v)}
+            densityNormalized={densityNorm}
           />
         )}
         {/* Mode control now lives in the header (right slot). Keep right column for numeric inputs only. */}
@@ -157,9 +165,9 @@ export default function BaseLabeledSlider(props: Props) {
               const viewMax = Math.min(Math.max(rv.max, min), max);
               return (
                 <>
-                  <NumberInput value={viewMin} onChange={(v) => (props as RangeMode).onChange({ ...rv, min: v })} min={min} max={max} step={step} format={format} />
+                  <NumberInput value={viewMin} onChange={(v) => (props as RangeMode).onChange({ ...rv, min: v })} min={min} max={max} step={step} format={format} parse={parse} />
                   <span className={INLINE_LABEL_MUTED_XS}>to</span>
-                  <NumberInput value={viewMax} onChange={(v) => (props as RangeMode).onChange({ ...rv, max: v })} min={min} max={max} step={step} format={format} />
+                  <NumberInput value={viewMax} onChange={(v) => (props as RangeMode).onChange({ ...rv, max: v })} min={min} max={max} step={step} format={format} parse={parse} />
                 </>
               );
             })()}

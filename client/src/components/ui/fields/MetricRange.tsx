@@ -1,7 +1,8 @@
 import React from 'react';
 import LabeledRange from './LabeledRange';
 import type { FieldStatus } from './FieldContainer';
-import { useFilterStore } from '../../../stores/filterStore';
+import { useMetricConfig } from '../../../lib/metricConfig';
+import { tickFormatterFromUnit, formatCurrencyCHF, formatGrams, formatPercent, formatMm, parseFromUnit } from '../../../lib/formatters';
 import { FIELD_HELP } from '../fieldHelp';
 
 type Metric = 'price' | 'weight' | 'distortion' | 'breathing';
@@ -16,94 +17,36 @@ type Props = {
 };
 
 export default function MetricRange({ metric, label, idPrefix, warningTip, status }: Props) {
-  const caps = useFilterStore((s) => s.availabilityCaps);
-
-  const state = useFilterStore.getState();
-
-  if (metric === 'price') {
-    const value = state.priceRange;
-    const set = useFilterStore((s) => s.setPriceRange);
-    return (
-      <LabeledRange
-        label={label ?? 'Price (CHF)'}
-        infoText={caps ? `${FIELD_HELP.price} Available now ${caps.priceBounds.min}–${caps.priceBounds.max}.` : FIELD_HELP.price}
-        min={caps?.priceBounds.min ?? 0}
-        max={caps?.priceBounds.max ?? 10000}
-        step={50}
-        value={value}
-        onChange={set}
-        format={(v) => String(v)}
-        ticks={caps?.priceTicks}
-        snap
-        idPrefix={idPrefix ?? 'price'}
-        metric="price"
-        warningTip={warningTip}
-        status={status}
-      />
-    );
-  }
-
-  if (metric === 'weight') {
-    const value = state.weightRange;
-    const set = useFilterStore((s) => s.setWeightRange);
-    return (
-      <LabeledRange
-        label={label ?? 'Weight (g)'}
-        infoText={caps ? `${FIELD_HELP.weight} Available now ${caps.weightBounds.min}–${caps.weightBounds.max}.` : FIELD_HELP.weight}
-        min={caps?.weightBounds.min ?? 0}
-        max={caps?.weightBounds.max ?? 5000}
-        step={10}
-        value={value}
-        onChange={set}
-        format={(v) => String(v)}
-        ticks={caps?.weightTicks}
-        snap
-        idPrefix={idPrefix ?? 'weight'}
-        metric="weight"
-        warningTip={warningTip}
-        status={status}
-      />
-    );
-  }
-
-  if (metric === 'distortion') {
-    const maxVal = state.proDistortionMaxPct;
-    const set = useFilterStore((s) => s.setProDistortionMaxPct);
-    return (
-      <LabeledRange
-        label={label ?? 'Distortion max (%)'}
-        infoText={FIELD_HELP.distortionMax}
-        min={0}
-        max={caps?.distortionMaxMax ?? 10}
-        step={0.1}
-        value={{ min: 0, max: maxVal }}
-        onChange={(r) => set(r.max)}
-        format={(v) => String(v)}
-        snap
-        idPrefix={idPrefix ?? 'distortion'}
-        metric="distortion"
-        warningTip={warningTip}
-        status={status}
-      />
-    );
-  }
-
-  // breathing
-  const minVal = state.proBreathingMinScore;
-  const set = useFilterStore((s) => s.setProBreathingMinScore);
+  const cfg = useMetricConfig(metric);
+  const helpMap: Record<Metric, string> = {
+    price: FIELD_HELP.price,
+    weight: FIELD_HELP.weight,
+    distortion: FIELD_HELP.distortionMax,
+    breathing: FIELD_HELP.breathingMin,
+  };
+  const defaultLabels: Record<Metric, string> = {
+    price: 'Price (CHF)',
+    weight: 'Weight (g)',
+    distortion: 'Distortion max (%)',
+    breathing: 'Focus breathing score min',
+  };
+  const parse = cfg.unit ? parseFromUnit(cfg.unit) : undefined;
   return (
     <LabeledRange
-      label={label ?? 'Focus breathing score min'}
-      infoText={FIELD_HELP.breathingMin}
-      min={caps?.breathingMinMin ?? 0}
-      max={10}
-      step={0.5}
-      value={{ min: minVal, max: 10 }}
-      onChange={(r) => set(r.min)}
-      format={(v) => String(v)}
+      label={label ?? defaultLabels[metric]}
+      infoText={cfg.bounds ? `${helpMap[metric]}${metric === 'price' || metric === 'weight' ? ` Available now ${cfg.bounds.min}–${cfg.bounds.max}.` : ''}` : helpMap[metric]}
+      min={cfg.bounds.min}
+      max={cfg.bounds.max}
+      step={cfg.step}
+      value={cfg.value}
+      onChange={cfg.set as any}
+      format={cfg.unit === 'CHF' ? formatCurrencyCHF : cfg.unit === 'g' ? (v) => `${Math.round(v)}` : cfg.unit === '%' ? formatPercent : (v) => String(v)}
+      tickFormatter={cfg.tickFormatter}
+      parse={parse}
+      ticks={cfg.ticks}
       snap
-      idPrefix={idPrefix ?? 'breathing'}
-      metric="breathing"
+      idPrefix={idPrefix ?? metric}
+      metric={metric}
       warningTip={warningTip}
       status={status}
     />

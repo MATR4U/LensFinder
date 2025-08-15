@@ -1,6 +1,7 @@
 import React from 'react';
 import { type FieldStatus } from './FieldContainer';
 import BaseLabeledSlider from './BaseLabeledSlider';
+import { atBoundsStatus } from './status';
 
 type Props = {
   label: string;
@@ -22,8 +23,7 @@ type Props = {
 };
 
 export default function LabeledSlider({ label, infoText, min, max, step, value, onChange, ticks, snap, format, right, hint, status, warningTip, softPreference, idPrefix }: Props) {
-  const atLimit = (typeof min === 'number' && value <= min) || (typeof max === 'number' && value >= max);
-  const fieldStatus: FieldStatus | undefined = atLimit ? (status ?? 'warning') : status;
+  const fieldStatus: FieldStatus | undefined = atBoundsStatus({ value: { min: value, max: value }, min, max, currentStatus: status });
   return (
     <BaseLabeledSlider
       label={label}
