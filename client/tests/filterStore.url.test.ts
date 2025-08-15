@@ -1,4 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import React from 'react';
+import { render } from '@testing-library/react';
+import { useUrlFiltersSync } from '../src/hooks/useUrlFiltersSync';
+
+function MountUrlSync() {
+  useUrlFiltersSync();
+  return null;
+}
 
 function resetUrl(search: string) {
   const url = new URL(window.location.href);
@@ -14,10 +22,10 @@ describe('URL sync (hydrate and write-back)', () => {
 
   it('hydrates store from URL params on load', async () => {
     resetUrl('?cameraName=Test&isPro=0&brand=Any&lensType=Any&sealed=1&isMacro=0&pmin=100&pmax=200&wmin=50&wmax=100&goal=Portrait');
-    // Ensure fresh module load runs hydration block
-    vi.resetModules();
     const mod = await import('../src/stores/filterStore');
     const store = mod.useFilterStore;
+    render(React.createElement(MountUrlSync));
+    await new Promise(r => setTimeout(r, 0));
     const s = store.getState();
     // trigger debounced setters synchronously by setting to same value
     s.setPriceRange({ min: s.priceRange.min, max: s.priceRange.max });
@@ -29,9 +37,11 @@ describe('URL sync (hydrate and write-back)', () => {
 
   it('writes to URL when store changes', async () => {
     const mod = await import('../src/stores/filterStore');
+    render(React.createElement(MountUrlSync));
     const s = mod.useFilterStore.getState();
     s.setCameraName('FooCam');
     s.setIsPro(true);
+    await new Promise(r => setTimeout(r, 0));
     const params = new URLSearchParams(window.location.search);
     expect(params.get('cameraName')).toBe('FooCam');
     expect(params.get('isPro')).toBe('1');
@@ -39,9 +49,11 @@ describe('URL sync (hydrate and write-back)', () => {
 
   it('clears URL when full reset is called', async () => {
     const mod = await import('../src/stores/filterStore');
+    render(React.createElement(MountUrlSync));
     const s = mod.useFilterStore.getState();
     s.setCameraName('FooCam');
     s.setIsPro(false);
+    await new Promise(r => setTimeout(r, 0));
     // ensure params present first
     expect(new URLSearchParams(window.location.search).get('cameraName')).toBe('FooCam');
     // move to stage > 0 to allow URL writing
