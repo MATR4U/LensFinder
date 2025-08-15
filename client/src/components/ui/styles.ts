@@ -14,18 +14,19 @@ export const INPUT_STYLE = 'bg-[var(--control-bg)] border border-[var(--control-
 export const SELECT_STYLE = INPUT_STYLE;
 export const CHECKBOX_STYLE = 'accent-[var(--accent)]';
 export const CARD_STYLE_NEUTRAL = 'bg-[var(--card-bg)] border-[var(--card-border)] text-[var(--text-color)]';
-export const FIELD_CONTAINER_BASE = 'w-full rounded-lg border p-3';
+export const FIELD_CONTAINER_BASE = 'w-full rounded-lg border p-3 md:p-4';
 export const FIELD_CONTAINER_BG_NORMAL = 'bg-[var(--control-bg)] border-[var(--control-border)]';
 export const FIELD_CONTAINER_BG_LIMIT = 'bg-[var(--control-bg)] border-[var(--border-default)]';
 export const FIELD_CONTAINER_BG_BLOCKING = 'bg-[var(--error-bg)] border-[var(--error-border)]';
-export const FIELD_CONTAINER_BG_WARNING = 'bg-[var(--notice-warning-bg)] border-[var(--notice-warning-border)]';
+// Use warning background only when there are zero matches (set by parent when applicable)
+export const FIELD_CONTAINER_BG_WARNING = 'bg-[var(--control-bg)] border-[var(--control-border)]';
 
 // Slider
 export const SLIDER_ROOT_BASE = 'group relative flex w-full items-center select-none touch-none';
-export const SLIDER_FIELD_STACK = 'space-y-2';
+export const SLIDER_FIELD_STACK = 'space-y-2 md:grid md:grid-cols-[1fr_auto] md:gap-4';
 export const SLIDER_TRACK_BASE = 'relative w-full grow rounded-full bg-[var(--slider-track)] h-[var(--slider-track-h)]';
-export const SLIDER_RANGE_BASE = 'absolute rounded-full bg-[var(--slider-range)] h-[var(--slider-track-h)] transition-colors';
-export const SLIDER_THUMB_BASE = 'block rounded-full bg-[var(--slider-thumb-bg)] shadow-md ring-1 ring-[var(--slider-thumb-ring)] h-[var(--slider-thumb)] w-[var(--slider-thumb)] transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--slider-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent hover:scale-105 active:scale-95';
+export const SLIDER_RANGE_BASE = 'absolute rounded-full bg-[var(--slider-range)] h-[var(--slider-track-h)] transition-all duration-150 ease-out';
+export const SLIDER_THUMB_BASE = 'block rounded-full bg-[var(--slider-thumb-bg)] shadow-md ring-1 ring-[var(--slider-thumb-ring)] h-[var(--slider-thumb)] w-[var(--slider-thumb)] transition-all duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--slider-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent hover:scale-105 active:scale-95';
 // Tick marks
 export const SLIDER_TICK_BASE = 'absolute top-1/2 -translate-y-1/2 w-px h-2 bg-[var(--slider-tick)]';
 
@@ -76,7 +77,7 @@ export const PANEL_NEUTRAL = CARD_NEUTRAL;
 // Layout tokens
 export const GRID_AUTOFILL = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5';
 export const GRID_AUTOFILL_4 = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5';
-export const GRID_TWO_GAP3 = 'grid grid-cols-1 sm:grid-cols-2 gap-4';
+export const GRID_TWO_GAP3 = 'grid grid-cols-1 sm:grid-cols-2 gap-6';
 export const GRID_TWO_GAP4 = 'grid grid-cols-1 sm:grid-cols-2 gap-4';
 export const GRID_THREE_GAP4 = 'grid grid-cols-1 sm:grid-cols-3 gap-4';
 export const GRID_LG_TWO_GAP6 = 'grid grid-cols-1 lg:grid-cols-2 gap-6';
@@ -86,6 +87,8 @@ export const ROW_BETWEEN = 'flex items-center justify-between';
 export const ROW_END = 'flex justify-end';
 export const ACTION_ROW = 'flex gap-2';
 export const DIVIDER_T = 'pt-3 border-t border-[var(--border-default)]';
+export const STICKY_BOTTOM = 'fixed bottom-3 left-1/2 -translate-x-1/2 z-40';
+export const TRAY = 'rounded-full px-3 py-2 border bg-[var(--card-bg)] border-[var(--card-border)] shadow-lg backdrop-blur supports-[backdrop-filter]:bg-[color-mix(in_oklab,var(--card-bg),transparent_20%)]';
 
 // Loading states
 export const LOADING_TEXT_SM = 'text-sm text-[var(--text-muted)]';
