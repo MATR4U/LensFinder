@@ -9,12 +9,8 @@ try { pg = require('pg'); } catch { pg = require('../server/node_modules/pg'); }
 async function main() {
   const moduleDir = __dirname; // /app/db in container
   const monoRoot = path.resolve(moduleDir, '..');
-  const preferredEnv = process.env.NODE_ENV === 'production' ? '.env.prod' : '.env.dev';
-  const fallbackEnv = process.env.NODE_ENV === 'production' ? 'env.prod.example' : 'env.dev.example';
-  const preferredPath = path.join(monoRoot, preferredEnv);
-  const fallbackPath = path.join(monoRoot, fallbackEnv);
+  const preferredPath = path.join(monoRoot, '.env');
   dotenv.config({ path: preferredPath });
-  dotenv.config({ path: fallbackPath });
 
   const databaseUrl = process.env.DATABASE_URL && process.env.DATABASE_URL.trim();
   if (!databaseUrl) {
