@@ -177,8 +177,33 @@ export interface FilterState {
 export const useFilterStore = createWithEqualityFn<FilterState>()(persist((set, get) => ({
   // Journey
   stage: 0,
-  setStage: (n) => { get().pushHistory(); set({ stage: n }); },
-  continueTo: (n) => { get().pushHistory(); set({ stage: n }); },
+  setStage: (n) => {
+    const allowed = [0,1,2,3,4];
+    if (!allowed.includes(n)) {
+      if (import.meta?.env?.DEV) console.warn('[flow] setStage blocked: invalid stage', n);
+      return;
+    }
+    get().pushHistory();
+    set({ stage: n });
+  },
+  continueTo: (next) => {
+    const cur = get().stage;
+    const allowedForward = { 0: 1, 1: 2, 2: 3, 3: 4 } as Record<number, number>;
+    const allowedBackward = { 1: 0, 2: 1, 3: 2, 4: 3 } as Record<number, number>;
+    const isForward = next > cur;
+    const ok = (isForward ? allowedForward[cur] === next : allowedBackward[cur] === next);
+    if (!ok) {
+      if (import.meta?.env?.DEV) console.warn('[flow] continueTo blocked: ', { cur, next });
+      return;
+    }
+    // Guard: require at least 2 selections to enter Report (4). Stage 3 (results grid) remains accessible to build selections.
+    if (next >= 4 && get().compareList.length < 2) {
+      if (import.meta?.env?.DEV) console.warn('[flow] blocked: need at least 2 selections');
+      return;
+    }
+    get().pushHistory();
+    set({ stage: next });
+  },
   // Initial State
   cameraName: 'Any',
   setCameraName: (name) => set({ cameraName: name }),
@@ -480,7 +505,15 @@ export const useFilterStore = createWithEqualityFn<FilterState>()(persist((set, 
     const key = `__baseline_${currentStage}__` as unknown as keyof FilterState;
     const anyState = get() as unknown as Record<string, any>;
     const baseline = anyState[key];
-    if (!baseline) return;
+    if (!baseline) {
+      const caps = get().availabilityCaps;
+      if (caps) {
+        get().resetFilters({ priceBounds: caps.priceBounds, weightBounds: caps.weightBounds });
+      } else {
+        get().resetFilters();
+      }
+      return;
+    }
     set({
       cameraName: baseline.cameraName,
       isPro: baseline.isPro,
@@ -741,139 +774,6 @@ export const useFilterStore = createWithEqualityFn<FilterState>()(persist((set, 
   }),
 }));
 
-// URL sync subscription (store-level): hydrate on load and write on state changes
-if (typeof window !== 'undefined') {
-  // New session handling: when there are no URL parameters on first load of a
-  // browser session, drop any persisted filters and start from clean defaults.
-  try {
-    const p = new URLSearchParams(window.location.search);
-    const hasFilterParams = (
-      p.has('cameraName') || p.has('isPro') || p.has('brand') || p.has('lensType') ||
-      p.has('sealed') || p.has('isMacro') || p.has('pmin') || p.has('pmax') ||
-      p.has('wmin') || p.has('wmax') || p.has('goal')
-    );
-    const sessionKey = 'lf_session_started_v1';
-    const firstInSession = !sessionStorage.getItem(sessionKey);
-    if (firstInSession) sessionStorage.setItem(sessionKey, '1');
-    // If URL has no filter params, always start from clean defaults (ignore persisted state)
-    if (!hasFilterParams) {
-      try { localStorage.removeItem('camera-filter-storage'); } catch {}
-      const s = useFilterStore.getState();
-      s.setCameraName('Any');
-      s.setBrand('Any');
-      s.setLensType('Any');
-      s.setSealed(false);
-      s.setIsMacro(false);
-      s.resetFilters();
-    }
-  } catch {}
-  // Hydrate from URL once
-  const params = new URLSearchParams(window.location.search);
-  const s = useFilterStore.getState();
-  const getNum = (k: string, def: number) => {
-    const v = params.get(k); const n = v ? Number(v) : NaN; return Number.isFinite(n) ? n : def;
-  };
-  const cameraName = params.get('cameraName'); if (cameraName) s.setCameraName(cameraName);
-  const isPro = params.get('isPro'); if (isPro !== null) s.setIsPro(isPro === '1' || isPro === 'true');
-  const brand = params.get('brand'); if (brand) s.setBrand(brand);
-  const lensType = params.get('lensType'); if (lensType) s.setLensType(lensType);
-  const sealed = params.get('sealed'); if (sealed !== null) s.setSealed(sealed === '1' || sealed === 'true');
-  const isMacro = params.get('isMacro'); if (isMacro !== null) s.setIsMacro(isMacro === '1' || isMacro === 'true');
-  const pmin = getNum('pmin', s.priceRange.min);
-  const pmax = getNum('pmax', s.priceRange.max);
-  s.setPriceRange({ min: pmin, max: pmax });
-  const wmin = getNum('wmin', s.weightRange.min);
-  const wmax = getNum('wmax', s.weightRange.max);
-  s.setWeightRange({ min: wmin, max: wmax });
-  const gp = params.get('goal'); if (gp) s.setGoalPreset(gp);
-
-  // Subscribe to changes and update URL
-  let prev = useFilterStore.getState();
-  useFilterStore.subscribe((next) => {
-    // Stage 0 (start): keep clean URL unless user deviates from defaults
-    if (next.stage === 0) {
-      const isDefault = (
-        next.cameraName === 'Any' &&
-        next.brand === 'Any' &&
-        next.lensType === 'Any' &&
-        next.sealed === false &&
-        next.isMacro === false &&
-        // Allow any goal preset as default varies; do not treat as deviation
-        true
-      );
-      if (isDefault) {
-        const clean = window.location.pathname;
-        if (window.location.search.length > 0) {
-          window.history.replaceState(null, '', clean);
-        }
-        prev = next;
-        return;
-      }
-      // If non-default on stage 0, write params as usual (helps tests/dev deep-linking)
-    }
-
-    // Detect changes across all filter inputs and reflect them in the URL
-    const changed = (
-      prev.cameraName !== next.cameraName || prev.isPro !== next.isPro ||
-      prev.brand !== next.brand || prev.lensType !== next.lensType ||
-      prev.sealed !== next.sealed || prev.isMacro !== next.isMacro ||
-      prev.priceRange.min !== next.priceRange.min || prev.priceRange.max !== next.priceRange.max ||
-      prev.weightRange.min !== next.weightRange.min || prev.weightRange.max !== next.weightRange.max ||
-      prev.goalPreset !== next.goalPreset ||
-      prev.proCoverage !== next.proCoverage ||
-      prev.proFocalMin !== next.proFocalMin || prev.proFocalMax !== next.proFocalMax ||
-      prev.proMaxApertureF !== next.proMaxApertureF ||
-      prev.proRequireOIS !== next.proRequireOIS ||
-      prev.proRequireSealed !== next.proRequireSealed ||
-      prev.proRequireMacro !== next.proRequireMacro ||
-      prev.proPriceMax !== next.proPriceMax ||
-      prev.proWeightMax !== next.proWeightMax ||
-      prev.proDistortionMaxPct !== next.proDistortionMaxPct ||
-      prev.proBreathingMinScore !== next.proBreathingMinScore ||
-      prev.softPrice !== next.softPrice || prev.softWeight !== next.softWeight ||
-      prev.softDistortion !== next.softDistortion || prev.softBreathing !== next.softBreathing ||
-      prev.enablePrice !== next.enablePrice || prev.enableWeight !== next.enableWeight ||
-      prev.enableDistortion !== next.enableDistortion || prev.enableBreathing !== next.enableBreathing
-    );
-    if (changed) {
-      const p = new URLSearchParams();
-      p.set('cameraName', next.cameraName);
-      p.set('isPro', next.isPro ? '1' : '0');
-      p.set('brand', next.brand);
-      p.set('lensType', next.lensType);
-      p.set('sealed', next.sealed ? '1' : '0');
-      p.set('isMacro', next.isMacro ? '1' : '0');
-      p.set('pmin', String(next.priceRange.min));
-      p.set('pmax', String(next.priceRange.max));
-      p.set('wmin', String(next.weightRange.min));
-      p.set('wmax', String(next.weightRange.max));
-      p.set('goal', next.goalPreset);
-      // Pro / advanced params
-      p.set('coverage', next.proCoverage);
-      p.set('fmin', String(next.proFocalMin));
-      p.set('fmax', String(next.proFocalMax));
-      p.set('apmax', String(next.proMaxApertureF));
-      p.set('ois', next.proRequireOIS ? '1' : '0');
-      p.set('reqSealed', next.proRequireSealed ? '1' : '0');
-      p.set('reqMacro', next.proRequireMacro ? '1' : '0');
-      p.set('pmaxHard', String(next.proPriceMax));
-      p.set('wmaxHard', String(next.proWeightMax));
-      p.set('distMax', String(next.proDistortionMaxPct));
-      p.set('breathMin', String(next.proBreathingMinScore));
-      // Soft/enable flags
-      p.set('softPrice', next.softPrice ? '1' : '0');
-      p.set('softWeight', next.softWeight ? '1' : '0');
-      p.set('softDist', next.softDistortion ? '1' : '0');
-      p.set('softBreath', next.softBreathing ? '1' : '0');
-      p.set('enPrice', next.enablePrice ? '1' : '0');
-      p.set('enWeight', next.enableWeight ? '1' : '0');
-      p.set('enDist', next.enableDistortion ? '1' : '0');
-      p.set('enBreath', next.enableBreathing ? '1' : '0');
-      const nextUrl = `${window.location.pathname}?${p.toString()}`;
-      window.history.replaceState(null, '', nextUrl);
-    }
-    prev = next;
-  });
-}
+// URL sync moved to UI hook: useUrlFiltersSync()
 
 
