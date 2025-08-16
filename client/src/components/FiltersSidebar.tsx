@@ -1,5 +1,5 @@
 import React from 'react';
-import { CARD_BASE, CARD_NEUTRAL, TEXT_SM, TEXT_XS_MUTED } from './ui/styles';
+import { CARD_BASE, CARD_NEUTRAL, TEXT_SM } from './ui/styles';
 import type { Camera } from '../types';
 import Toggle from './ui/Toggle';
 import Select from './ui/Select';

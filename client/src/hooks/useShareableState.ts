@@ -10,7 +10,7 @@ export function useShareableState() {
   const restoreFromUrl = React.useCallback(() => {
     // Reuse existing URL sync hook to set store from current URL
     // Trigger by toggling a noop setter to cause effects to run
-    const s = useFilterStore.getState();
+    const _s = useFilterStore.getState(); // TODO: programmatic restore from URL to store if needed in future
     // no-op: reading triggers nothing; URL sync runs on mount in useUrlFiltersSync
     return true;
   }, []);

@@ -1,7 +1,6 @@
 import React from 'react';
 import Section from '../ui/Section';
 import ModeSelect from './ModeSelect';
-import { useFilterStore } from '../../stores/filterStore';
 import { MODE_STAGE_BINDINGS, useFilterBindings } from '../../hooks/useStoreBindings';
 
 export default function ModeStage() {

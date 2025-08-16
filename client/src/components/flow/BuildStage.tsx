@@ -1,9 +1,8 @@
 import React from 'react';
 import Section from '../ui/Section';
 import BuildCapabilities from './BuildCapabilities';
-import { useFilterStore } from '../../stores/filterStore';
 import { BUILD_STAGE_BINDINGS, useFilterBindings } from '../../hooks/useStoreBindings';
-import type { Camera, Lens } from '../../types';
+import type { Camera } from '../../types';
 
 export default function BuildStage({
   cameras,

@@ -1,17 +1,17 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { useDebouncedReport } from '../hooks/useDebouncedReport';
 import { PlotProvider } from '../context/PlotProvider';
-import Card from '../components/ui/Card';
+// TODO: Re-introduce Card if we need additional container UI here
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-const LazyProRequirements = React.lazy(() => import('../components/flow/ProRequirements'));
-const LazySimpleRequirements = React.lazy(() => import('../components/flow/SimpleRequirements'));
+// const LazyProRequirements = React.lazy(() => import('../components/flow/ProRequirements')); // TODO: prefetch on hover
+// const LazySimpleRequirements = React.lazy(() => import('../components/flow/SimpleRequirements')); // TODO: prefetch on hover
 import { shallow } from 'zustand/shallow';
 import { useBootstrap } from '../hooks/useBootstrap';
-import { resultId } from '../lib/ids';
+// import { resultId } from '../lib/ids';
 import { useFilterStore } from '../stores/filterStore';
 import { SECTION_STACK, TEXT_XS_MUTED, STACK_Y } from '../components/ui/styles';
 import PageBase from '../components/pages/PageBase';
-import Loading from '../components/ui/Loading';
+// import Loading from '../components/ui/Loading';
 import CollapsibleMessage from '../components/ui/CollapsibleMessage';
 import OutageScreen from '../components/ui/OutageScreen';
 const DebugInspector = React.lazy(() => import('../components/flow/DebugInspector'));
@@ -32,18 +32,19 @@ export default function App() {
   const isPro = useFilterStore(s => s.isPro);
   const goalPreset = useFilterStore(s => s.goalPreset);
   const goalWeights = useFilterStore(s => s.goalWeights, shallow);
-  const focalChoice = useFilterStore(s => s.focalChoice);
-  const subjectDistanceM = useFilterStore(s => s.subjectDistanceM);
-  const compareList = useFilterStore(s => s.compareList);
-  const selected = useFilterStore(s => s.selected);
-  const report = useFilterStore(s => s.report);
+  // TODO: enable when needed in UI
+  // const focalChoice = useFilterStore(s => s.focalChoice);
+  // const subjectDistanceM = useFilterStore(s => s.subjectDistanceM);
+  // const compareList = useFilterStore(s => s.compareList);
+  // const selected = useFilterStore(s => s.selected);
+  // const report = useFilterStore(s => s.report);
   const setReport = useFilterStore(s => s.setReport);
 
   // Journey state: 0 mode, 1 build/capabilities, 2 requirements, 3 compare/top, 4 report
   const stage = useFilterStore(s => s.stage);
-  const continueTo = useFilterStore(s => s.continueTo);
-  const captureStageBaseline = useFilterStore(s => s.captureStageBaseline);
-  const resetToStageBaseline = useFilterStore(s => s.resetToStageBaseline);
+  // const continueTo = useFilterStore(s => s.continueTo); // not used here directly
+  // const captureStageBaseline = useFilterStore(s => s.captureStageBaseline);
+  // const resetToStageBaseline = useFilterStore(s => s.resetToStageBaseline);
   const modeRef = React.useRef<HTMLDivElement | null>(null);
   const reqRef = React.useRef<HTMLDivElement | null>(null);
   const compareRef = React.useRef<HTMLDivElement | null>(null);
@@ -62,7 +63,7 @@ export default function App() {
   // Auto-generate report whenever inputs/results change (debounced)
   useDebouncedReport({ camera, results, isPro, goalPreset, setReport });
 
-  const appReady = cameras.length > 0 && lenses.length > 0;
+  // const appReady = cameras.length > 0 && lenses.length > 0;
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
   const forceOutage = (typeof window !== 'undefined' && typeof window.__FORCE_OUTAGE__ !== 'undefined') ? (window as any).__FORCE_OUTAGE__ : false;

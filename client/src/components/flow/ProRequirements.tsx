@@ -1,36 +1,18 @@
 import React, { useMemo } from 'react';
 import type { Camera, Lens } from '../../types';
-import Info from '../ui/Info';
-import RangeSlider from '../ui/RangeSlider';
-import LabeledSelect from '../ui/fields/LabeledSelect';
-import LabeledCheckbox from '../ui/fields/LabeledCheckbox';
-import CheckboxGroup from '../ui/fields/CheckboxGroup';
-import Checkbox from '../ui/Checkbox';
-import LabeledRange from '../ui/fields/LabeledRange';
-import MetricRange from './MetricRange';
-import LabeledSegmentedControl, { type SegmentOption } from '../ui/fields/LabeledSegmentedControl';
-import LabeledSlider from '../ui/fields/LabeledSlider';
-import Button from '../ui/Button';
-import { TITLE_H2, TEXT_XS_MUTED, GRID_TWO_GAP3, STACK_Y, DIVIDER_T, TEXT_2XS_MUTED, INLINE_LABEL_MUTED_XS } from '../ui/styles';
-import { useFilterStore } from '../../stores/filterStore';
+//
 import { PRO_REQ_BINDINGS, useFilterBindings } from '../../hooks/useStoreBindings';
-import { PRESETS } from '../../lib/recommender';
-import { shallow } from 'zustand/shallow';
-import { applyFilters, buildFilterInput } from '../../lib/filters';
-import { computeNormalizedHistogram, gradientStyleFromNormalized } from '../../lib/hist';
-import { useLastChangedDiff } from '../../hooks/useLastChangedDiff';
-import { usePredictiveSuggestions } from '../../hooks/usePredictiveSuggestions';
+// TODO: Reintroduce density computation using filters/hist when UI is finalized
 import GoalsHeader from './pro/GoalsHeader';
 import { FIELD_HELP } from '../ui/fieldHelp';
 import CollapsibleMessage from '../ui/CollapsibleMessage';
 import BaseRequirements from './BaseRequirements';
-import StageNav from '../ui/StageNav';
-import FocalRange from './FocalRange';
+//
 import ApertureControl from './pro/ApertureControl';
 import FocalOnly from './pro/FocalOnly';
 import PriceAndWeight from './pro/PriceAndWeight';
 import VideoAndDistortion from './pro/VideoAndDistortion';
-import { AvailabilityProvider, useAvailability } from '../../context/AvailabilityContext';
+//
 // Inline warnings replace the standalone block; remove NoticeZeroResults usage
 
 type Props = {
@@ -44,35 +26,26 @@ type Props = {
 };
 
 export default function ProRequirements(props: Props) {
-  const { cameras, brandsForCamera, resultsCount = 0, onContinue, camera, cameraName: selectedCameraName = 'Any', lenses = [] } = props;
+  const { cameras, brandsForCamera, resultsCount = 0, onContinue } = props;
 
   const {
     cameraName, setCameraName,
     brand, setBrand,
     lensType, setLensType,
-    coverage, setCoverage,
-    focalMin, setFocalMin,
-    focalMax, setFocalMax,
-    maxApertureF, setMaxApertureF,
-    requireOIS, setRequireOIS,
+    // coverage, focalMin, focalMax, maxApertureF, requireOIS, // TODO: controlled via subcomponents
     sealed, setSealed,
     isMacro, setIsMacro,
-    priceRange, setPriceRange,
-    weightRange, setWeightRange,
-    distortionMaxPct, setDistortionMaxPct,
-    breathingMinScore, setBreathingMinScore,
-    goalPreset, setGoalPreset,
-    goalWeights, setGoalWeights,
+    // priceRange, setPriceRange, // TODO: reintroduce Pro price range wiring here if needed
+    // weightRange, setWeightRange, // TODO: reintroduce Pro weight range wiring here if needed
+    // distortionMaxPct, breathingMinScore,
+    // goalPreset, setGoalPreset, // TODO: goal preset handled elsewhere
+    // goalWeights, setGoalWeights, // TODO: goal weights editor moved
     caps,
-    undoLastFilter,
+    // undoLastFilter, // TODO: expose undo in Pro header if needed
     continueTo,
     resetFilters,
-    softPrice, setSoftPrice,
-    softWeight, setSoftWeight,
-    softDistortion, setSoftDistortion,
-    softBreathing, setSoftBreathing,
-    enablePrice, enableWeight, enableDistortion, enableBreathing,
-    setEnablePrice, setEnableWeight, setEnableDistortion, setEnableBreathing,
+    // softPrice, setSoftPrice, softWeight, setSoftWeight, softDistortion, setSoftDistortion, softBreathing, setSoftBreathing, // TODO: soft toggles UI
+    // enablePrice, enableWeight, enableDistortion, enableBreathing, setEnablePrice, setEnableWeight, setEnableDistortion, setEnableBreathing, // TODO: enable toggles UI
   } = useFilterBindings(PRO_REQ_BINDINGS);
 
   const onBack = () => continueTo(1);
@@ -84,108 +57,25 @@ export default function ProRequirements(props: Props) {
     }
   };
 
-  // Track the last changed filter and its human-formatted value for contextual zero-results notice
-  const { getLabel: lastChangedLabel, getDetail: lastChangedDetail } = useLastChangedDiff();
+  // Contextual zero-results and predictive suggestions handled elsewhere now
 
-  // Predictive impact: compute counts if this single control is relaxed to its availability bound
-  const predictive = usePredictiveSuggestions({ lenses, camera, cameraName: selectedCameraName });
-
-  // Density tracks for price and weight
+  // Density tracks for price and weight (deferred)
   const { priceTrackStyle, weightTrackStyle, currentPriceBounds, currentWeightBounds } = useMemo(() => {
-    if (!caps || lenses.length === 0) return { priceTrackStyle: {} as React.CSSProperties, weightTrackStyle: {} as React.CSSProperties };
-    const makeDensity = (vals: number[], minVal: number, maxVal: number, buckets = 24) => {
-      if (maxVal <= minVal) return [] as number[];
-      const hist = new Array(buckets).fill(0);
-      const span = maxVal - minVal;
-      vals.forEach(v => {
-        const i = Math.min(buckets - 1, Math.max(0, Math.floor(((v - minVal) / span) * buckets)));
-        hist[i] += 1;
-      });
-      const maxCount = Math.max(1, ...hist);
-      return hist.map(h => h / maxCount);
+    return {
+      priceTrackStyle: {} as React.CSSProperties,
+      weightTrackStyle: {} as React.CSSProperties,
+      currentPriceBounds: caps ? { ...caps.priceBounds } : ({ min: 0, max: 0 } as any),
+      currentWeightBounds: caps ? { ...caps.weightBounds } : ({ min: 0, max: 0 } as any),
     };
-    const baseFilters = {
-      brand, lensType, sealed, isMacro,
-      proCoverage: coverage,
-      proFocalMin: focalMin, proFocalMax: focalMax,
-      proMaxApertureF: maxApertureF,
-      proRequireOIS: requireOIS,
-      proRequireSealed: sealed,
-      proRequireMacro: isMacro,
-      proDistortionMaxPct: distortionMaxPct,
-      proBreathingMinScore: breathingMinScore,
-    };
-    // Price density: ignore current price/weight cuts
-    const sObj: any = {
-      lenses,
-      cameraName,
-      ...baseFilters,
-      priceRange: { ...caps.priceBounds },
-      weightRange: { ...caps.weightBounds },
-      proCoverage: coverage,
-      proFocalMin: focalMin,
-      proFocalMax: focalMax,
-      proMaxApertureF: maxApertureF,
-      proRequireOIS: requireOIS,
-      proRequireSealed: sealed,
-      proRequireMacro: isMacro,
-      proPriceMax: caps.priceBounds.max,
-      proWeightMax: caps.weightBounds.max,
-      proDistortionMaxPct: distortionMaxPct,
-      proBreathingMinScore: breathingMinScore,
-      softPrice: true,
-      softWeight: true,
-      softDistortion: true,
-      softBreathing: true,
-      enablePrice: true,
-      enableWeight: true,
-      enableDistortion: true,
-      enableBreathing: true,
-    };
-    const pricePool = applyFilters(buildFilterInput(sObj, camera?.mount));
-    const priceVals = pricePool.map(l => l.price_chf).filter(v => Number.isFinite(v));
-    const priceNorm = computeNormalizedHistogram(priceVals, caps.priceBounds.min, caps.priceBounds.max);
-    const priceTrackStyle: React.CSSProperties = gradientStyleFromNormalized(priceNorm);
+  }, [caps]);
 
-    // Weight density
-    const weightPool = pricePool; // same pool is fine
-    const weightVals = weightPool.map(l => l.weight_g).filter(v => Number.isFinite(v));
-    const weightNorm = computeNormalizedHistogram(weightVals, caps.weightBounds.min, caps.weightBounds.max);
-    const weightTrackStyle: React.CSSProperties = gradientStyleFromNormalized(weightNorm);
+  // TODO: surface density track styles and bounds in field components when UI is finalized
+  void priceTrackStyle;
+  void weightTrackStyle;
+  void currentPriceBounds;
+  void currentWeightBounds;
 
-    const currentPriceBounds = priceVals.length ? { min: Math.min(...priceVals), max: Math.max(...priceVals) } : { ...caps.priceBounds };
-    const currentWeightBounds = weightVals.length ? { min: Math.min(...weightVals), max: Math.max(...weightVals) } : { ...caps.weightBounds };
-    return { priceTrackStyle, weightTrackStyle, currentPriceBounds, currentWeightBounds };
-  }, [caps, lenses, camera, selectedCameraName, brand, lensType, sealed, isMacro, coverage, focalMin, focalMax, maxApertureF, requireOIS, distortionMaxPct, breathingMinScore]);
-
-  // Current filtered list for histogram foregrounds
-  const currentFiltered = useMemo(() => {
-    const filters = {
-      cameraName: selectedCameraName,
-      brand,
-      lensType,
-      sealed,
-      isMacro,
-      priceRange,
-      weightRange,
-      proCoverage: coverage,
-      proFocalMin: focalMin,
-      proFocalMax: focalMax,
-      proMaxApertureF: maxApertureF,
-      proRequireOIS: requireOIS,
-      proRequireSealed: sealed,
-      proRequireMacro: isMacro,
-      proPriceMax: priceRange.max,
-      proWeightMax: weightRange.max,
-      proDistortionMaxPct: distortionMaxPct,
-      proBreathingMinScore: breathingMinScore,
-      softPrice,
-      softWeight,
-      softDistortion,
-      softBreathing,
-    } as any;
-    return applyFilters({ lenses: lenses || [], cameraName: selectedCameraName, cameraMount: camera?.mount, ...filters });
-  }, [lenses, selectedCameraName, camera, brand, lensType, sealed, isMacro, priceRange, weightRange, coverage, focalMin, focalMax, maxApertureF, requireOIS, distortionMaxPct, breathingMinScore, softPrice, softWeight, softDistortion, softBreathing]);
+  // Removed unused foreground histogram computation
 
   return (
     <BaseRequirements
@@ -210,8 +100,7 @@ export default function ProRequirements(props: Props) {
       onContinue={onContinue}
     >
       <GoalsHeader />
-      {/** compute foreground arrays from current filtered results */}
-      {(() => null)()}
+      {/** foreground histograms are computed inside field components */}
       <CollapsibleMessage variant="neutral" title="Tune your requirements" defaultOpen={false} className="max-w-3xl">
         <ul className="list-disc pl-5 text-sm space-y-1">
           <li><strong>Coverage</strong>: {FIELD_HELP.coverage}</li>

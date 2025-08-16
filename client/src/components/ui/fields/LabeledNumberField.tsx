@@ -20,7 +20,7 @@ type Props = {
   parse?: (s: string) => number;
 };
 
-export default function LabeledNumberField({ label, infoText, value, onChange, min, max, step, placeholder, right, hint, status, idPrefix, format, parse }: Props) {
+export default function LabeledNumberField({ label, infoText, value, onChange, min, max, step: _step, placeholder, right, hint, status, idPrefix, format, parse }: Props) { // TODO: add +/- stepper buttons using step
   const [text, setText] = React.useState<string>(() => (Number.isFinite(value) ? (format ? format(value) : String(value)) : ''));
   React.useEffect(() => {
     setText(Number.isFinite(value) ? (format ? format(value) : String(value)) : '');

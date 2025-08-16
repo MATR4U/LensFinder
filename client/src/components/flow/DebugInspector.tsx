@@ -1,6 +1,5 @@
 import React from 'react';
 import DebugFilterPanel from '../../components/DebugFilterPanel';
-import { useFilterStore } from '../../stores/filterStore';
 import { DEBUG_BINDINGS, useFilterBindings } from '../../hooks/useStoreBindings';
 
 export default function DebugInspector(props: {

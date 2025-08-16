@@ -1,15 +1,13 @@
 import React from 'react';
 import type { Camera } from '../../types';
-import { TITLE_H2, CARD_PADDED, GRID_TWO_GAP3, INLINE_CHIPS_ROW, ROW_BETWEEN, BADGE_COUNT, ACTION_ROW } from '../ui/styles';
+import { CARD_PADDED, GRID_TWO_GAP3, INLINE_CHIPS_ROW, BADGE_COUNT } from '../ui/styles';
 import PageBase from '../pages/PageBase';
-import Button from '../ui/Button';
-import LabeledSelect from '../ui/fields/LabeledSelect';
+// TODO: If we re-introduce Button or LabeledSelect here, wire them into the layout
 import { useStageLifecycle } from '../../hooks/useStageLifecycle';
 import AvailabilitySelect from '../ui/AvailabilitySelect';
-import { useFilterStore } from '../../stores/filterStore';
 import CheckboxGroup from '../ui/fields/CheckboxGroup';
 import StageNav from '../ui/StageNav';
-import { AvailabilityProvider } from '../../context/AvailabilityContext';
+//
 import { COPY } from '../../lib/copy';
 
 type ToggleItem = { key: string; label: string; checked: boolean; onChange: (v: boolean) => void; id: string; infoText?: string };

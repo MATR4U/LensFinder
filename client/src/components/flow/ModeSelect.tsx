@@ -1,6 +1,6 @@
 import React from 'react';
 import { CARD_PADDED, GRID_TWO_GAP3 } from '../ui/styles';
-import { useFilterStore } from '../../stores/filterStore';
+import { MODE_SELECT_BINDINGS, useFilterBindings } from '../../hooks/useStoreBindings';
 import SelectableCard from '../ui/SelectableCard';
 import StageNav from '../ui/StageNav';
 import { useStageLifecycle } from '../../hooks/useStageLifecycle';
@@ -10,9 +10,7 @@ type Props = {
 };
 
 export default function ModeSelect({ onContinue }: Props) {
-  const isPro = useFilterStore(s => s.isPro);
-  const setIsPro = useFilterStore(s => s.setIsPro);
-  const continueTo = useFilterStore(s => s.continueTo);
+  const { isPro, setIsPro, continueTo } = useFilterBindings(MODE_SELECT_BINDINGS);
   const { onEnter } = useStageLifecycle(0, { resetOnEntry: false });
   React.useEffect(() => { onEnter(); }, [onEnter]);
   return (
@@ -41,7 +39,7 @@ export default function ModeSelect({ onContinue }: Props) {
           testId="mode-pro"
         />
       </div>
-      <StageNav className="mt-2" onBack={() => continueTo(0)} onContinue={() => continueTo(1)} />
+      <StageNav className="mt-2" onBack={() => continueTo(0)} onContinue={onContinue ?? (() => continueTo(1))} />
     </div>
   );
 }

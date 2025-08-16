@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useFilterStore } from '../stores/filterStore';
 
-export function useStageReset(stageNumber: number) {
+export function useStageReset(_stageNumber: number) { // TODO: stageNumber reserved for future stage-aware resets
   const resetFilters = useFilterStore(s => s.resetFilters);
   const setCameraName = useFilterStore(s => s.setCameraName);
   const setSealed = useFilterStore(s => s.setSealed);

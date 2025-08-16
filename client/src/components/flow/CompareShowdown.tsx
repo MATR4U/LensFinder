@@ -2,11 +2,11 @@ import React from 'react';
 import LazyPlot from '../ui/LazyPlot';
 import type { Result, Camera } from '../../types';
 import { useSelectedResults } from '../../hooks/useSelectedResults';
-import { useFilterStore } from '../../stores/filterStore';
+import { COMPARE_SHOWDOWN_BINDINGS, useFilterBindings } from '../../hooks/useStoreBindings';
 import CollapsibleMessage from '../ui/CollapsibleMessage';
 import Info from '../ui/Info';
-import Button from '../ui/Button';
-import { CARD_BASE, CARD_NEUTRAL, TEXT_SM, TEXT_MUTED } from '../ui/styles';
+//
+import { CARD_BASE, CARD_NEUTRAL, TEXT_SM } from '../ui/styles';
 import Table from '../Table';
 import { useStageLifecycle } from '../../hooks/useStageLifecycle';
 
@@ -15,12 +15,10 @@ type Props = {
   selected: Result[];
 };
 
-export default function CompareShowdown({ camera, selected }: Props) {
+export default function CompareShowdown({ camera: _camera, selected }: Props) { // TODO: consider showing camera-dependent comparison hints
   const { onEnter } = useStageLifecycle(3, { resetOnEntry: false });
   React.useEffect(() => { onEnter(); }, [onEnter]);
-  const compareList = useFilterStore(s => s.compareList);
-  const toggleCompare = useFilterStore(s => s.toggleCompare);
-  const setSelected = useFilterStore(s => s.setSelected);
+  const { setSelected } = useFilterBindings(COMPARE_SHOWDOWN_BINDINGS);
   const rows = useSelectedResults(selected);
   const table = (
     <Table data={rows as any} columnsMode="compare-minimal" onSelect={(r) => setSelected(r)} />

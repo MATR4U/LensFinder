@@ -5,7 +5,6 @@ import Card from '../ui/Card';
 import ReportView from '../report/ReportView';
 import StageNav from '../ui/StageNav';
 import type { Camera, Result } from '../../types';
-import { useFilterStore } from '../../stores/filterStore';
 import { REPORT_STAGE_BINDINGS, useFilterBindings } from '../../hooks/useStoreBindings';
 
 export default function ReportStage({ camera, goalWeights, results }: { camera: Camera | undefined; goalWeights: Record<string, number> | undefined; results: Result[]; }) {

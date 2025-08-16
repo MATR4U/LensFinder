@@ -19,7 +19,7 @@ export function ticksFromBounds(min: number, max: number): number[] {
   return [min, q1, q2, q3, max];
 }
 
-export function parseFromUnit(unit: 'CHF' | 'g' | 'mm' | '%') {
+export function parseFromUnit(_unit: 'CHF' | 'g' | 'mm' | '%') {
   return (input: string): number => {
     const normalized = input
       .replace(/\s+/g, ' ')

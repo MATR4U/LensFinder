@@ -66,18 +66,18 @@ export function onDataInvalidated(cb: () => void) {
         source = null;
       };
     })();
-  } catch (_) {
+  } catch {
     source = null;
   }
 
-  let pollTimer: any;
+  let pollTimer: any; // TODO: replace with scheduler util for testability
   async function pollTick() {
     if (stopped) return;
     try {
       await fetchWithEtag('/api/cameras', camerasCache);
       await fetchWithEtag('/api/lenses', lensesCache);
       cb();
-    } catch (_) {
+    } catch {
     } finally {
       if (!stopped) pollTimer = setTimeout(pollTick, 60000);
     }

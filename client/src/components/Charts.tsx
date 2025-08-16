@@ -7,7 +7,7 @@ import type { Result, Camera } from '../types';
 
 type Props = { results: Result[]; camera: Camera | undefined };
 
-export default function Charts({ results, camera }: Props) {
+export default function Charts({ results, camera: _camera }: Props) { // TODO: evaluate using camera contextually in charts
   const layoutBase = {
     paper_bgcolor: 'transparent',
     plot_bgcolor: 'transparent',

@@ -2,17 +2,21 @@ import React from 'react';
 import type { Camera } from '../../types';
 import { useFilterStore } from '../../stores/filterStore';
 import { BUILD_CAPS_BINDINGS, useFilterBindings } from '../../hooks/useStoreBindings';
-import { CARD_PADDED, GRID_TWO_GAP3 } from '../ui/styles';
+import { CARD_PADDED } from '../ui/styles';
 import StageHeader from '../ui/StageHeader';
 import StageNav from '../ui/StageNav';
-import StageLayout from '../ui/StageLayout';
-import BuildFeatures from '../ui/BuildFeatures';
+// TODO: Implement StageLayout if needed for layout orchestration
+// TODO: Implement BuildFeatures or remove if superseded by BuildFeaturesGroup
 import { useBuildFeatureAvailability } from '../../hooks/useBuildFeatureAvailability';
 import { useAvailabilityOptions } from '../../hooks/useAvailabilityOptions';
 import { useStageLifecycle } from '../../hooks/useStageLifecycle';
 import { useAutoCorrectSelections } from '../../hooks/useAutoCorrectSelections';
 import { useStageReset } from '../../hooks/useStageReset';
-import AvailabilitySelect from '../ui/AvailabilitySelect';
+// TODO: Implement AvailabilitySelect if we plan to surface caps at this stage
+import CameraSelect from './build/CameraSelect';
+import BrandTypeSelectors from './build/BrandTypeSelectors';
+import CoverageSelect from './build/CoverageSelect';
+import BuildFeaturesGroup from './build/BuildFeaturesGroup';
 import { useAvailableBodies } from '../../hooks/useAvailableBodies';
 import { useCountsOptions } from '../../hooks/useCountsOptions';
 import { AvailabilityProvider, useAvailability } from '../../context/AvailabilityContext';
@@ -24,7 +28,7 @@ type Props = {
   onContinue: () => void;
 };
 
-function BuildCapabilitiesBody({ cameras = [], brandsForCamera = [], resultsCount, onContinue }: Props) {
+function BuildCapabilitiesBody({ cameras = [], brandsForCamera: _brandsForCamera = [], resultsCount, onContinue }: Props) { // TODO: brandsForCamera currently unused; integrate or remove
   const {
     isPro,
     cameraName, setCameraName,
@@ -35,7 +39,7 @@ function BuildCapabilitiesBody({ cameras = [], brandsForCamera = [], resultsCoun
     isMacro, setIsMacro,
     requireOIS, setRequireOIS,
     continueTo,
-    caps,
+    caps: _caps,
   } = useFilterBindings(BUILD_CAPS_BINDINGS);
 
   const onBack = () => continueTo(0);
@@ -81,48 +85,25 @@ function BuildCapabilitiesBody({ cameras = [], brandsForCamera = [], resultsCoun
       })()}
 
       <div>
-        <AvailabilitySelect
-          label="Camera Body"
-          value={cameraName}
-          onChange={setCameraName}
-          options={[
-            { value: 'Any', label: 'Any', count: countsEff.cameraCounts['Any'] },
-            ...cameras.map(c => ({ value: c.name, label: c.name, count: countsEff.cameraCounts[c.name] ?? 0, disabled: !availableBodies[c.name] }))
-          ]}
-        />
+        <CameraSelect cameras={cameras} cameraName={cameraName} setCameraName={setCameraName} counts={countsEff.cameraCounts} availableBodies={availableBodies} />
       </div>
 
-      <div className={GRID_TWO_GAP3}>
-        <div>
-          <AvailabilitySelect
-            label="Lens Brand"
-            value={brand}
-            onChange={setBrand}
-            options={useCountsOptions('brands', supBrands, dyn, countsEff)}
-          />
-        </div>
-        <div>
-          <AvailabilitySelect
-            label="Lens Type"
-            value={lensType}
-            onChange={setLensType}
-            options={useCountsOptions('lensTypes', supLensTypes, dyn, countsEff)}
-          />
-        </div>
-      </div>
+      <BrandTypeSelectors
+        brand={brand}
+        setBrand={setBrand}
+        lensType={lensType}
+        setLensType={setLensType}
+        brandsOptions={useCountsOptions('brands', supBrands, dyn, countsEff)}
+        lensTypeOptions={useCountsOptions('lensTypes', supLensTypes, dyn, countsEff)}
+      />
 
       {isPro && (
         <div>
-          <AvailabilitySelect
-            label="Sensor Coverage"
-            value={coverage}
-            onChange={setCoverage}
-            options={useCountsOptions('coverage', supCoverage, dyn, countsEff)}
-          />
+          <CoverageSelect coverage={coverage} setCoverage={setCoverage} options={useCountsOptions('coverage', supCoverage, dyn, countsEff)} />
         </div>
       )}
 
-      <BuildFeatures
+      <BuildFeaturesGroup
         sealed={sealed}
         setSealed={setSealed}
         canRequireSealed={canRequireSealed}
@@ -130,6 +111,7 @@ function BuildCapabilitiesBody({ cameras = [], brandsForCamera = [], resultsCoun
         setIsMacro={setIsMacro}
         canRequireMacro={canRequireMacro}
         {...(isPro ? { requireOIS, setRequireOIS, canRequireOIS } : {})}
+        isPro={isPro}
       />
 
       <StageNav className="mt-2" onBack={onBack} backLabel="Back to mode" onReset={useStageReset(1)} onContinue={onContinue} continueLabel="Continue" />

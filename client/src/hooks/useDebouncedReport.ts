@@ -31,7 +31,7 @@ export function useDebouncedReport({ camera, results, isPro, goalPreset, setRepo
         const goalDesc = isPro ? `${goalPreset} (Pro)` : `${goalPreset} (Beginner)`;
         const resp = await postReport({ cameraName: camera.name, goal: goalDesc, top });
         setReport(resp);
-      } catch (_) { /* ignore transient errors */ }
+      } catch { /* ignore transient errors */ }
     }, delayMs);
     return () => { controller.abort(); window.clearTimeout(timeout); };
   }, [camera, results, isPro, goalPreset, setReport, delayMs]);

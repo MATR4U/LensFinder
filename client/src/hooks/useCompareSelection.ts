@@ -1,10 +1,9 @@
 import { useFilterStore } from '../stores/filterStore';
-import { useMemo, useCallback } from 'react';
+import { selectCompareState } from '../stores/selectors';
+import { useCallback } from 'react';
 
 export function useCompareSelection(max = 3) {
-  const compareList = useFilterStore(s => s.compareList);
-  const setCompareList = useFilterStore(s => s.setCompareList);
-  const toggleCompare = useFilterStore(s => s.toggleCompare);
+  const { compareList, setCompareList, toggleCompare } = useFilterStore(selectCompareState);
   const selectedCount = compareList.length;
   const atCapacity = selectedCount >= max;
   const isSelected = useCallback((id: string) => compareList.includes(id), [compareList]);

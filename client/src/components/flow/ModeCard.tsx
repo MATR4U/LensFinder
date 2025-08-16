@@ -1,11 +1,10 @@
 import React from 'react';
 import { CARD_PADDED, GRID_TWO_GAP3 } from '../ui/styles';
-import { useFilterStore } from '../../stores/filterStore';
+import { MODE_CARD_BINDINGS, useFilterBindings } from '../../hooks/useStoreBindings';
 import SelectableCard from '../ui/SelectableCard';
 
 export default function ModeCard() {
-  const isPro = useFilterStore(s => s.isPro);
-  const setIsPro = useFilterStore(s => s.setIsPro);
+  const { isPro, setIsPro } = useFilterBindings(MODE_CARD_BINDINGS);
   return (
     <div className={CARD_PADDED}>
       {/* Title handled by parent Section; avoid duplicate headings */}

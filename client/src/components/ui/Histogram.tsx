@@ -17,7 +17,7 @@ type Props = {
   showMaxLabel?: boolean;
 };
 
-export default function Histogram({ values, totalValues, min, max, buckets = 24, className = '', selection, dragging = false, onSelectRange, showMaxLabel = false }: Props) {
+export default function Histogram({ values, totalValues, min, max, buckets = 24, className: _className = '', selection, dragging = false, onSelectRange, showMaxLabel = false }: Props) { // TODO: allow className styling passthrough if needed
   const bg = React.useMemo<HistogramBin[]>(() => (totalValues ? computeHistogram(totalValues, min, max, buckets) : []), [totalValues, min, max, buckets]);
   const fg = React.useMemo<HistogramBin[]>(() => computeHistogram(values, min, max, buckets), [values, min, max, buckets]);
   const height = 40;

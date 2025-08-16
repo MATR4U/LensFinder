@@ -1,6 +1,6 @@
 import type { FilterState } from '../../filterStore';
 import { PRESETS } from '../../../lib/recommender';
-import { mapWeightsToLegacyFilters, inferPresetWithHysteresis } from '../../../lib/presetsMapping';
+import { mapWeightsToLegacyFilters } from '../../../lib/presetsMapping';
 
 export function createGoalsSlice(
   set: (partial: Partial<FilterState>) => void,
@@ -26,16 +26,17 @@ export function createGoalsSlice(
       const wide = weights.wide ?? 0;
 
       const cur = get();
-      let nextEnableWeight = cur.enableWeight;
-      let nextSoftWeight = cur.softWeight;
+      // TODO: Retain these for tuning heuristics; currently not applied directly
+      const nextEnableWeight = cur.enableWeight; void nextEnableWeight;
+      const nextSoftWeight = cur.softWeight; void nextSoftWeight;
       let nextWeightMax = cur.proWeightMax;
       if (portability >= 0.8) { nextEnableWeight = true; nextSoftWeight = false; nextWeightMax = 800; }
       else if (portability >= 0.6) { nextEnableWeight = true; nextSoftWeight = false; nextWeightMax = 1000; }
       else if (portability >= 0.4) { nextEnableWeight = true; nextSoftWeight = true; nextWeightMax = 1200; }
       else { nextEnableWeight = false; }
 
-      let nextEnablePrice = cur.enablePrice;
-      let nextSoftPrice = cur.softPrice;
+      const nextEnablePrice = cur.enablePrice; void nextEnablePrice;
+      const nextSoftPrice = cur.softPrice; void nextSoftPrice;
       let nextPriceMax = cur.proPriceMax;
       if (valueW >= 0.8) { nextEnablePrice = true; nextSoftPrice = false; nextPriceMax = 1000; }
       else if (valueW >= 0.6) { nextEnablePrice = true; nextSoftPrice = false; nextPriceMax = 1500; }
@@ -62,21 +63,21 @@ export function createGoalsSlice(
         if (nextFocalMin < 0) nextFocalMin = 0;
       }
 
-      let nextEnableDistortion = cur.enableDistortion;
-      let nextSoftDistortion = cur.softDistortion;
+      const nextEnableDistortion = cur.enableDistortion; void nextEnableDistortion;
+      const nextSoftDistortion = cur.softDistortion; void nextSoftDistortion;
       let nextDistortionMax = cur.proDistortionMaxPct;
       if (distortion >= 0.7) { nextEnableDistortion = true; nextSoftDistortion = false; nextDistortionMax = 2.5; }
       else if (distortion >= 0.5) { nextEnableDistortion = true; nextSoftDistortion = true; nextDistortionMax = 3.5; }
       else { nextEnableDistortion = false; }
 
-      let nextEnableBreathing = cur.enableBreathing;
-      let nextSoftBreathing = cur.softBreathing;
+      const nextEnableBreathing = cur.enableBreathing; void nextEnableBreathing;
+      const nextSoftBreathing = cur.softBreathing; void nextSoftBreathing;
       let nextBreathingMin = cur.proBreathingMinScore;
       if (video >= 0.7) { nextEnableBreathing = true; nextSoftBreathing = false; nextBreathingMin = 7; }
       else if (video >= 0.5) { nextEnableBreathing = true; nextSoftBreathing = true; nextBreathingMin = 5; }
       else { nextEnableBreathing = false; }
 
-      let nextRequireOIS = cur.proRequireOIS;
+      const nextRequireOIS = cur.proRequireOIS; void nextRequireOIS;
       if (lowLightOrBlur >= 0.85) nextRequireOIS = true;
 
       let override: Partial<FilterState> = {};

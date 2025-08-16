@@ -3,7 +3,6 @@ import { STACK_Y } from '../ui/styles';
 import ExploreGrid from './ExploreGrid';
 import CompareShowdown from './CompareShowdown';
 import StageNav from '../ui/StageNav';
-import { useFilterStore } from '../../stores/filterStore';
 import { COMPARE_STAGE_BINDINGS, useFilterBindings } from '../../hooks/useStoreBindings';
 import { resultId } from '../../lib/ids';
 import type { Camera, Result } from '../../types';

@@ -30,8 +30,7 @@ export default function CheckboxGroup({ label, infoText, items, layout = 'row', 
       <div className={layout === 'row' ? 'flex flex-wrap items-center divide-x divide-[var(--border-default)]' : 'flex flex-col gap-2'} aria-labelledby={groupLabelId}>
         {items.map((item) => {
           const checkboxId = item.id ?? `${item.key}-${groupLabelId}`;
-          const roleLabel = item.label;
-          const ariaChecked = item.checked ? 'true' : 'false';
+          // roleLabel and ariaChecked are implicit via Toggle; avoid unused vars
           const hideText = !showItemLabels && items.length === 1;
           return (
             <div key={item.key} className="inline-flex items-center gap-2 text-sm text-[var(--text-muted)] px-4 first:pl-0">

@@ -54,7 +54,8 @@
     "test:precommit": "SKIP_DB_TESTS=1 npm run ci:fast && npm --workspace client run lint && npm run build",
     "data:lenses:fetch": "node db/data/scripts/fetch-lens-specs.mjs",
     "data:lenses:update": "node db/data/scripts/fetch-lens-specs.mjs --write",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "watch:lint:file": "onchange -i -k --await-write-finish 2000 \"client/src/**/*.{ts,tsx}\" -- bash -lc 'ABS=\"$PWD/$(echo \"${1}\" | sed s#^./##)\"; echo Lint: $ABS; npm --workspace client exec -- eslint --quiet \"$ABS\"'"
   },
   "devDependencies": {
     "@playwright/test": "1.46.1",
@@ -62,7 +63,8 @@
     "cross-env": "7.0.3",
     "kill-port": "2.0.1",
     "wait-on": "7.2.0",
-    "husky": "9.0.11"
+    "husky": "9.0.11",
+    "onchange": "7.1.0"
   },
   "overrides": {
     "graphql": "16.9.0"

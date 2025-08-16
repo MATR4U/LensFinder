@@ -3,7 +3,8 @@ import { useFilterStore } from '../stores/filterStore';
 import { FilterStateSchema } from '../lib/schema';
 import { decodeWeightsBase64Url, encodeWeightsBase64Url } from '../lib/presetsMapping';
 
-const paramMap = [
+// TODO: Use this map to automate encode/decode; currently duplicated in effects above
+const _paramMap = [
   ['cameraName', 'cameraName'],
   ['isPro', (v: any) => (v ? '1' : '0'), (s: any, v: string) => (v === '1' || v === 'true')],
   ['brand', 'brand'],

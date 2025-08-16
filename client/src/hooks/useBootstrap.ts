@@ -3,11 +3,7 @@ import type { Camera, Lens } from '../types';
 // Do not block on health; fetch data directly with backoff
 import { getCamerasCached, getLensesCached, onDataInvalidated, getCacheMeta, getCachedSnapshot } from '../lib/data';
 
-async function fetchJSON<T>(path: string): Promise<T> {
-  const res = await fetch(path);
-  if (!res.ok) throw new Error(`Request failed: ${res.status}`);
-  return res.json();
-}
+// TODO: If needed later, re-introduce fetchJSON and wire it to callers
 
 export function useBootstrap() {
   const [cameras, setCameras] = useState<Camera[]>([]);
@@ -98,7 +94,7 @@ export function useBootstrap() {
             if (cancelled) return;
             setCameras(nc);
             setLenses(nl);
-          } catch (_) { /* ignore */ }
+          } catch { /* ignore */ }
         });
         setFatalError(null);
         setLastError(null);

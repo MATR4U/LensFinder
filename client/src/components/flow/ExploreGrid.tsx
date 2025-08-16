@@ -1,8 +1,8 @@
 import React from 'react';
-import { TEXT_XS_MUTED, CARD_BASE, CARD_NEUTRAL, TEXT_MUTED, GRID_AUTOFILL, CARD_BODY, ROW_BETWEEN, TEXT_SM, ROW_END } from '../ui/styles';
+import { CARD_BASE, CARD_NEUTRAL, GRID_AUTOFILL, CARD_BODY, ROW_BETWEEN, TEXT_SM, ROW_END } from '../ui/styles';
 import type { Result } from '../../types';
 import { motion } from 'framer-motion';
-import { useFilterStore } from '../../stores/filterStore';
+import { EXPLORE_GRID_BINDINGS, useFilterBindings } from '../../hooks/useStoreBindings';
 import { useCompareSelection } from '../../hooks/useCompareSelection';
 import Button from '../ui/Button';
 import { resultId } from '../../lib/ids';
@@ -17,8 +17,8 @@ type Props = {
 export default function ExploreGrid({ items }: Props) {
   const { onEnter } = useStageLifecycle(2, { resetOnEntry: false });
   React.useEffect(() => { onEnter(); }, [onEnter]);
-  const setSelected = useFilterStore(s => s.setSelected);
-  const { compareList, atCapacity, isSelected, select, remove, ctaLabel } = useCompareSelection(3);
+  const { compareList } = useFilterBindings(EXPLORE_GRID_BINDINGS);
+  const { atCapacity, isSelected, select, remove /*, ctaLabel */ } = useCompareSelection(3); // TODO: reintroduce CTA label
   const [openDetailsId, setOpenDetailsId] = React.useState<string | null>(null);
   const MAX_COMPARE = 3;
   return (
@@ -27,7 +27,7 @@ export default function ExploreGrid({ items }: Props) {
         const id = resultId(r);
         const selectedIndex = compareList.indexOf(id);
         const selectedNow = isSelected(id);
-        const cta = ctaLabel(id);
+        // const cta = ctaLabel(id); // TODO: could surface CTA label in UI if space allows
         return (
           <motion.div
             layout

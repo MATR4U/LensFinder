@@ -9,7 +9,7 @@ import {
   useReactTable
 } from '@tanstack/react-table';
 import type { Result } from '../types';
-import { useFilterStore } from '../stores/filterStore';
+import { EXPLORE_GRID_BINDINGS, useFilterBindings } from '../hooks/useStoreBindings';
 import { resultId } from '../lib/ids';
 
 type Props = {
@@ -23,9 +23,7 @@ type Props = {
 
 export default function Table({ data, onSelect, onCheckPrice, advanced = true, priceOverrides, columnsMode }: Props) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  const setSelected = useFilterStore(s => s.setSelected);
-  const compareList = useFilterStore(s => s.compareList);
-  const toggleCompare = useFilterStore(s => s.toggleCompare);
+  const { setSelected, compareList, toggleCompare } = useFilterBindings(EXPLORE_GRID_BINDINGS);
 
   const columns = useMemo<ColumnDef<Result>[]>(() => {
     if (columnsMode === 'compare-minimal') {

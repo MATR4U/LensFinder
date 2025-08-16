@@ -1,21 +1,18 @@
 import Button from '../ui/Button';
 import React from 'react';
 import type { Camera, Lens } from '../../types';
-import Info from '../ui/Info';
-import { GRID_TWO_GAP3, INLINE_CHIPS_ROW } from '../ui/styles';
-import LabeledRange from '../ui/fields/LabeledRange';
+import { INLINE_CHIPS_ROW } from '../ui/styles';
 import MetricRange from './MetricRange';
 import { useFilterStore } from '../../stores/filterStore';
 import { SIMPLE_REQ_BINDINGS, useFilterBindings } from '../../hooks/useStoreBindings';
 import { PRESETS } from '../../lib/recommender';
-import { shallow } from 'zustand/shallow';
 import { applyFilters, buildFilterInput } from '../../lib/filters';
 import GoalPresetWeights from '../ui/fields/GoalPresetWeights';
 import { FIELD_HELP } from '../ui/fieldHelp';
 import CollapsibleMessage from '../ui/CollapsibleMessage';
 import BaseRequirements from './BaseRequirements';
 import StageHeader from '../ui/StageHeader';
-import StageNav from '../ui/StageNav';
+//
 import { AvailabilityProvider, useAvailability } from '../../context/AvailabilityContext';
 import { computeNormalizedHistogram, gradientStyleFromNormalized } from '../../lib/hist';
 
@@ -30,7 +27,7 @@ type Props = {
 };
 
 function SimpleRequirementsBody(props: Props) {
-  const { cameras, brandsForCamera, onContinue, resultsCount = 0, camera, cameraName: selectedCameraName = 'Any', lenses = [] } = props;
+  const { cameras, brandsForCamera: _brandsForCamera, onContinue, resultsCount = 0, camera, cameraName: selectedCameraName = 'Any', lenses = [] } = props; // TODO: brandsForCamera currently unused by Simple
 
   const {
     cameraName, setCameraName,
@@ -38,18 +35,18 @@ function SimpleRequirementsBody(props: Props) {
     lensType, setLensType,
     sealed, setSealed,
     isMacro, setIsMacro,
-    priceRange, setPriceRange,
-    weightRange, setWeightRange,
+    // priceRange, setPriceRange, // TODO: consider re-adding simple price range control
+    // weightRange, setWeightRange, // TODO: consider re-adding simple weight range control
     goalPreset, setGoalPreset,
-    setGoalWeights,
+    // setGoalWeights, // TODO: hook up weight sliders for simple mode if desired
     caps,
-    undoLastFilter,
+    // undoLastFilter, // TODO: expose undo inline in Simple header if needed
     continueTo,
     resetFilters,
-    softPrice, setSoftPrice,
-    softWeight, setSoftWeight,
-    enablePrice, setEnablePrice,
-    enableWeight, setEnableWeight,
+    // softPrice, setSoftPrice, // TODO: wire soft toggles in simple mode
+    // softWeight, setSoftWeight,
+    // enablePrice, setEnablePrice,
+    // enableWeight, setEnableWeight,
   } = useFilterBindings(SIMPLE_REQ_BINDINGS);
 
   const onBack = () => continueTo(1);
@@ -62,7 +59,7 @@ function SimpleRequirementsBody(props: Props) {
   };
 
   // Density tracks for price and weight (Simple)
-  const { priceTrackStyle, weightTrackStyle, currentPriceBounds, currentWeightBounds } = React.useMemo(() => {
+  const { priceTrackStyle, weightTrackStyle } = React.useMemo(() => {
     if (!caps || lenses.length === 0) return { priceTrackStyle: {} as React.CSSProperties, weightTrackStyle: {} as React.CSSProperties };
     const baseFilters = { brand, lensType, sealed, isMacro };
     const sObj: any = {
@@ -98,10 +95,10 @@ function SimpleRequirementsBody(props: Props) {
     const weightVals = pool.map(l => l.weight_g).filter(v => Number.isFinite(v));
     const weightNorm = computeNormalizedHistogram(weightVals, caps.weightBounds.min, caps.weightBounds.max);
     const weightTrackStyle: React.CSSProperties = gradientStyleFromNormalized(weightNorm);
-    const currentPriceBounds = priceVals.length ? { min: Math.min(...priceVals), max: Math.max(...priceVals) } : { ...caps.priceBounds };
-    const currentWeightBounds = weightVals.length ? { min: Math.min(...weightVals), max: Math.max(...weightVals) } : { ...caps.weightBounds };
-    return { priceTrackStyle, weightTrackStyle, currentPriceBounds, currentWeightBounds };
-  }, [caps, lenses, camera, selectedCameraName, brand, lensType, sealed, isMacro]);
+    return { priceTrackStyle, weightTrackStyle };
+  }, [caps, lenses, camera, selectedCameraName, brand, lensType, sealed, isMacro]); // TODO: surface track styles when controls return
+  void priceTrackStyle; // TODO: currently computed for future UI use
+  void weightTrackStyle;
 
   const infoBlock = (
     <CollapsibleMessage variant="info" title="How to use these filters" defaultOpen={false}>

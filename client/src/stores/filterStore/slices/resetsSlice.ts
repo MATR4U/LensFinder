@@ -3,7 +3,7 @@ import { PRESETS } from '../../../lib/recommender';
 
 export function createResetsSlice(
   set: (partial: Partial<FilterState>) => void,
-  get: () => FilterState
+  _get: () => FilterState
 ) {
   return {
     resetFilters: (availability?: { priceBounds: { min: number; max: number }; weightBounds: { min: number; max: number } }) => {

@@ -3,10 +3,9 @@ import FieldContainer, { type FieldStatus } from './FieldContainer';
 import Info from '../Info';
 import RangeSlider from '../RangeSlider';
 import { SLIDER_FIELD_STACK, INLINE_LABEL_MUTED_XS } from '../styles';
-import Checkbox from '../Checkbox';
 import NumberInput from '../NumberInput';
 import FilterModeSwitch, { type FilterMode } from '../FilterModeSwitch';
-import Histogram from '../Histogram';
+import LabeledHistogram from './LabeledHistogram';
 import { stableIdFromLabel } from './id';
 import { computeNormalizedHistogram } from '../../../lib/hist';
 
@@ -66,10 +65,11 @@ export default function BaseLabeledSlider(props: Props) {
   const {
     label, infoText, min, max, step,
     ticks, snap, format, tickFormatter, parse, trackStyle,
-    right, hint, status, id, warningTip, softPreference, mode, idPrefix,
+    right, hint, status, id: _id, warningTip, softPreference: _softPreference, mode, idPrefix,
     validationState = 'none', required, disabled, readOnly, testId,
-    histogramValues, histogramTotalValues, histogramShowMaxLabel, dragging,
+    histogramValues, histogramTotalValues, histogramShowMaxLabel, dragging: _dragging,
   } = props;
+  // TODO: id not needed; use idPrefix+auto. softPreference handled by mode; dragging is internal state
 
   const derivedPrefix = idPrefix ?? stableIdFromLabel(label);
   const autoLblId = React.useId();
@@ -77,7 +77,7 @@ export default function BaseLabeledSlider(props: Props) {
   const effectiveId = derivedPrefix ? `${derivedPrefix}-label` : autoLblId;
   const effectiveInputId = derivedPrefix ? `${derivedPrefix}-input` : autoInputId;
   const isSingle = typeof (props as SingleMode).singleValue === 'number';
-  const [isDragging, setIsDragging] = React.useState(false);
+  const [isDragging, setIsDragging] = React.useState(false); void isDragging; // TODO: consume drag state for UI affordance
   const densityNorm = React.useMemo(() => (histogramTotalValues && histogramTotalValues.length ? computeNormalizedHistogram(histogramTotalValues, min, max) : undefined), [histogramTotalValues, min, max]);
 
   const atEdge = isSingle
@@ -113,17 +113,15 @@ export default function BaseLabeledSlider(props: Props) {
       testId={testId}
     >
       <div className={SLIDER_FIELD_STACK}>
-        {/* Hybrid histogram: background via totalValues, foreground via current values. Extensible via props later */}
-        {!isSingle && (histogramValues || histogramTotalValues) && (
-          <Histogram
-            values={histogramValues || []}
-            totalValues={histogramTotalValues}
+        {!isSingle && (
+          <LabeledHistogram
             min={min}
             max={max}
-            selection={{ min: (props as RangeMode).value.min, max: (props as RangeMode).value.max }}
-            dragging={isDragging}
-            onSelectRange={(r) => (props as RangeMode).onChange({ ...(props as RangeMode).value, min: Math.max(min, Math.min(max, Math.round(r.min))), max: Math.max(min, Math.min(max, Math.round(r.max))) })}
-            showMaxLabel={!!histogramShowMaxLabel}
+            value={(props as RangeMode).value}
+            onChange={(v) => (props as RangeMode).onChange(v)}
+            histogramValues={histogramValues}
+            histogramTotalValues={histogramTotalValues}
+            histogramShowMaxLabel={histogramShowMaxLabel}
           />
         )}
         {isSingle ? (

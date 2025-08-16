@@ -5,6 +5,10 @@ import TicksOverlay from './range-slider/TicksOverlay';
 import TickLabels from './range-slider/TickLabels';
 import { useSliderLogic } from './range-slider/useSliderLogic';
 import { gradientStyleFromNormalized } from '../../lib/hist';
+import { useSliderKeyboard } from './range-slider/useSliderKeyboard';
+import { useSliderTooltip } from './range-slider/useSliderTooltip';
+import { useSliderA11y } from './range-slider/useSliderA11y';
+import { useTickLabels } from './range-slider/useTickLabels';
 
 type Range = { min: number; max: number };
 
@@ -79,15 +83,11 @@ export default function RangeSlider({
   const span = Math.max(1, max - min);
   const toPct = (n: number) => ((n - min) / span) * 100;
   const densityClass = density === 'sm' ? SLIDER_DENSITY_SM : density === 'lg' ? SLIDER_DENSITY_LG : SLIDER_DENSITY_MD;
-  const ticksPresent = Array.isArray(ticks) && ticks.length > 0;
-  const includesExtremes = ticksPresent && (
-    (ticks as number[]).some((t) => Math.abs(t - min) < 1e-6) &&
-    (ticks as number[]).some((t) => Math.abs(t - max) < 1e-6)
-  );
-  const [activeThumb, setActiveThumb] = React.useState<number | null>(null);
-  const posRef = React.useRef<{ x: number; t: number } | null>(null);
-  const velocityRef = React.useRef<number>(0);
+  const { ticksPresent, includesExtremes, shouldRenderTickLabels } = useTickLabels({ min, max, ticks, showTickLabels });
   const formatValue = (n: number) => (format ? format(n) : String(n));
+  const { handleKeyDown } = useSliderKeyboard({ min, max, step, isSingle, values, onValueChange, onValueCommit });
+  const { activeThumb, onPointerDown, onPointerMove, onPointerUp } = useSliderTooltip({ min, max, values, isSingle });
+  const { thumb0AriaLabel, thumb1AriaLabel } = useSliderA11y({ ariaLabelMin, ariaLabelMax, ariaLabelledBy, isSingle });
 
   return (
     <div className={`pb-5 ${className}`}>
@@ -103,66 +103,30 @@ export default function RangeSlider({
         aria-label={ariaLabelledBy ? undefined : 'Range'}
         aria-labelledby={ariaLabelledBy}
         aria-disabled={disabled}
-        onKeyDown={(e) => {
-          if (disabled) return;
-          const stepBase = step || 1;
-          const big = stepBase * 10;
-          const k = e.key;
-          if (e.shiftKey && (k === 'ArrowLeft' || k === 'ArrowRight')) {
-            e.preventDefault();
-            const sign = k === 'ArrowLeft' ? -1 : 1;
-            const delta = big * sign;
-            const next = isSingle
-              ? [Math.min(max, Math.max(min, (values[0] ?? safeMin) + delta))]
-              : [Math.min(max, Math.max(min, (values[0] ?? safeMin))), Math.min(max, Math.max(min, (values[1] ?? safeMax) + delta))];
-            onValueChange(next as number[]);
-          }
-          if (k === 'Home' || k === 'End') {
-            e.preventDefault();
-            const next = isSingle
-              ? [k === 'Home' ? min : max]
-              : [k === 'Home' ? min : (values[0] ?? safeMin), k === 'Home' ? (values[1] ?? safeMax) : max];
-            onValueChange(next as number[]);
-            onValueCommit(next as number[]);
-          }
-        }}
+        onKeyDown={(e) => { if (disabled) return; handleKeyDown(e); }}
       >
         <Slider.Track className={SLIDER_TRACK_BASE} style={{ ...(densityNormalized && densityNormalized.length ? gradientStyleFromNormalized(densityNormalized) : {}), ...(trackStyle || {}) }}>
           <Slider.Range className={SLIDER_RANGE_BASE} />
           <TicksOverlay ticks={ticks} toPct={toPct} />
         </Slider.Track>
         <Slider.Thumb
-          aria-label={ariaLabelledBy ? undefined : (isSingle ? (ariaLabelMax ?? 'Value') : (ariaLabelMin || 'Minimum'))}
+          aria-label={thumb0AriaLabel}
           aria-labelledby={ariaLabelledBy}
           aria-valuetext={formatValue(isSingle ? (values[0] ?? safeMin) : safeMin)}
           className={SLIDER_THUMB_BASE}
-          onPointerDown={(e) => { setActiveThumb(0); posRef.current = { x: e.clientX, t: performance.now() }; onDraggingChange?.(true); }}
-          onPointerMove={(e) => {
-            if (posRef.current) {
-              const dt = Math.max(1, performance.now() - posRef.current.t);
-              const dx = e.clientX - posRef.current.x;
-              velocityRef.current = dx / dt; // px/ms
-              posRef.current = { x: e.clientX, t: performance.now() };
-            }
-          }}
-          onPointerUp={() => { setActiveThumb((i) => (i === 0 ? null : i)); posRef.current = null; onDraggingChange?.(false); }}
+          onPointerDown={(e) => { onPointerDown(0)(e); onDraggingChange?.(true); }}
+          onPointerMove={(e) => { onPointerMove(e); }}
+          onPointerUp={() => { onPointerUp(0)(); onDraggingChange?.(false); }}
         />
         {!isSingle && (
           <Slider.Thumb
-            aria-label={ariaLabelledBy ? undefined : (ariaLabelMax || 'Maximum')}
+            aria-label={thumb1AriaLabel}
             aria-labelledby={ariaLabelledBy}
             aria-valuetext={formatValue(values[1] ?? safeMax)}
             className={SLIDER_THUMB_BASE}
-            onPointerDown={(e) => { setActiveThumb(1); posRef.current = { x: e.clientX, t: performance.now() }; onDraggingChange?.(true); }}
-            onPointerMove={(e) => {
-              if (posRef.current) {
-                const dt = Math.max(1, performance.now() - posRef.current.t);
-                const dx = e.clientX - posRef.current.x;
-                velocityRef.current = dx / dt;
-                posRef.current = { x: e.clientX, t: performance.now() };
-              }
-            }}
-            onPointerUp={() => { setActiveThumb((i) => (i === 1 ? null : i)); posRef.current = null; onDraggingChange?.(false); }}
+            onPointerDown={(e) => { onPointerDown(1)(e); onDraggingChange?.(true); }}
+            onPointerMove={(e) => { onPointerMove(e); }}
+            onPointerUp={() => { onPointerUp(1)(); onDraggingChange?.(false); }}
           />
         )}
         {/* Live value tooltips */}
@@ -174,7 +138,7 @@ export default function RangeSlider({
           </div>
         )}
       </Slider.Root>
-      {ticksPresent && showTickLabels && (
+      {shouldRenderTickLabels && (
         <TickLabels ticks={ticks} toPct={toPct} format={format} tickFormatter={tickFormatter} min={min} max={max} />
       )}
       {!isSingle && !(showTickLabels && ticksPresent && includesExtremes) && (

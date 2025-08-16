@@ -1,7 +1,6 @@
 import React from 'react';
 import { APP_BACKGROUND, PAGE_CONTAINER, SECTION_STACK, ROW_BETWEEN, TITLE_H1 } from '../ui/styles';
 import GLBackground from '../ui/GLBackground';
-import { useFilterStore } from '../../stores/filterStore';
 import { PAGE_BASE_BINDINGS, useFilterBindings } from '../../hooks/useStoreBindings';
 
 type Props = {

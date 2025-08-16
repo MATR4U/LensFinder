@@ -14,7 +14,7 @@ type Props = {
   etaStartSeconds?: number; // ignored for banner: countdown shown in overlay only
 };
 
-export default function StatusBanner({ variant, title, message, onRetry, details, pausedControls, copyText, etaStartSeconds }: Props) {
+export default function StatusBanner({ variant, title, message, onRetry, details, pausedControls, copyText, etaStartSeconds: _etaStartSeconds }: Props) { // TODO: consider surfacing eta countdown in banner if needed
   const clsVariant = variant === 'warning' ? CARD_WARNING : (variant === 'error' ? CARD_ERROR : '');
   // Do not show retry countdown/progress in the banner; overlay handles retry UX
   return (

@@ -1,6 +1,7 @@
 import React from 'react';
 import Card from './ui/Card';
 import { TEXT_XS_MUTED, TEXT_SM, STACK_Y } from './ui/styles';
+import PerCameraTable from './PerCameraTable';
 
 type DebugCounts = Record<string, number>;
 
@@ -35,6 +36,66 @@ type Props = {
   distributions?: Distros;
   perCameraCounts?: Record<string, number>;
 };
+
+function StepTable({ steps, counts, base }: { steps: Array<{ key: keyof DebugCounts; label: string; detail: string }>; counts: DebugCounts; base: number }) {
+  let previous = base;
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-left text-[13px]">
+        <thead>
+          <tr className="text-[var(--text-muted)]">
+            <th className="py-1 pr-3 font-medium">Step</th>
+            <th className="py-1 pr-3 font-medium">Criteria</th>
+            <th className="py-1 pr-3 font-medium">Count</th>
+            <th className="py-1 pr-3 font-medium">Δ</th>
+          </tr>
+        </thead>
+        <tbody>
+          {steps.map((s) => {
+            const value = counts[s.key] ?? previous;
+            const delta = value - previous;
+            const row = (
+              <tr key={String(s.key)} className="border-t border-[var(--divider)]/60">
+                <td className="py-1 pr-3 whitespace-nowrap">{s.label}</td>
+                <td className="py-1 pr-3 text-[var(--text-muted)]">{s.detail}</td>
+                <td className="py-1 pr-3">{value}</td>
+                <td className={`py-1 pr-3 ${delta === 0 ? 'text-[var(--text-muted)]' : delta < 0 ? 'text-[var(--error-text)]' : 'text-[var(--success-text)]'}`}>{delta >= 0 ? `+${delta}` : `${delta}`}</td>
+              </tr>
+            );
+            previous = value;
+            return row;
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function DistributionTable({ title, rows }: { title: string; rows: Array<{ key: string; base: number; final: number }> }) {
+  return (
+    <div>
+      <div className="text-sm font-medium mb-1">{title}</div>
+      <table className="w-full text-left text-[13px]">
+        <thead>
+          <tr className="text-[var(--text-muted)]">
+            <th className="py-1 pr-3 font-medium">Key</th>
+            <th className="py-1 pr-3 font-medium">Base</th>
+            <th className="py-1 pr-3 font-medium">Final</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.key} className="border-t border-[var(--divider)]/60">
+              <td className="py-1 pr-3">{r.key}</td>
+              <td className="py-1 pr-3">{r.base}</td>
+              <td className="py-1 pr-3">{r.final}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
 export default function DebugFilterPanel(props: Props) {
   const {
@@ -83,109 +144,27 @@ export default function DebugFilterPanel(props: Props) {
     { key: 'breathing', label: `Breathing ${softBreathing ? '(soft)' : '(hard)'}`, detail: `≥ ${proBreathingMinScore}` }
   ];
 
-  let previous = counts.mount ?? 0;
-
   return (
     <Card title="Filter debug" subtitle="Counts after each step">
       <div className={STACK_Y}>
-        <div className={TEXT_XS_MUTED}>
-          Base: {previous} lenses (mount {cameraMount || 'Any'})
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-[13px]">
-            <thead>
-              <tr className="text-[var(--text-muted)]">
-                <th className="py-1 pr-3 font-medium">Step</th>
-                <th className="py-1 pr-3 font-medium">Criteria</th>
-                <th className="py-1 pr-3 font-medium">Count</th>
-                <th className="py-1 pr-3 font-medium">Δ</th>
-              </tr>
-            </thead>
-            <tbody>
-              {steps.map((s) => {
-                const value = counts[s.key] ?? previous;
-                const delta = value - previous;
-                const row = (
-                  <tr key={String(s.key)} className="border-t border-[var(--divider)]/60">
-                    <td className="py-1 pr-3 whitespace-nowrap">{s.label}</td>
-                    <td className="py-1 pr-3 text-[var(--text-muted)]">{s.detail}</td>
-                    <td className="py-1 pr-3">{value}</td>
-                    <td className={`py-1 pr-3 ${delta === 0 ? 'text-[var(--text-muted)]' : delta < 0 ? 'text-[var(--error-text)]' : 'text-[var(--success-text)]'}`}>{delta >= 0 ? `+${delta}` : `${delta}`}</td>
-                  </tr>
-                );
-                previous = value;
-                return row;
-              })}
-            </tbody>
-          </table>
-        </div>
+        <div className={TEXT_XS_MUTED}>Base: {counts.mount ?? 0} lenses (mount {cameraMount || 'Any'})</div>
+        <StepTable steps={steps} counts={counts} base={counts.mount ?? 0} />
         {distributions && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <div className="text-sm font-medium mb-1">Brand distribution</div>
-              <table className="w-full text-left text-[13px]">
-                <thead>
-                  <tr className="text-[var(--text-muted)]">
-                    <th className="py-1 pr-3 font-medium">Brand</th>
-                    <th className="py-1 pr-3 font-medium">Base</th>
-                    <th className="py-1 pr-3 font-medium">Final</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {Array.from(new Set([...Object.keys(distributions.base.byBrand), ...Object.keys(distributions.final.byBrand)])).sort().map((b) => (
-                    <tr key={b} className="border-t border-[var(--divider)]/60">
-                      <td className="py-1 pr-3">{b}</td>
-                      <td className="py-1 pr-3">{distributions.base.byBrand[b] || 0}</td>
-                      <td className="py-1 pr-3">{distributions.final.byBrand[b] || 0}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div>
-              <div className="text-sm font-medium mb-1">Type distribution</div>
-              <table className="w-full text-left text-[13px]">
-                <thead>
-                  <tr className="text-[var(--text-muted)]">
-                    <th className="py-1 pr-3 font-medium">Type</th>
-                    <th className="py-1 pr-3 font-medium">Base</th>
-                    <th className="py-1 pr-3 font-medium">Final</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {Array.from(new Set([...Object.keys(distributions.base.byType), ...Object.keys(distributions.final.byType)])).sort().map((t) => (
-                    <tr key={t} className="border-t border-[var(--divider)]/60">
-                      <td className="py-1 pr-3">{t}</td>
-                      <td className="py-1 pr-3">{distributions.base.byType[t] || 0}</td>
-                      <td className="py-1 pr-3">{distributions.final.byType[t] || 0}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <DistributionTable
+              title="Brand distribution"
+              rows={Array.from(new Set([...Object.keys(distributions.base.byBrand), ...Object.keys(distributions.final.byBrand)])).sort().map((b) => ({ key: b, base: distributions.base.byBrand[b] || 0, final: distributions.final.byBrand[b] || 0 }))}
+            />
+            <DistributionTable
+              title="Type distribution"
+              rows={Array.from(new Set([...Object.keys(distributions.base.byType), ...Object.keys(distributions.final.byType)])).sort().map((t) => ({ key: t, base: distributions.base.byType[t] || 0, final: distributions.final.byType[t] || 0 }))}
+            />
           </div>
         )}
         {perCameraCounts && (
           <div>
             <div className="text-sm font-medium mb-1">Per-camera results (current filters)</div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-[13px]">
-                <thead>
-                  <tr className="text-[var(--text-muted)]">
-                    <th className="py-1 pr-3 font-medium">Camera</th>
-                    <th className="py-1 pr-3 font-medium">Count</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {Object.keys(perCameraCounts).sort().map((name) => (
-                    <tr key={name} className="border-t border-[var(--divider)]/60">
-                      <td className="py-1 pr-3">{name}</td>
-                      <td className="py-1 pr-3">{perCameraCounts[name]}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <PerCameraTable counts={perCameraCounts} />
           </div>
         )}
         <div className={TEXT_SM}>

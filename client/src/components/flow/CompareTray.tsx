@@ -1,6 +1,5 @@
 import React from 'react';
 import { STICKY_BOTTOM, TRAY } from '../ui/styles';
-import { useFilterStore } from '../../stores/filterStore';
 import { COMPARE_TRAY_BINDINGS, useFilterBindings } from '../../hooks/useStoreBindings';
 import { useCompareGate } from '../../hooks/useCompareGate';
 

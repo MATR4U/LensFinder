@@ -1,20 +1,19 @@
 import React from 'react';
-import { TEXT_XS_MUTED, LINK_HOVER_ACCENT, TEXT_SM, GRID_LG_TWO_GAP6 } from '../ui/styles';
+import { TEXT_XS_MUTED, GRID_LG_TWO_GAP6 } from '../ui/styles';
 import BaseReport from './BaseReport';
 import { useReportLifecycle } from './useReportLifecycle';
 import { buildResultsCSV } from '../../lib/csv';
-import LazyPlot from '../ui/LazyPlot';
-import { usePlotConfig } from '../../context/PlotProvider';
-import { computeParetoFrontier } from '../../lib/optics';
 import type { ReportResponse } from '../../lib/api';
 import type { Camera, Result } from '../../types';
 import { useSelectedResults } from '../../hooks/useSelectedResults';
-import { clientConfig } from '../../config';
+//
 import SummaryHeader from './SummaryHeader';
 import Recommendations from './Recommendations';
 import RankingWeights from './RankingWeights';
-import CollapsibleMessage from '../ui/CollapsibleMessage';
-import Info from '../ui/Info';
+import ReportHowTo from './ReportHowTo';
+import PerformancePlot from './PerformancePlot';
+import ReportBadges from './ReportBadges';
+import FinalVerdict from './FinalVerdict';
 import { useStageLifecycle } from '../../hooks/useStageLifecycle';
 
 type Props = {
@@ -50,14 +49,13 @@ function fromReportItems(items: ReportResponse['items']): DisplayItem[] {
   }));
 }
 
-export default function ReportView({ report, camera, selected, goalWeights, topResults = [], onEditPreferences }: Props) {
+export default function ReportView({ report, camera, selected: _selected, goalWeights, topResults = [], onEditPreferences }: Props) {
   if (!report) return null;
   const { cameraName, goal, items } = report;
 
   useReportLifecycle('Personalized lens report', report);
   const { onEnter } = useStageLifecycle(4, { resetOnEntry: false });
   React.useEffect(() => { onEnter(); }, [onEnter]);
-  const plotCfg = usePlotConfig();
 
   const selectedNow = useSelectedResults(topResults as any);
   const selectedDisplay = fromResults(selectedNow as unknown as Result[]);
@@ -71,7 +69,7 @@ export default function ReportView({ report, camera, selected, goalWeights, topR
   const maxWeight = Math.max(...top3.map(i => i.weight_g || 1), 1);
   const minWeight = Math.min(...top3.map(i => i.weight_g || 1));
   const maxValueIndex = Math.max(...valueScores.map(v => v.v), 1);
-  const toBar = (v: number, max = 10) => Math.max(0, Math.min(10, v));
+  const toBar = (v: number, _max = 10) => Math.max(0, Math.min(10, v));
   const toPortabilityBar = (w: number) => {
     if (maxWeight === minWeight) return 5;
     const norm = (maxWeight - w) / (maxWeight - minWeight);
@@ -101,29 +99,9 @@ export default function ReportView({ report, camera, selected, goalWeights, topR
     }}>
       <SummaryHeader cameraName={cameraName} goal={goal} onEditPreferences={onEditPreferences} />
 
-      <CollapsibleMessage variant="info" title="How to read this report" defaultOpen={false} className="mb-4">
-        <ul>
-          <li><strong>Score</strong>: Overall utility aligned to your preferences. Higher is better.</li>
-          <li><strong>Badges</strong>: Top Performer = highest Score; Best Value = best Score÷Price; Best Portability = lightest.</li>
-          <li><strong>Bars</strong>: Low Light, Video, Portability, Value are normalized 0–10 within your top picks to highlight strengths.</li>
-          <li><strong>Chart</strong>: Each dot is a lens (X = Price, Y = Score). The green line marks the Pareto frontier—prefer options near the top‑left.</li>
-          <li><strong>Decide</strong>: If torn, pick the best value on the frontier, then consider portability and your shooting style.</li>
-        </ul>
-      </CollapsibleMessage>
+      <ReportHowTo />
 
-      {top3.length > 0 && (
-        <div className="mb-3 flex flex-wrap gap-2 text-xs">
-          {topPerformer && (
-            <span className="px-2 py-0.5 rounded bg-[var(--accent)]/20 text-[var(--accent)] border border-[var(--accent)]/30">Top performer: {topPerformer.name}</span>
-          )}
-          {bestValue && (
-            <span className="px-2 py-0.5 rounded bg-[var(--badge-success-bg)] text-[var(--badge-success-text)] border border-[var(--badge-success-border)]">Best value: {bestValue.name}</span>
-          )}
-          {lightest && (
-            <span className="px-2 py-0.5 rounded bg-[var(--badge-warning-bg)] text-[var(--badge-warning-text)] border border-[var(--badge-warning-border)]">Best portability: {lightest.name}</span>
-          )}
-        </div>
-      )}
+      {top3.length > 0 && (<ReportBadges topPerformer={topPerformer} bestValue={bestValue as any} lightest={lightest} />)}
 
       <Recommendations
         camera={camera}
@@ -136,57 +114,11 @@ export default function ReportView({ report, camera, selected, goalWeights, topR
       {items.length > 0 && (
         <div className={`mt-6 ${GRID_LG_TWO_GAP6}`}>
           <div className="lg:col-span-2">
-            <h4 className={`${TEXT_SM} font-semibold text-[var(--text-color)] mb-2 flex items-center gap-2`}>
-              <span>Performance vs. Price</span>
-              <Info text="Each dot is a lens. Prefer points nearer the top‑left; the green line shows the efficient frontier (best trade‑offs)." />
-            </h4>
-            <LazyPlot
-              data={(function () {
-                const pts = top3.map(i => ({ name: i.name, x: i.price_chf, y: i.score, label: `${i.rank}. ${i.name}` }));
-                const frontier = computeParetoFrontier(pts);
-                return [
-                  {
-                    x: pts.map(p => p.x),
-                    y: pts.map(p => p.y),
-                    text: pts.map(p => p.label),
-                    mode: 'markers',
-                    type: 'scatter',
-                    marker: { size: 10, color: 'var(--plot-marker)' },
-                    hovertemplate: '%{text}<br>Price CHF %{x}<br>Score %{y:.0f}<extra></extra>'
-                  },
-                  {
-                    x: frontier.map(p => p.x),
-                    y: frontier.map(p => p.y),
-                    mode: 'lines+markers',
-                    line: { color: 'var(--plot-frontier)', width: 2 },
-                    marker: { color: 'var(--plot-frontier)', size: 6 },
-                    name: 'Pareto frontier',
-                    hovertemplate: 'Frontier<br>Price CHF %{x}<br>Score %{y:.0f}<extra></extra>'
-                  }
-                ] as any;
-              })()}
-              layout={{
-                ...plotCfg.layoutDefaults,
-                xaxis: { ...(plotCfg.layoutDefaults?.xaxis || {}), title: 'Price (CHF)' },
-                yaxis: { ...(plotCfg.layoutDefaults?.yaxis || {}), title: 'Score' },
-              } as any}
-              style={{ width: '100%', height: 260 }}
-              config={{ ...plotCfg.configDefaults }}
-            />
-            <p className={`${TEXT_XS_MUTED} mt-2`}>Lenses in the top‑left give you the most performance for your money.</p>
+            <PerformancePlot data={top3} />
           </div>
         </div>
       )}
-      {top3.length > 0 && (
-        <div className="mt-6">
-          <h3 className="text-lg font-bold text-[var(--text-color)]">Final Verdict</h3>
-          <ul className="list-disc list-inside">
-            {topPerformer && (<li><span className="font-semibold">Top Performer:</span> <a className={LINK_HOVER_ACCENT} href={`${clientConfig.searchUrlBase}${encodeURIComponent(topPerformer.name)}`} target="_blank" rel="noopener noreferrer">{topPerformer.name}</a></li>)}
-            {bestValue && (<li><span className="font-semibold">Best Value (Score ÷ Price):</span> <a className={LINK_HOVER_ACCENT} href={`${clientConfig.searchUrlBase}${encodeURIComponent(bestValue.name)}`} target="_blank" rel="noopener noreferrer">{bestValue.name}</a></li>)}
-            {lightest && (<li><span className="font-semibold">Best Portability (Lightest):</span> <a className={LINK_HOVER_ACCENT} href={`${clientConfig.searchUrlBase}${encodeURIComponent(lightest.name)}`} target="_blank" rel="noopener noreferrer">{lightest.name}</a></li>)}
-          </ul>
-        </div>
-      )}
+      {top3.length > 0 && (<FinalVerdict topPerformer={topPerformer} bestValue={bestValue} lightest={lightest} />)}
       <p className={`${TEXT_XS_MUTED} mt-4`}>Tip: Click any lens to view prices. The bars reflect key factors; adjust weights to see how recommendations change.</p>
     </BaseReport>
   );

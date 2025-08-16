@@ -11,7 +11,7 @@ type Props = {
   className?: string;
 };
 
-export default function NumberInput({ value, onChange, min, max, step = 1, format, parse, className = '' }: Props) {
+export default function NumberInput({ value, onChange, min, max, step: _step = 1, format, parse, className = '' }: Props) { // TODO: support step increment UI
   const [text, setText] = React.useState<string>(() => format ? format(value) : String(value));
   const debounceRef = React.useRef<number | null>(null);
   React.useEffect(() => {

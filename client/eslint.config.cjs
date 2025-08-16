@@ -32,6 +32,7 @@ module.exports = [
       '@typescript-eslint': tsPlugin,
       import: importPlugin,
       'react-hooks': reactHooksPlugin,
+      
     },
     settings: {
       'import/resolver': {
@@ -80,7 +81,8 @@ module.exports = [
         ],
       }],
       // Noise reduction (warn level for incremental cleanup)
-      '@typescript-eslint/no-unused-vars': ['warn', {
+      // Use TS ESLint rule to flag unused vars and imports (import specifiers)
+      '@typescript-eslint/no-unused-vars': ['error', {
         argsIgnorePattern: '^_',
         varsIgnorePattern: '^_',
         ignoreRestSiblings: true,

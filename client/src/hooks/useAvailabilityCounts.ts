@@ -65,7 +65,7 @@ export function useAvailabilityCounts({ cameras, supBrands, supLensTypes, supCov
       enableBreathing: false,
     };
 
-    const countWith = (overrides: Partial<typeof base>, cameraNameOverride?: string, cameraMountOverride?: string) => {
+    const countWith = (overrides: Partial<typeof base>, cameraNameOverride?: string, _cameraMountOverride?: string) => { // TODO: potential use for explicit mount override
       const mount = cameraNameOverride
         ? (cameras.find(c => c.name === cameraNameOverride)?.mount)
         : (camera?.mount);

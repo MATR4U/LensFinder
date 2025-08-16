@@ -1,5 +1,4 @@
 import React from 'react';
-import { INPUT_STYLE } from './styles';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'warning';
 export type ButtonSize = 'xs' | 'sm' | 'md';

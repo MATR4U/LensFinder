@@ -1,7 +1,7 @@
 import React from 'react';
 import { clientConfig } from '../../config';
 import { TEXT_XS_MUTED, CARD_BASE, CARD_NEUTRAL, ROW_BETWEEN, BADGE_SHAPE_XS } from '../ui/styles';
-import type { Camera, Result } from '../../types';
+import type { Camera } from '../../types';
 
 type Props = {
   lens: { name: string; score: number; price_chf: number; weight_g: number; rank: number; type?: string };

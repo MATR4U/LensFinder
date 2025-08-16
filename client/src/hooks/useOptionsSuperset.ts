@@ -1,5 +1,4 @@
-import React from 'react';
-import type { Camera } from '../types';
+// NOTE: no React/hooks used here; keep pure TS
 import { ANY } from '../lib/constants';
 
 type Caps = {
