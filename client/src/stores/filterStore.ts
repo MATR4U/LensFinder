@@ -372,7 +372,72 @@ export const useFilterStore = createWithEqualityFn<FilterState>()(persist((set, 
   setEnableDistortion: (v: boolean) => { get().pushHistory(); set({ enableDistortion: v }); },
   setEnableBreathing: (v: boolean) => { get().pushHistory(); set({ enableBreathing: v }); },
 
-  setGoalPreset: (p) => { get().pushHistory(); set({ goalPreset: p, goalWeights: { ...PRESETS[p] } }); },
+  setGoalPreset: (p) => {
+    get().pushHistory();
+    const weights = PRESETS[p] || {};
+    // Derive sensible filter defaults from preset weights to impact match counts
+    const portability = weights.portability ?? 0;
+    const valueW = weights.value ?? 0;
+    const lowLightOrBlur = Math.max(weights.low_light ?? 0, weights.background_blur ?? 0);
+    const distortion = weights.distortion_control ?? 0;
+    const video = weights.video_excellence ?? 0;
+
+    // Start with current values to avoid wiping unrelated selections
+    const cur = get();
+    let nextEnableWeight = cur.enableWeight;
+    let nextSoftWeight = cur.softWeight;
+    let nextWeightMax = cur.proWeightMax;
+    if (portability >= 0.8) { nextEnableWeight = true; nextSoftWeight = false; nextWeightMax = 800; }
+    else if (portability >= 0.6) { nextEnableWeight = true; nextSoftWeight = false; nextWeightMax = 1000; }
+    else if (portability >= 0.4) { nextEnableWeight = true; nextSoftWeight = true; nextWeightMax = 1200; }
+    else { nextEnableWeight = false; }
+
+    let nextEnablePrice = cur.enablePrice;
+    let nextSoftPrice = cur.softPrice;
+    let nextPriceMax = cur.proPriceMax;
+    if (valueW >= 0.8) { nextEnablePrice = true; nextSoftPrice = false; nextPriceMax = 1000; }
+    else if (valueW >= 0.6) { nextEnablePrice = true; nextSoftPrice = false; nextPriceMax = 1500; }
+    else if (valueW >= 0.4) { nextEnablePrice = true; nextSoftPrice = true; nextPriceMax = 2500; }
+    else { nextEnablePrice = false; }
+
+    // Aperture as a strict cap only when strongly prioritized
+    let nextMaxApertureF = cur.proMaxApertureF;
+    if (lowLightOrBlur >= 0.9) nextMaxApertureF = 2.0;
+    else if (lowLightOrBlur >= 0.7) nextMaxApertureF = 2.8;
+    else nextMaxApertureF = 99;
+
+    let nextEnableDistortion = cur.enableDistortion;
+    let nextSoftDistortion = cur.softDistortion;
+    let nextDistortionMax = cur.proDistortionMaxPct;
+    if (distortion >= 0.7) { nextEnableDistortion = true; nextSoftDistortion = false; nextDistortionMax = 2.5; }
+    else if (distortion >= 0.5) { nextEnableDistortion = true; nextSoftDistortion = true; nextDistortionMax = 3.5; }
+    else { nextEnableDistortion = false; }
+
+    let nextEnableBreathing = cur.enableBreathing;
+    let nextSoftBreathing = cur.softBreathing;
+    let nextBreathingMin = cur.proBreathingMinScore;
+    if (video >= 0.7) { nextEnableBreathing = true; nextSoftBreathing = false; nextBreathingMin = 7; }
+    else if (video >= 0.5) { nextEnableBreathing = true; nextSoftBreathing = true; nextBreathingMin = 5; }
+    else { nextEnableBreathing = false; }
+
+    set({
+      goalPreset: p,
+      goalWeights: { ...weights },
+      enableWeight: nextEnableWeight,
+      softWeight: nextSoftWeight,
+      proWeightMax: nextWeightMax,
+      enablePrice: nextEnablePrice,
+      softPrice: nextSoftPrice,
+      proPriceMax: nextPriceMax,
+      proMaxApertureF: nextMaxApertureF,
+      enableDistortion: nextEnableDistortion,
+      softDistortion: nextSoftDistortion,
+      proDistortionMaxPct: nextDistortionMax,
+      enableBreathing: nextEnableBreathing,
+      softBreathing: nextSoftBreathing,
+      proBreathingMinScore: nextBreathingMin,
+    });
+  },
   setGoalWeights: (w) => { get().pushHistory(); set({ goalWeights: { ...w } }); },
 
   setAvailabilityCaps: (caps) => set({ availabilityCaps: caps }),
