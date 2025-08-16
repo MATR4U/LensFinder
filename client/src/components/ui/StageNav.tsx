@@ -8,7 +8,6 @@ type Props = {
   continueLabel?: string;
   className?: string;
   canForward?: boolean;
-  stageNumber?: number;
 };
 
 export default function StageNav({ onBack, onReset, onContinue, continueLabel = 'Continue', className = '', canForward = true }: Props) {

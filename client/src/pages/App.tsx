@@ -33,6 +33,7 @@ import DebugFilterPanel from '../components/DebugFilterPanel';
 import BuildCapabilities from '../components/flow/BuildCapabilities';
 import MessageTwoColumn from '../components/ui/MessageTwoColumn';
 import { useUrlFiltersSync } from '../hooks/useUrlFiltersSync';
+import StageNav from '../components/ui/StageNav';
 
 export default function App() {
   useUrlFiltersSync();
@@ -507,13 +508,13 @@ export default function App() {
                 <div className="mb-1 text-lg font-semibold text-[var(--text-color)]">Candidates to compare</div>
                 <div className="text-sm text-[var(--text-muted)] mb-2">Add up to 3 to compare side‑by‑side.</div>
                 <ExploreGrid items={resultsForGrid} />
-                <CompareTray />
                 {compareList.length >= 2 && (
                   <CompareShowdown
                     camera={camera}
                     selected={results.filter(r => compareList.includes(resultId(r)))}
                   />
                 )}
+                <StageNav className="mt-2" onBack={() => continueTo(2)} onContinue={() => continueTo(4)} continueLabel="View Report" />
               </motion.div>
             )}
 
@@ -539,9 +540,7 @@ export default function App() {
                     onEditPreferences={() => { continueTo(2); }}
                   />
                 </Card>
-                <div className={ROW_END}>
-                  <Button onClick={() => continueTo(0)}>Start Over</Button>
-                </div>
+                <StageNav className="mt-2" onBack={() => continueTo(3)} onContinue={() => continueTo(0)} continueLabel="Start Over" />
               </motion.div>
             )}
           </AnimatePresence>

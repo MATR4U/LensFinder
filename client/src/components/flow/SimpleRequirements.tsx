@@ -8,7 +8,7 @@ import MetricRange from './MetricRange';
 import { useFilterStore } from '../../stores/filterStore';
 import { PRESETS } from '../../lib/recommender';
 import { shallow } from 'zustand/shallow';
-import { applyFilters } from '../../lib/filters';
+import { applyFilters, buildFilterInput } from '../../lib/filters';
 import GoalPresetWeights from '../ui/fields/GoalPresetWeights';
 import { FIELD_HELP } from '../ui/fieldHelp';
 import CollapsibleMessage from '../ui/CollapsibleMessage';
@@ -94,10 +94,9 @@ function SimpleRequirementsBody(props: Props) {
   const { priceTrackStyle, weightTrackStyle, currentPriceBounds, currentWeightBounds } = React.useMemo(() => {
     if (!caps || lenses.length === 0) return { priceTrackStyle: {} as React.CSSProperties, weightTrackStyle: {} as React.CSSProperties };
     const baseFilters = { brand, lensType, sealed, isMacro };
-    const pool = applyFilters({
+    const sObj: any = {
       lenses,
       cameraName: selectedCameraName ?? 'Any',
-      cameraMount: camera?.mount,
       ...baseFilters,
       priceRange: caps.priceBounds,
       weightRange: caps.weightBounds,
@@ -112,7 +111,16 @@ function SimpleRequirementsBody(props: Props) {
       proWeightMax: caps.weightBounds.max,
       proDistortionMaxPct: 100,
       proBreathingMinScore: 0,
-    });
+      softPrice: true,
+      softWeight: true,
+      softDistortion: true,
+      softBreathing: true,
+      enablePrice: true,
+      enableWeight: true,
+      enableDistortion: true,
+      enableBreathing: true,
+    };
+    const pool = applyFilters(buildFilterInput(sObj, camera?.mount));
     const priceVals = pool.map(l => l.price_chf).filter(v => Number.isFinite(v));
     const priceNorm = computeNormalizedHistogram(priceVals, caps.priceBounds.min, caps.priceBounds.max);
     const priceTrackStyle: React.CSSProperties = gradientStyleFromNormalized(priceNorm);

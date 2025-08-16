@@ -16,6 +16,8 @@ type Props = {
   errorFallback?: React.ReactNode;
   suspenseFallback?: React.ReactNode;
   onView?: (path: string) => void;
+  // Show global history controls (Undo/Redo) in the footer. Defaults to false for staged screens.
+  showHistoryControls?: boolean;
 };
 
 type BoundaryProps = { fallback?: React.ReactNode; children?: React.ReactNode };
@@ -33,7 +35,7 @@ class Boundary extends React.Component<BoundaryProps, { hasError: boolean }> {
   }
 }
 
-export default function PageBase({ title, metaDescription, headerSlot, actionsSlot, bannerSlot, subheaderSlot, children, footerSlot, errorFallback, suspenseFallback, onView }: Props) {
+export default function PageBase({ title, metaDescription, headerSlot, actionsSlot, bannerSlot, subheaderSlot, children, footerSlot, errorFallback, suspenseFallback, onView, showHistoryControls = false }: Props) {
   const canUndo = useFilterStore(s => s.historyLength > 0);
   const canRedo = useFilterStore(s => s.redoLength > 0);
   const undo = useFilterStore(s => s.undoLastFilter);
@@ -91,10 +93,12 @@ export default function PageBase({ title, metaDescription, headerSlot, actionsSl
             <footer className="sticky bottom-0 left-0 right-0 border-t border-[var(--control-border)] bg-[var(--app-bg)]/90 backdrop-blur supports-[backdrop-filter]:bg-[color-mix(in_oklab,var(--app-bg),transparent_20%)] mt-6">
               <div className={`${PAGE_CONTAINER} py-3`}>
                 <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <button className={`px-3 py-2 rounded border border-[var(--control-border)] text-sm ${!canUndo ? 'opacity-50 cursor-not-allowed' : ''}`} onClick={() => canUndo && undo()} aria-disabled={!canUndo}>Back</button>
-                    <button className={`px-3 py-2 rounded border border-[var(--control-border)] text-sm ${!canRedo ? 'opacity-50 cursor-not-allowed' : ''}`} onClick={() => canRedo && redo()} aria-disabled={!canRedo}>Forward</button>
-                  </div>
+                  {showHistoryControls ? (
+                    <div className="flex items-center gap-2">
+                      <button className={`px-3 py-2 rounded border border-[var(--control-border)] text-sm ${!canUndo ? 'opacity-50 cursor-not-allowed' : ''}`} onClick={() => canUndo && undo()} aria-disabled={!canUndo}>Undo</button>
+                      <button className={`px-3 py-2 rounded border border-[var(--control-border)] text-sm ${!canRedo ? 'opacity-50 cursor-not-allowed' : ''}`} onClick={() => canRedo && redo()} aria-disabled={!canRedo}>Redo</button>
+                    </div>
+                  ) : <span />}
                   <div>
                     {footerSlot}
                   </div>

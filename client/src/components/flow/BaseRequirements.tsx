@@ -70,7 +70,6 @@ export default function BaseRequirements(props: Props) {
     <PageBase
       title={title || COPY.stages.requirements.title}
       actionsSlot={<span className={BADGE_COUNT}>{resultsCount} matches</span>}
-      footerSlot={<StageNav onBack={onBack} onReset={onReset} onContinue={onContinue} continueLabel={continueText} />}
     >
       <div className={CARD_PADDED}>
         {info}
@@ -90,27 +89,35 @@ export default function BaseRequirements(props: Props) {
           </div>
         )}
 
-        <div className={GRID_TWO_GAP3}>
-          <div>
-            <AvailabilitySelect label="Lens Brand" value={brand} onChange={setBrand} options={brandOptions.map(b => ({ value: b, label: b }))} />
-          </div>
-          <div>
-            <AvailabilitySelect label="Lens Type" value={lensType} onChange={setLensType} options={lensTypeOptions.map(t => ({ value: t, label: t }))} />
-          </div>
-        </div>
-
-        <CheckboxGroup
-          label="Build features"
-          items={[
-            { key: 'sealed', id: 'sealed', label: 'Weather sealed', checked: sealed, onChange: setSealed },
-            { key: 'macro', id: 'macro', label: 'Macro', checked: isMacro, onChange: setIsMacro },
-            ...((extraToggles || []).map(t => ({ key: t.key, id: t.id, label: t.label, checked: t.checked, onChange: t.onChange, infoText: t.infoText }))),
-          ]}
-        />
-
+        {/* Goal/preset should be prominent at the top */}
         {goalSection}
 
+        {/* Hide primary brand/type and build features when selections were done in the previous stage */}
+        {showPrimarySelectors && (
+          <>
+            <div className={GRID_TWO_GAP3}>
+              <div>
+                <AvailabilitySelect label="Lens Brand" value={brand} onChange={setBrand} options={brandOptions.map(b => ({ value: b, label: b }))} />
+              </div>
+              <div>
+                <AvailabilitySelect label="Lens Type" value={lensType} onChange={setLensType} options={lensTypeOptions.map(t => ({ value: t, label: t }))} />
+              </div>
+            </div>
+
+            <CheckboxGroup
+              label="Build features"
+              items={[
+                { key: 'sealed', id: 'sealed', label: 'Weather sealed', checked: sealed, onChange: setSealed },
+                { key: 'macro', id: 'macro', label: 'Macro', checked: isMacro, onChange: setIsMacro },
+                ...((extraToggles || []).map(t => ({ key: t.key, id: t.id, label: t.label, checked: t.checked, onChange: t.onChange, infoText: t.infoText }))),
+              ]}
+            />
+          </>
+        )}
+
         {children}
+
+        <StageNav className="mt-2" onBack={onBack} onReset={onReset} onContinue={onContinue} continueLabel={continueText} />
       </div>
     </PageBase>
   );

@@ -15,7 +15,7 @@ import { TITLE_H2, TEXT_XS_MUTED, GRID_TWO_GAP3, STACK_Y, DIVIDER_T, TEXT_2XS_MU
 import { useFilterStore } from '../../stores/filterStore';
 import { PRESETS } from '../../lib/recommender';
 import { shallow } from 'zustand/shallow';
-import { applyFilters } from '../../lib/filters';
+import { applyFilters, buildFilterInput } from '../../lib/filters';
 import { computeNormalizedHistogram, gradientStyleFromNormalized } from '../../lib/hist';
 import { useLastChangedDiff } from '../../hooks/useLastChangedDiff';
 import { usePredictiveSuggestions } from '../../hooks/usePredictiveSuggestions';
@@ -23,7 +23,6 @@ import GoalPresetWeights from '../ui/fields/GoalPresetWeights';
 import { FIELD_HELP } from '../ui/fieldHelp';
 import CollapsibleMessage from '../ui/CollapsibleMessage';
 import BaseRequirements from './BaseRequirements';
-import StageHeader from '../ui/StageHeader';
 import StageNav from '../ui/StageNav';
 import FocalRange from './FocalRange';
 import { AvailabilityProvider, useAvailability } from '../../context/AvailabilityContext';
@@ -258,26 +257,21 @@ export default function ProRequirements(props: Props) {
       onReset={onReset}
       onContinue={onContinue}
     >
-      <StageHeader
-        title="Your requirements"
-        resultsCount={resultsCount}
-        right={(
-          <GoalPresetWeights
-            preset={goalPreset}
-            onChangePreset={setGoalPreset}
-            weights={goalWeights}
-            onChangeWeights={setGoalWeights}
-            presets={PRESETS}
-            showWeights={false}
-            optionSuffixMap={React.useMemo(() => {
-              const map: Record<string, number> = {};
-              Object.keys(PRESETS).forEach((k) => { map[k] = resultsCount; });
-              return map;
-            }, [resultsCount])}
-          />
-        )}
-        className="mb-4"
-      />
+      <div className="mb-4">
+        <GoalPresetWeights
+          preset={goalPreset}
+          onChangePreset={setGoalPreset}
+          weights={goalWeights}
+          onChangeWeights={setGoalWeights}
+          presets={PRESETS}
+          showWeights={false}
+          optionSuffixMap={React.useMemo(() => {
+            const map: Record<string, number> = {};
+            Object.keys(PRESETS).forEach((k) => { map[k] = resultsCount; });
+            return map;
+          }, [resultsCount])}
+        />
+      </div>
       {/** compute foreground arrays from current filtered results */}
       {(() => null)()}
       <CollapsibleMessage variant="info" title="How to use hard specs" defaultOpen={false}>

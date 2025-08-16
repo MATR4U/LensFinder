@@ -149,13 +149,7 @@ function BuildCapabilitiesBody({ cameras = [], brandsForCamera = [], resultsCoun
         {...(isPro ? { requireOIS, setRequireOIS, canRequireOIS } : {})}
       />
 
-      <StageNav
-        className="mt-2"
-        onBack={onBack}
-        onReset={useStageReset(1)}
-        onContinue={onContinue}
-        continueLabel="Continue"
-      />
+      <StageNav className="mt-2" onBack={onBack} onReset={useStageReset(1)} onContinue={onContinue} continueLabel="Continue" />
     </div>
   );
 }
