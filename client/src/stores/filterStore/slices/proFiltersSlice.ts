@@ -67,9 +67,9 @@ export function createProFiltersSlice(
       scheduleHistoryCoalescedPush(get, set, 300);
       set({ proMaxApertureF: val, goalWeights: nextWeights, goalPreset: inferred });
     },
-    setProRequireOIS: (v: boolean) => { get().pushHistory(); set({ proRequireOIS: v }); },
-    setProRequireSealed: (v: boolean) => { get().pushHistory(); set({ proRequireSealed: v }); },
-    setProRequireMacro: (v: boolean) => { get().pushHistory(); set({ proRequireMacro: v }); },
+    setProRequireOIS: (v: boolean) => { const { pushHistory } = get(); set({ proRequireOIS: v }); pushHistory(); },
+    setProRequireSealed: (v: boolean) => { const { pushHistory } = get(); set({ proRequireSealed: v }); pushHistory(); },
+    setProRequireMacro: (v: boolean) => { const { pushHistory } = get(); set({ proRequireMacro: v }); pushHistory(); },
     setProPriceMax: (n: number) => {
       const caps = get().availabilityCaps;
       const b = caps?.priceBounds;
@@ -106,14 +106,14 @@ export function createProFiltersSlice(
       scheduleHistoryCoalescedPush(get, set, 300);
       set({ proBreathingMinScore: val, goalWeights: nextWeights, goalPreset: inferred });
     },
-    setSoftPrice: (v: boolean) => { get().pushHistory(); set({ softPrice: v }); },
-    setSoftWeight: (v: boolean) => { get().pushHistory(); set({ softWeight: v }); },
-    setSoftDistortion: (v: boolean) => { get().pushHistory(); set({ softDistortion: v }); },
-    setSoftBreathing: (v: boolean) => { get().pushHistory(); set({ softBreathing: v }); },
-    setEnablePrice: (v: boolean) => { get().pushHistory(); set({ enablePrice: v }); },
-    setEnableWeight: (v: boolean) => { get().pushHistory(); set({ enableWeight: v }); },
-    setEnableDistortion: (v: boolean) => { get().pushHistory(); set({ enableDistortion: v }); },
-    setEnableBreathing: (v: boolean) => { get().pushHistory(); set({ enableBreathing: v }); },
+    setSoftPrice: (v: boolean) => { const { pushHistory } = get(); set({ softPrice: v }); pushHistory(); },
+    setSoftWeight: (v: boolean) => { const { pushHistory } = get(); set({ softWeight: v }); pushHistory(); },
+    setSoftDistortion: (v: boolean) => { const { pushHistory } = get(); set({ softDistortion: v }); pushHistory(); },
+    setSoftBreathing: (v: boolean) => { const { pushHistory } = get(); set({ softBreathing: v }); pushHistory(); },
+    setEnablePrice: (v: boolean) => { const { pushHistory } = get(); set({ enablePrice: v }); pushHistory(); },
+    setEnableWeight: (v: boolean) => { const { pushHistory } = get(); set({ enableWeight: v }); pushHistory(); },
+    setEnableDistortion: (v: boolean) => { const { pushHistory } = get(); set({ enableDistortion: v }); pushHistory(); },
+    setEnableBreathing: (v: boolean) => { const { pushHistory } = get(); set({ enableBreathing: v }); pushHistory(); },
   } satisfies Partial<FilterState>;
 }
 

@@ -20,6 +20,7 @@ export interface FilterState {
   stage: number;
   setStage: (n: number) => void;
   continueTo: (n: number) => void;
+  advance: (n: number) => void;
   // Camera selection
   cameraName: string;
   setCameraName: (name: string) => void;
@@ -165,13 +166,17 @@ export const useFilterStore = createWithEqualityFn<FilterState>()(persist((set, 
   ...createPricingSlice(set),
 }), {
   name: 'camera-filter-storage',
-  version: 2,
+  version: 3,
   migrate: (persisted: any) => {
     if (persisted && typeof persisted === 'object') {
       if ('stage' in persisted) delete persisted.stage;
       // Do not persist compare selections across sessions
       if ('compareList' in persisted) delete persisted.compareList;
       if ('selected' in persisted) delete persisted.selected;
+      // v3 migration scaffold: normalize legacy 'Any' and sentinels in-place (non-breaking)
+      const normalizeAny = (v: any, anyValue: any) => (v === 'Any' ? anyValue : v);
+      if ('brand' in persisted) persisted.brand = normalizeAny(persisted.brand, 'Any');
+      if ('lensType' in persisted) persisted.lensType = normalizeAny(persisted.lensType, 'Any');
     }
     return persisted;
   },

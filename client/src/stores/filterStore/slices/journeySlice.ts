@@ -4,6 +4,15 @@ export function createJourneySlice(
   set: (partial: Partial<FilterState>) => void,
   get: () => FilterState
 ) {
+  const canTransition = (cur: number, next: number, compareCount: number) => {
+    const allowedForward = { 0: 1, 1: 2, 2: 3, 3: 4 } as Record<number, number>;
+    const allowedBackward = { 1: 0, 2: 1, 3: 2, 4: 3 } as Record<number, number>;
+    const isForward = next > cur;
+    const ok = isForward ? allowedForward[cur] === next : allowedBackward[cur] === next;
+    if (!ok) return false;
+    if (next >= 4 && compareCount < 2) return false;
+    return true;
+  };
   return {
     stage: 0,
     setStage: (n: number) => {
@@ -17,16 +26,19 @@ export function createJourneySlice(
     },
     continueTo: (next: number) => {
       const cur = get().stage;
-      const allowedForward = { 0: 1, 1: 2, 2: 3, 3: 4 } as Record<number, number>;
-      const allowedBackward = { 1: 0, 2: 1, 3: 2, 4: 3 } as Record<number, number>;
-      const isForward = next > cur;
-      const ok = isForward ? allowedForward[cur] === next : allowedBackward[cur] === next;
+      const ok = canTransition(cur, next, get().compareList.length);
       if (!ok) {
         if (import.meta?.env?.DEV) console.warn('[flow] continueTo blocked: ', { cur, next });
         return;
       }
-      if (next >= 4 && get().compareList.length < 2) {
-        if (import.meta?.env?.DEV) console.warn('[flow] blocked: need at least 2 selections');
+      get().pushHistory();
+      set({ stage: next });
+    },
+    advance: (next: number) => {
+      const cur = get().stage;
+      const ok = canTransition(cur, next, get().compareList.length);
+      if (!ok) {
+        if (import.meta?.env?.DEV) console.warn('[flow] advance blocked: ', { cur, next });
         return;
       }
       get().pushHistory();

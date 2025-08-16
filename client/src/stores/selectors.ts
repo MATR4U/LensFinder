@@ -86,6 +86,39 @@ export const selectNormalizedFilters = (s: ReturnType<typeof useFilterStore.getS
   } as const;
 };
 
+// Selector that returns a ready FiltersInput for lib/filters.applyFilters
+export const selectFiltersInput = (s: ReturnType<typeof useFilterStore.getState>) => {
+  const eff = selectEffectiveFilters(s);
+  return {
+    cameraName: eff.cameraName,
+    brand: eff.brand,
+    lensType: eff.lensType,
+    sealed: eff.sealed,
+    isMacro: eff.isMacro,
+    priceRange: eff.priceRange,
+    weightRange: eff.weightRange,
+    proCoverage: eff.proCoverage,
+    proFocalMin: eff.proFocalMin,
+    proFocalMax: eff.proFocalMax,
+    proMaxApertureF: eff.proMaxApertureF,
+    proRequireOIS: eff.proRequireOIS,
+    proRequireSealed: eff.proRequireSealed,
+    proRequireMacro: eff.proRequireMacro,
+    proPriceMax: eff.proPriceMax,
+    proWeightMax: eff.proWeightMax,
+    proDistortionMaxPct: eff.proDistortionMaxPct,
+    proBreathingMinScore: eff.proBreathingMinScore,
+    softPrice: eff.softPrice,
+    softWeight: eff.softWeight,
+    softDistortion: eff.softDistortion,
+    softBreathing: eff.softBreathing,
+    enablePrice: eff.enablePrice,
+    enableWeight: eff.enableWeight,
+    enableDistortion: eff.enableDistortion,
+    enableBreathing: eff.enableBreathing,
+  };
+};
+
 export const selectPrimaryFilters = (s: ReturnType<typeof useFilterStore.getState>) => ({
   cameraName: s.cameraName,
   brand: s.brand,

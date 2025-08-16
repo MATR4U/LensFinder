@@ -31,8 +31,8 @@ export function createSimpleFiltersSlice(
       const next = caps && !caps.lensTypes.includes(v) ? 'Any' : v;
       set({ lensType: next });
     },
-    setSealed: (v: boolean) => { get().pushHistory(); set({ sealed: v }); },
-    setIsMacro: (v: boolean) => { get().pushHistory(); set({ isMacro: v }); },
+    setSealed: (v: boolean) => { const { pushHistory } = get(); set({ sealed: v }); pushHistory(); },
+    setIsMacro: (v: boolean) => { const { pushHistory } = get(); set({ isMacro: v }); pushHistory(); },
     setPriceRange: (r: Range) => {
       const timerKey = '__priceRangeTimer__' as unknown as keyof FilterState;
       scheduleDebouncedRangeUpdate('priceRange' as any, r, timerKey, get, set, () => get().availabilityCaps?.priceBounds as any);
