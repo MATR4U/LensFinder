@@ -52,6 +52,7 @@
     "ci:fast": "npm run test:server && npm run test:client",
     "ci:verify": "npm run build && npm run test && npm run test:e2e",
     "test:precommit": "SKIP_DB_TESTS=1 npm run ci:fast && npm --workspace client run lint && npm run build",
+    "feature:finish": "node scripts/feature-finish.mjs",
     "data:lenses:fetch": "node db/data/scripts/fetch-lens-specs.mjs",
     "data:lenses:update": "node db/data/scripts/fetch-lens-specs.mjs --write",
     "prepare": "husky install",
