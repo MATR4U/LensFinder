@@ -58,8 +58,8 @@ export default function GoalPresetWeights({
         <Select
           value={preset}
           onChange={(p) => {
+            // Let onChangePreset apply preset weights centrally (store handles it)
             onChangePreset(p as string);
-            if (presets[p as string]) onChangeWeights({ ...presets[p as string] });
           }}
         >
           {presetKeys.map((p) => {

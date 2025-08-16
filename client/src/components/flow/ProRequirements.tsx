@@ -13,18 +13,23 @@ import LabeledSlider from '../ui/fields/LabeledSlider';
 import Button from '../ui/Button';
 import { TITLE_H2, TEXT_XS_MUTED, GRID_TWO_GAP3, STACK_Y, DIVIDER_T, TEXT_2XS_MUTED, INLINE_LABEL_MUTED_XS } from '../ui/styles';
 import { useFilterStore } from '../../stores/filterStore';
+import { PRO_REQ_BINDINGS, useFilterBindings } from '../../hooks/useStoreBindings';
 import { PRESETS } from '../../lib/recommender';
 import { shallow } from 'zustand/shallow';
 import { applyFilters, buildFilterInput } from '../../lib/filters';
 import { computeNormalizedHistogram, gradientStyleFromNormalized } from '../../lib/hist';
 import { useLastChangedDiff } from '../../hooks/useLastChangedDiff';
 import { usePredictiveSuggestions } from '../../hooks/usePredictiveSuggestions';
-import GoalPresetWeights from '../ui/fields/GoalPresetWeights';
+import GoalsHeader from './pro/GoalsHeader';
 import { FIELD_HELP } from '../ui/fieldHelp';
 import CollapsibleMessage from '../ui/CollapsibleMessage';
 import BaseRequirements from './BaseRequirements';
 import StageNav from '../ui/StageNav';
 import FocalRange from './FocalRange';
+import ApertureControl from './pro/ApertureControl';
+import FocalOnly from './pro/FocalOnly';
+import PriceAndWeight from './pro/PriceAndWeight';
+import VideoAndDistortion from './pro/VideoAndDistortion';
 import { AvailabilityProvider, useAvailability } from '../../context/AvailabilityContext';
 // Inline warnings replace the standalone block; remove NoticeZeroResults usage
 
@@ -68,60 +73,7 @@ export default function ProRequirements(props: Props) {
     softBreathing, setSoftBreathing,
     enablePrice, enableWeight, enableDistortion, enableBreathing,
     setEnablePrice, setEnableWeight, setEnableDistortion, setEnableBreathing,
-  } = useFilterStore((s) => ({
-    cameraName: s.cameraName,
-    setCameraName: s.setCameraName,
-    brand: s.brand,
-    setBrand: s.setBrand,
-    lensType: s.lensType,
-    setLensType: s.setLensType,
-    coverage: s.proCoverage,
-    setCoverage: s.setProCoverage,
-    focalMin: s.proFocalMin,
-    setFocalMin: s.setProFocalMin,
-    focalMax: s.proFocalMax,
-    setFocalMax: s.setProFocalMax,
-    maxApertureF: s.proMaxApertureF,
-    setMaxApertureF: s.setProMaxApertureF,
-    requireOIS: s.proRequireOIS,
-    setRequireOIS: s.setProRequireOIS,
-    sealed: s.sealed,
-    setSealed: s.setSealed,
-    isMacro: s.isMacro,
-    setIsMacro: s.setIsMacro,
-    priceRange: s.priceRange,
-    setPriceRange: s.setPriceRange,
-    weightRange: s.weightRange,
-    setWeightRange: s.setWeightRange,
-    distortionMaxPct: s.proDistortionMaxPct,
-    setDistortionMaxPct: s.setProDistortionMaxPct,
-    breathingMinScore: s.proBreathingMinScore,
-    setBreathingMinScore: s.setProBreathingMinScore,
-    goalPreset: s.goalPreset,
-    setGoalPreset: s.setGoalPreset,
-    goalWeights: s.goalWeights,
-    setGoalWeights: s.setGoalWeights,
-    caps: s.availabilityCaps,
-    undoLastFilter: s.undoLastFilter,
-    continueTo: s.continueTo,
-    resetFilters: s.resetFilters,
-    softPrice: s.softPrice,
-    setSoftPrice: s.setSoftPrice,
-    softWeight: s.softWeight,
-    setSoftWeight: s.setSoftWeight,
-    softDistortion: s.softDistortion,
-    setSoftDistortion: s.setSoftDistortion,
-    softBreathing: s.softBreathing,
-    setSoftBreathing: s.setSoftBreathing,
-    enablePrice: s.enablePrice,
-    enableWeight: s.enableWeight,
-    enableDistortion: s.enableDistortion,
-    enableBreathing: s.enableBreathing,
-    setEnablePrice: s.setEnablePrice,
-    setEnableWeight: s.setEnableWeight,
-    setEnableDistortion: s.setEnableDistortion,
-    setEnableBreathing: s.setEnableBreathing,
-  }), shallow);
+  } = useFilterBindings(PRO_REQ_BINDINGS);
 
   const onBack = () => continueTo(1);
   const onReset = () => {
@@ -257,17 +209,7 @@ export default function ProRequirements(props: Props) {
       onReset={onReset}
       onContinue={onContinue}
     >
-      <div className="mb-2">
-        <GoalPresetWeights
-          preset={goalPreset}
-          onChangePreset={setGoalPreset}
-          weights={goalWeights}
-          onChangeWeights={setGoalWeights}
-          presets={PRESETS}
-          showWeights={false}
-          optionSuffixMap={undefined}
-        />
-      </div>
+      <GoalsHeader />
       {/** compute foreground arrays from current filtered results */}
       {(() => null)()}
       <CollapsibleMessage variant="neutral" title="Tune your requirements" defaultOpen={false} className="max-w-3xl">
@@ -289,68 +231,16 @@ export default function ProRequirements(props: Props) {
       {/* Optional micro-hint row can remain for positive counts if desired; omit for now */}
 
       {/* Coverage is selected in the Build & capabilities pre-stage */}
-      <div>
-        {(() => {
-          const values = [1.4, 1.8, 2.0, 2.8, 3.5, 4.0, 5.6, 8.0, 11.0, 16.0].filter(v => (caps?.apertureMaxMax ? v <= caps.apertureMaxMax : true));
-          const ticks = values.map(v => Number(v.toFixed(1)));
-          const minTick = ticks[0] ?? 1.4;
-          const maxTick = ticks[ticks.length - 1] ?? (caps?.apertureMaxMax ?? 16.0);
-          return (
-            <LabeledSlider
-              label="Max aperture (f/)"
-              infoText={FIELD_HELP.maxAperture}
-              min={minTick}
-              max={maxTick}
-              step={0.1}
-              value={maxApertureF}
-              onChange={(v) => setMaxApertureF(Number(v))}
-              ticks={ticks}
-              snap
-              format={(v) => v.toFixed(1)}
-              idPrefix="aperture"
-            />
-          );
-        })()}
-      </div>
+      <ApertureControl maxApertureLimit={caps?.apertureMaxMax} />
 
-      <div>
-        <FocalRange
-          warningTip={(resultsCount === 0 && lastChangedLabel() === 'Focal range' && lastChangedDetail()) ? `No matches after adjusting Focal range to ${lastChangedDetail()}.` : undefined}
-          status={(resultsCount === 0 && lastChangedLabel() === 'Focal range') ? 'blocking' : undefined}
-        />
-      </div>
-
-      <div className={STACK_Y}>
-        <div>
-          <MetricRange
-            metric="price"
-            warningTip={resultsCount === 0
-              ? (lastChangedLabel() === 'Price range' && lastChangedDetail()
-                ? `No matches after adjusting Price range to ${lastChangedDetail()}.`
-                : 'No matches with current filters.')
-              : undefined}
-            status={resultsCount === 0 && lastChangedLabel() === 'Price range' ? 'blocking' : undefined}
-          />
-        </div>
-        <div>
-          <MetricRange metric="weight" warningTip={(resultsCount === 0 && lastChangedLabel() === 'Weight range' && lastChangedDetail()) ? `No matches after adjusting Weight range to ${lastChangedDetail()}.` : undefined} status={(resultsCount === 0 && lastChangedLabel() === 'Weight range') ? 'blocking' : undefined} />
-        </div>
-      </div>
-
-      <div className={STACK_Y}>
-        <div>
-          <MetricRange metric="distortion" warningTip={(resultsCount === 0 && lastChangedLabel() === 'Distortion max' && lastChangedDetail()) ? `No matches after adjusting Distortion max to ${lastChangedDetail()}.` : undefined} status={(resultsCount === 0 && lastChangedLabel() === 'Distortion max') ? 'blocking' : undefined} />
-        </div>
-        <div>
-          <MetricRange metric="breathing" warningTip={(resultsCount === 0 && lastChangedLabel() === 'Breathing min score' && lastChangedDetail()) ? `No matches after adjusting Breathing min score to ${lastChangedDetail()}.` : undefined} status={(resultsCount === 0 && lastChangedLabel() === 'Breathing min score') ? 'blocking' : undefined} />
-        </div>
-      </div>
+      <FocalOnly resultsCount={resultsCount} />
+      <PriceAndWeight resultsCount={resultsCount} />
+      <VideoAndDistortion resultsCount={resultsCount} />
 
       {/* Build & capabilities are now part of the pre-stage screen. */}
 
       {/* Moved GoalPresetWeights to top */}
 
-      <StageNav className="mt-4" onBack={onBack} onReset={onReset} onContinue={onContinue} />
     </BaseRequirements>
   );
 }

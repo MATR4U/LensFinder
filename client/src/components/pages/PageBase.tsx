@@ -2,6 +2,7 @@ import React from 'react';
 import { APP_BACKGROUND, PAGE_CONTAINER, SECTION_STACK, ROW_BETWEEN, TITLE_H1 } from '../ui/styles';
 import GLBackground from '../ui/GLBackground';
 import { useFilterStore } from '../../stores/filterStore';
+import { PAGE_BASE_BINDINGS, useFilterBindings } from '../../hooks/useStoreBindings';
 
 type Props = {
   title?: string;
@@ -36,10 +37,9 @@ class Boundary extends React.Component<BoundaryProps, { hasError: boolean }> {
 }
 
 export default function PageBase({ title, metaDescription, headerSlot, actionsSlot, bannerSlot, subheaderSlot, children, footerSlot, errorFallback, suspenseFallback, onView, showHistoryControls = false }: Props) {
-  const canUndo = useFilterStore(s => s.historyLength > 0);
-  const canRedo = useFilterStore(s => s.redoLength > 0);
-  const undo = useFilterStore(s => s.undoLastFilter);
-  const redo = useFilterStore(s => s.redoLastFilter);
+  const { historyLength, redoLength, undo, redo } = useFilterBindings(PAGE_BASE_BINDINGS);
+  const canUndo = historyLength > 0;
+  const canRedo = redoLength > 0;
   React.useEffect(() => {
     if (title) document.title = `LensFinder – ${title}`;
     if (metaDescription) {

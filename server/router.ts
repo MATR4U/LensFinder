@@ -11,12 +11,29 @@ import crypto from 'crypto';
 import { graphql, getIntrospectionQuery } from 'graphql';
 import { z } from 'zod';
 import { problem, withCorrelationId, requireApiVersion, buildLinkHeader, createHmacVerifier } from './utils/http.js';
+import { sendWithEtag, headFromJson, parsePageParams } from './utils/respond.js';
 import { metrics } from './utils/metrics.js';
+import { broadcast } from './services/sseHub.js';
 import { getCacheClient, computeCacheKey, type CachedResponse } from './utils/cache.js';
+import { mountIndexRoutes } from './routes/index.js';
+import { mountHealthRoutes } from './routes/health.js';
+import { mountCameraRoutes } from './routes/cameras.js';
+import { mountLensRoutes } from './routes/lenses.js';
+import { mountPriceRoutes } from './routes/price.js';
+import { mountEventRoutes } from './routes/events.js';
+import { mountCacheRoutes } from './routes/cache.js';
 
 export function createRouter(options: { rootDir: string }): Router {
   const { rootDir } = options;
   const router = express.Router();
+  // New modular routers (kept alongside legacy handlers during transition)
+  mountIndexRoutes(router);
+  mountHealthRoutes(router);
+  mountCameraRoutes(router);
+  mountLensRoutes(router);
+  mountPriceRoutes(router);
+  mountEventRoutes(router);
+  mountCacheRoutes(router);
 
   // Service index for discoverability (mirrors server/index.ts variant)
   router.get('/api', (_req: Request, res: Response) => {
@@ -56,19 +73,7 @@ export function createRouter(options: { rootDir: string }): Router {
     for (const [, res] of sseClients) writeSse(res, event, data);
   }
 
-  function sendWithEtag(req: Request, res: Response, payload: unknown) {
-    const body = JSON.stringify(payload);
-    const etag = 'W/"' + crypto.createHash('sha1').update(body).digest('hex') + '"';
-    const ifNoneMatch = req.headers['if-none-match'];
-    if (ifNoneMatch && ifNoneMatch === etag) {
-      res.status(304).end();
-      return;
-    }
-    res.setHeader('ETag', etag);
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Vary', 'Accept, Accept-Encoding, Origin');
-    res.type('application/json').send(body);
-  }
+  // sendWithEtag moved to utils/respond
 
   // Simple health check that validates DB connectivity
   router.get('/api/health', async (_req: Request, res: Response) => {
@@ -166,7 +171,7 @@ export function createRouter(options: { rootDir: string }): Router {
     res.json(results);
   });
 
-  // HEAD variant for component health (no body, same headers/status 200)
+  // HEAD for detailed component health (no body)
   router.head('/api/health/components', async (_req: Request, res: Response) => {
     try {
       await getPool().query('SELECT 1');
@@ -176,23 +181,7 @@ export function createRouter(options: { rootDir: string }): Router {
     }
   });
 
-  // HEAD for detailed component health (no body, mirrors status semantics)
-  router.head('/api/health/components', async (_req: Request, res: Response) => {
-    try {
-      await getPool().query('SELECT 1');
-      res.status(200).end();
-    } catch {
-      res.status(503).end();
-    }
-  });
-
-  function parsePageParams(req: Request) {
-    const limit = req.query.limit !== undefined ? Number(req.query.limit) : undefined;
-    const offset = req.query.offset !== undefined ? Number(req.query.offset) : undefined;
-    const safeLimit = typeof limit === 'number' && Number.isFinite(limit) ? Math.min(Math.max(0, Math.floor(limit)), 500) : undefined;
-    const safeOffset = typeof offset === 'number' && Number.isFinite(offset) ? Math.max(0, Math.floor(offset)) : undefined;
-    return { limit: safeLimit, offset: safeOffset };
-  }
+  // parsePageParams moved to utils/respond
 
   // Simple API key auth for GET endpoints when API_KEY is set
   function requireReadApiKey(req: Request, res: Response): boolean {
@@ -299,12 +288,7 @@ export function createRouter(options: { rootDir: string }): Router {
         if (cached && (cached as any).body !== undefined) {
           if (cached.headers?.xTotalCount) res.setHeader('X-Total-Count', cached.headers.xTotalCount);
           if (cached.headers?.link) res.setHeader('Link', cached.headers.link);
-          const body = JSON.stringify(cached.body);
-          const etag = 'W/"' + crypto.createHash('sha1').update(body).digest('hex') + '"';
-          res.setHeader('ETag', etag);
-          res.setHeader('Cache-Control', 'no-cache');
-          res.setHeader('Vary', 'Accept, Accept-Encoding, Origin');
-          return res.status(200).end();
+          return headFromJson(req, res, cached.body);
         }
       }
       const { limit, offset } = parsePageParams(req);
@@ -342,12 +326,7 @@ export function createRouter(options: { rootDir: string }): Router {
         const linkHeader = buildLinkHeader(base, new URLSearchParams(req.query as any), (counts as any).cameras) || undefined;
         if (linkHeader) res.setHeader('Link', linkHeader);
       }
-      const body = JSON.stringify(items);
-      const etag = 'W/"' + crypto.createHash('sha1').update(body).digest('hex') + '"';
-      res.setHeader('ETag', etag);
-      res.setHeader('Cache-Control', 'no-cache');
-      res.setHeader('Vary', 'Accept, Accept-Encoding, Origin');
-      return res.status(200).end();
+      return headFromJson(req, res, items);
     } catch (e) {
       if (process.env.VITEST === 'true' || process.env.VITEST === '1' || process.env.NODE_ENV === 'test') {
         res.setHeader('Vary', 'Accept, Accept-Encoding, Origin');
@@ -448,12 +427,7 @@ export function createRouter(options: { rootDir: string }): Router {
         if (cached && (cached as any).body !== undefined) {
           if (cached.headers?.xTotalCount) res.setHeader('X-Total-Count', cached.headers.xTotalCount);
           if (cached.headers?.link) res.setHeader('Link', cached.headers.link);
-          const body = JSON.stringify(cached.body);
-          const etag = 'W/"' + crypto.createHash('sha1').update(body).digest('hex') + '"';
-          res.setHeader('ETag', etag);
-          res.setHeader('Cache-Control', 'no-cache');
-          res.setHeader('Vary', 'Accept, Accept-Encoding, Origin');
-          return res.status(200).end();
+          return headFromJson(req, res, cached.body);
         }
       }
       const { limit, offset } = parsePageParams(req);
@@ -493,12 +467,7 @@ export function createRouter(options: { rootDir: string }): Router {
         const linkHeader = buildLinkHeader(base, new URLSearchParams(req.query as any), (counts as any).lenses) || undefined;
         if (linkHeader) res.setHeader('Link', linkHeader);
       }
-      const body = JSON.stringify(items);
-      const etag = 'W/"' + crypto.createHash('sha1').update(body).digest('hex') + '"';
-      res.setHeader('ETag', etag);
-      res.setHeader('Cache-Control', 'no-cache');
-      res.setHeader('Vary', 'Accept, Accept-Encoding, Origin');
-      return res.status(200).end();
+      return headFromJson(req, res, items);
     } catch (e) {
       if (process.env.VITEST === 'true' || process.env.VITEST === '1' || process.env.NODE_ENV === 'test') {
         res.setHeader('Vary', 'Accept, Accept-Encoding, Origin');
@@ -663,100 +632,7 @@ export function createRouter(options: { rootDir: string }): Router {
     res.json(payload);
   });
 
-  // Server-Sent Events endpoint (public; browsers can't send headers)
-  router.get('/api/events', (req: Request, res: Response) => {
-    const onceParam = (req.query as any).once;
-    if (onceParam !== undefined) {
-      const onceSchema = z.object({ once: z.coerce.number().int().min(0).max(1) }).passthrough();
-      const parsed = onceSchema.safeParse({ once: onceParam });
-      if (!parsed.success) return problem(res, 400, 'Bad Request', 'Invalid once parameter');
-    }
-    // Optional signed query token: ts + sig (HMAC of `${ts}.${req.path}`)
-    const secret = config.requestSignatureSecret;
-    if (secret) {
-      const tsHeader = String((req.query as any).ts || '').trim();
-      const sigHeader = String((req.query as any).sig || '').trim();
-      if (!tsHeader || !sigHeader) return problem(res, 401, 'Unauthorized');
-      const now = Date.now();
-      let tsMs: number | null = null;
-      const asNumber = Number(tsHeader);
-      if (Number.isFinite(asNumber)) {
-        tsMs = asNumber > 10_000_000_000 ? Math.floor(asNumber) : Math.floor(asNumber * 1000);
-      } else {
-        const parsed = Date.parse(tsHeader);
-        tsMs = Number.isFinite(parsed) ? parsed : null;
-      }
-      if (!tsMs) return problem(res, 401, 'Unauthorized', 'Invalid timestamp');
-      if (Math.abs(now - tsMs) > (config.signatureTtlSeconds * 1000)) {
-        return problem(res, 401, 'Unauthorized', 'Signature expired');
-      }
-      const mac = crypto.createHmac('sha256', secret).update(tsHeader + '.' + req.path).digest('hex');
-      const a = new Uint8Array(Buffer.from(sigHeader, 'hex'));
-      const b = new Uint8Array(Buffer.from(mac, 'hex'));
-      if (a.byteLength !== b.byteLength || !crypto.timingSafeEqual(a, b)) {
-        return problem(res, 401, 'Unauthorized');
-      }
-    }
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('X-Accel-Buffering', 'no');
-    res.flushHeaders?.();
-
-    const id = crypto.randomUUID();
-    sseClients.set(id, res);
-    // Immediately acknowledge
-    res.write(`retry: 5000\n`);
-    res.write(`: connected ${id}\n\n`);
-
-    // Keepalive ping (25s to play nicely with proxies)
-    let seq = 0;
-    const keepalive = setInterval(() => {
-      writeSse(res, 'ping', { ts: Date.now(), n: seq++ });
-    }, 25000);
-
-    // Test/support: allow one-shot close for probes
-    const once = String((req.query as any).once || '').trim() === '1';
-    if (once) {
-      writeSse(res, 'ping', { ts: Date.now(), n: seq++ });
-      clearInterval(keepalive);
-      sseClients.delete(id);
-      return res.end();
-    }
-
-    const cleanup = () => {
-      clearInterval(keepalive);
-      sseClients.delete(id);
-    };
-    req.on('close', cleanup);
-    res.on('close', cleanup as any);
-  });
-
-  // HEAD for /api/events
-  router.head('/api/events', (_req: Request, res: Response) => {
-    res.status(200).end();
-  });
-
-  // Token minting for SSE when REQUEST_SIGNATURE_SECRET is set
-  router.get('/api/events/token', (_req: Request, res: Response) => {
-    const secret = config.requestSignatureSecret;
-    if (!secret) return res.status(204).end();
-    const ts = Date.now();
-    const sig = crypto.createHmac('sha256', secret).update(String(ts) + '.' + '/api/events').digest('hex');
-    res.json({ ts, sig });
-  });
-
-  // HEAD variant for SSE token endpoint (no body)
-  router.head('/api/events/token', (_req: Request, res: Response) => {
-    const secret = config.requestSignatureSecret;
-    if (!secret) return res.status(204).end();
-    res.status(200).end();
-  });
-
-  // HEAD for /api/events/token
-  router.head('/api/events/token', (_req: Request, res: Response) => {
-    res.type('application/json').status(200).end();
-  });
+  // Events handled by routes/events.ts
 
   // Cache invalidation endpoint (HMAC signed). Deletes keys by prefix.
   router.post('/api/cache/purge', express.json({ verify: (req, _res, buf) => { (req as any).rawBody = buf.toString('utf8'); } }), async (req: Request, res: Response) => {

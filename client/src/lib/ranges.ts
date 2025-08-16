@@ -12,4 +12,8 @@ export function clampRangeToCaps(range: Range, bounds: Bounds): Range {
   return { min, max };
 }
 
+export function rangesEqual(a: Range, b: Range): boolean {
+  return a.min === b.min && a.max === b.max;
+}
+
 

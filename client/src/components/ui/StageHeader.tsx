@@ -8,7 +8,7 @@ type Props = {
   className?: string;
 };
 
-export default function StageHeader({ title, resultsCount, right, className = '' }: Props) {
+function StageHeaderImpl({ title, resultsCount, right, className = '' }: Props) {
   return (
     <div className={`${ROW_BETWEEN} ${className}`}>
       <div className="flex items-center gap-3">
@@ -21,6 +21,11 @@ export default function StageHeader({ title, resultsCount, right, className = ''
     </div>
   );
 }
+
+const StageHeader = React.memo(StageHeaderImpl);
+StageHeader.displayName = 'StageHeader';
+
+export default StageHeader;
 
 
 

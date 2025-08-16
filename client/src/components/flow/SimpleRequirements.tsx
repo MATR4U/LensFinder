@@ -6,6 +6,7 @@ import { GRID_TWO_GAP3, INLINE_CHIPS_ROW } from '../ui/styles';
 import LabeledRange from '../ui/fields/LabeledRange';
 import MetricRange from './MetricRange';
 import { useFilterStore } from '../../stores/filterStore';
+import { SIMPLE_REQ_BINDINGS, useFilterBindings } from '../../hooks/useStoreBindings';
 import { PRESETS } from '../../lib/recommender';
 import { shallow } from 'zustand/shallow';
 import { applyFilters, buildFilterInput } from '../../lib/filters';
@@ -49,37 +50,7 @@ function SimpleRequirementsBody(props: Props) {
     softWeight, setSoftWeight,
     enablePrice, setEnablePrice,
     enableWeight, setEnableWeight,
-  } = useFilterStore((s) => ({
-    cameraName: s.cameraName,
-    setCameraName: s.setCameraName,
-    brand: s.brand,
-    setBrand: s.setBrand,
-    lensType: s.lensType,
-    setLensType: s.setLensType,
-    sealed: s.sealed,
-    setSealed: s.setSealed,
-    isMacro: s.isMacro,
-    setIsMacro: s.setIsMacro,
-    priceRange: s.priceRange,
-    setPriceRange: s.setPriceRange,
-    weightRange: s.weightRange,
-    setWeightRange: s.setWeightRange,
-    goalPreset: s.goalPreset,
-    setGoalPreset: s.setGoalPreset,
-    setGoalWeights: s.setGoalWeights,
-    caps: s.availabilityCaps,
-    undoLastFilter: s.undoLastFilter,
-    continueTo: s.continueTo,
-    resetFilters: s.resetFilters,
-    softPrice: s.softPrice,
-    setSoftPrice: s.setSoftPrice,
-    softWeight: s.softWeight,
-    setSoftWeight: s.setSoftWeight,
-    enablePrice: s.enablePrice,
-    setEnablePrice: s.setEnablePrice,
-    enableWeight: s.enableWeight,
-    setEnableWeight: s.setEnableWeight,
-  }), shallow);
+  } = useFilterBindings(SIMPLE_REQ_BINDINGS);
 
   const onBack = () => continueTo(1);
   const onReset = () => {

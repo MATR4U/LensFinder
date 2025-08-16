@@ -34,3 +34,7 @@ This repo uses `TODO.MD` as the single-source backlog for production-critical wo
 #### CI
 CI runs server/client tests, builds, launches the stack, and executes e2e with Redis.
 
+### UI store bindings
+
+Prefer using the schema-based `useFilterBindings` hook rather than ad‑hoc `useFilterStore` selectors inside components. Define a small schema in `client/src/hooks/useStoreBindings.ts` (see `PRO_REQ_BINDINGS`, `BUILD_CAPS_BINDINGS`, etc.) and consume it via `useFilterBindings(schema)`. This reduces repetition and keeps mappings in one place. See `docs/ui-bindings.md`.
+

@@ -17,7 +17,37 @@
       "vitest/globals",
       "@testing-library/jest-dom",
       "@types/three"
-    ]
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@types/*": [
+        "src/types/*"
+      ],
+      "@lib/*": [
+        "src/lib/*"
+      ],
+      "@stores/*": [
+        "src/stores/*"
+      ],
+      "@hooks/*": [
+        "src/hooks/*"
+      ],
+      "@flow/*": [
+        "src/components/flow/*"
+      ],
+      "@ui/*": [
+        "src/components/ui/*"
+      ],
+      "@context/*": [
+        "src/context/*"
+      ],
+      "@graphql/*": [
+        "src/graphql/*"
+      ],
+      "@pages/*": [
+        "src/pages/*"
+      ]
+    }
   },
   "include": [
     "src",

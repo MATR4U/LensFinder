@@ -7,6 +7,19 @@ export default defineConfig(({ mode }) => {
   const forceOutage = rootEnv.VITE_FORCE_OUTAGE === '1' || rootEnv.VITE_FORCE_OUTAGE === 'true';
   return {
     plugins: [react()],
+    resolve: {
+      alias: {
+        '@types': '/src/types',
+        '@lib': '/src/lib',
+        '@stores': '/src/stores',
+        '@hooks': '/src/hooks',
+        '@flow': '/src/components/flow',
+        '@ui': '/src/components/ui',
+        '@context': '/src/context',
+        '@graphql': '/src/graphql',
+        '@pages': '/src/pages'
+      }
+    },
     build: {
       target: process.env.ESNEXT === 'true' ? 'esnext' : 'es2020',
       cssTarget: 'safari14',

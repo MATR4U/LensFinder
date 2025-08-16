@@ -16,15 +16,15 @@ export type Availability = {
   breathingMinMin: number;
 };
 
-export function coverageMatches(lensCoverage: string | undefined, selection: string): boolean {
-  if (selection === 'Any') return true;
+export function coverageMatches(lensCoverage: string | undefined, selection: string | undefined): boolean {
+  if (!selection || selection === 'Any') return true;
   const synonyms: Record<string, string[]> = {
     'Full Frame': ['FF', 'Full Frame'],
     'APS-C': ['APS-C', 'APS C', 'APS'],
     'MFT': ['MFT', 'Micro Four Thirds'],
     'Medium Format': ['Medium Format', 'MF']
   };
-  const options = synonyms[selection] || [selection];
+  const options = (synonyms[selection] || [selection]).filter((s): s is string => typeof s === 'string' && s.length > 0);
   const lc = (lensCoverage || '').toLowerCase();
   return options.some((opt) => lc.includes(opt.toLowerCase()));
 }

@@ -1,22 +1,21 @@
 import React from 'react';
-import { TEXT_XS_MUTED, LINK_HOVER_ACCENT, PANEL_BASE, PANEL_NEUTRAL, TEXT_SM, CARD_PADDED, GRID_LG_TWO_GAP6 } from './ui/styles';
-import BaseReport from './report/BaseReport';
-import { useReportLifecycle } from './report/useReportLifecycle';
-import { buildResultsCSV } from '../lib/csv';
-import LazyPlot from './ui/LazyPlot';
-import { usePlotConfig } from '../context/PlotProvider';
-import { computeParetoFrontier } from '../lib/optics';
-import type { ReportResponse } from '../lib/api';
-import type { Camera, Result } from '../types';
-import { useSelectedResults } from '../hooks/useSelectedResults';
-import { useFilterStore } from '../stores/filterStore';
-import { clientConfig } from '../config';
-import SummaryHeader from './report/SummaryHeader';
-import Recommendations from './report/Recommendations';
-import RankingWeights from './report/RankingWeights';
-import CollapsibleMessage from './ui/CollapsibleMessage';
-import Info from './ui/Info';
-import { useStageLifecycle } from '../hooks/useStageLifecycle';
+import { TEXT_XS_MUTED, LINK_HOVER_ACCENT, TEXT_SM, GRID_LG_TWO_GAP6 } from '../ui/styles';
+import BaseReport from './BaseReport';
+import { useReportLifecycle } from './useReportLifecycle';
+import { buildResultsCSV } from '../../lib/csv';
+import LazyPlot from '../ui/LazyPlot';
+import { usePlotConfig } from '../../context/PlotProvider';
+import { computeParetoFrontier } from '../../lib/optics';
+import type { ReportResponse } from '../../lib/api';
+import type { Camera, Result } from '../../types';
+import { useSelectedResults } from '../../hooks/useSelectedResults';
+import { clientConfig } from '../../config';
+import SummaryHeader from './SummaryHeader';
+import Recommendations from './Recommendations';
+import RankingWeights from './RankingWeights';
+import CollapsibleMessage from '../ui/CollapsibleMessage';
+import Info from '../ui/Info';
+import { useStageLifecycle } from '../../hooks/useStageLifecycle';
 
 type Props = {
   report: ReportResponse | null;
@@ -51,7 +50,7 @@ function fromReportItems(items: ReportResponse['items']): DisplayItem[] {
   }));
 }
 
-export default function Report({ report, camera, selected, goalWeights, topResults = [], onEditPreferences }: Props) {
+export default function ReportView({ report, camera, selected, goalWeights, topResults = [], onEditPreferences }: Props) {
   if (!report) return null;
   const { cameraName, goal, items } = report;
 
@@ -60,10 +59,6 @@ export default function Report({ report, camera, selected, goalWeights, topResul
   React.useEffect(() => { onEnter(); }, [onEnter]);
   const plotCfg = usePlotConfig();
 
-  // Helpers
-
-  // Compute derived metrics
-  // Reflect current selection order if available
   const selectedNow = useSelectedResults(topResults as any);
   const selectedDisplay = fromResults(selectedNow as unknown as Result[]);
   const itemsDisplay = fromReportItems(items);
@@ -73,18 +68,16 @@ export default function Report({ report, camera, selected, goalWeights, topResul
   const topPerformer = top3.slice().sort((a, b) => b.score - a.score)[0];
   const lightest = top3.slice().sort((a, b) => a.weight_g - b.weight_g)[0];
 
-  // Normalize for simple bars (0..10)
   const maxWeight = Math.max(...top3.map(i => i.weight_g || 1), 1);
   const minWeight = Math.min(...top3.map(i => i.weight_g || 1));
   const maxValueIndex = Math.max(...valueScores.map(v => v.v), 1);
   const toBar = (v: number, max = 10) => Math.max(0, Math.min(10, v));
   const toPortabilityBar = (w: number) => {
     if (maxWeight === minWeight) return 5;
-    const norm = (maxWeight - w) / (maxWeight - minWeight); // lighter -> higher
+    const norm = (maxWeight - w) / (maxWeight - minWeight);
     return toBar(norm * 10);
   };
 
-  // Build bars for recommendations
   const bars = Object.fromEntries(top3.map(t => {
     const valueIndex = t.price_chf > 0 ? (t.score / t.price_chf) : 0;
     return [t.name, {
@@ -106,7 +99,6 @@ export default function Report({ report, camera, selected, goalWeights, topResul
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       URL.revokeObjectURL(url);
     }}>
-      {/* Section 1: Personalized summary */}
       <SummaryHeader cameraName={cameraName} goal={goal} onEditPreferences={onEditPreferences} />
 
       <CollapsibleMessage variant="info" title="How to read this report" defaultOpen={false} className="mb-4">
@@ -119,7 +111,6 @@ export default function Report({ report, camera, selected, goalWeights, topResul
         </ul>
       </CollapsibleMessage>
 
-      {/* Top badges based on consistent definitions */}
       {top3.length > 0 && (
         <div className="mb-3 flex flex-wrap gap-2 text-xs">
           {topPerformer && (
@@ -134,14 +125,12 @@ export default function Report({ report, camera, selected, goalWeights, topResul
         </div>
       )}
 
-      {/* Section 2: Top 3 cards */}
       <Recommendations
         camera={camera}
         items={top3.map(t => ({ name: t.name, score: t.score, price_chf: t.price_chf, weight_g: t.weight_g, rank: t.rank, type: t.type }))}
         bars={bars}
       />
 
-      {/* Section: Weights transparency */}
       <RankingWeights goalWeights={goalWeights} />
 
       {items.length > 0 && (
@@ -188,7 +177,6 @@ export default function Report({ report, camera, selected, goalWeights, topResul
           </div>
         </div>
       )}
-      {/* Final verdict with consistent definitions */}
       {top3.length > 0 && (
         <div className="mt-6">
           <h3 className="text-lg font-bold text-[var(--text-color)]">Final Verdict</h3>

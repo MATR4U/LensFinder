@@ -1,6 +1,7 @@
 import React from 'react';
 import type { Camera } from '../../types';
 import { useFilterStore } from '../../stores/filterStore';
+import { BUILD_CAPS_BINDINGS, useFilterBindings } from '../../hooks/useStoreBindings';
 import { CARD_PADDED, GRID_TWO_GAP3 } from '../ui/styles';
 import StageHeader from '../ui/StageHeader';
 import StageNav from '../ui/StageNav';
@@ -35,25 +36,7 @@ function BuildCapabilitiesBody({ cameras = [], brandsForCamera = [], resultsCoun
     requireOIS, setRequireOIS,
     continueTo,
     caps,
-  } = useFilterStore(s => ({
-    isPro: s.isPro,
-    cameraName: s.cameraName,
-    setCameraName: s.setCameraName,
-    brand: s.brand,
-    setBrand: s.setBrand,
-    lensType: s.lensType,
-    setLensType: s.setLensType,
-    coverage: s.proCoverage,
-    setCoverage: s.setProCoverage,
-    sealed: s.sealed,
-    setSealed: s.setSealed,
-    isMacro: s.isMacro,
-    setIsMacro: s.setIsMacro,
-    requireOIS: s.proRequireOIS,
-    setRequireOIS: s.setProRequireOIS,
-    continueTo: s.continueTo,
-    caps: s.availabilityCaps,
-  }));
+  } = useFilterBindings(BUILD_CAPS_BINDINGS);
 
   const onBack = () => continueTo(0);
 

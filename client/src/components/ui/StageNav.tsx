@@ -11,7 +11,7 @@ type Props = {
   backLabel?: string;
 };
 
-export default function StageNav({ onBack, onReset, onContinue, continueLabel = 'Continue', className = '', canForward = true, backLabel = 'Back' }: Props) {
+function StageNavImpl({ onBack, onReset, onContinue, continueLabel = 'Continue', className = '', canForward = true, backLabel = 'Back' }: Props) {
   return (
     <div className={`${ROW_BETWEEN} ${className}`}>
       <div className={ACTION_ROW}>
@@ -38,6 +38,18 @@ export default function StageNav({ onBack, onReset, onContinue, continueLabel = 
     </div>
   );
 }
+
+const areEqual = (prev: Props, next: Props) => (
+  prev.continueLabel === next.continueLabel &&
+  prev.className === next.className &&
+  prev.canForward === next.canForward &&
+  prev.backLabel === next.backLabel
+);
+
+const StageNav = React.memo(StageNavImpl, areEqual);
+StageNav.displayName = 'StageNav';
+
+export default StageNav;
 
 
 

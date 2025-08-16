@@ -1,6 +1,7 @@
 import React from 'react';
 import { useFilterStore } from '../stores/filterStore';
 import { FilterStateSchema } from '../lib/schema';
+import { decodeWeightsBase64Url, encodeWeightsBase64Url } from '../lib/presetsMapping';
 
 const paramMap = [
   ['cameraName', 'cameraName'],
@@ -69,7 +70,11 @@ export function useUrlFiltersSync() {
       enableDistortion: (() => { const v = params.get('enDist'); return v !== null ? (v === '1' || v === 'true') : s.enableDistortion; })(),
       enableBreathing: (() => { const v = params.get('enBreath'); return v !== null ? (v === '1' || v === 'true') : s.enableBreathing; })(),
       goalPreset: params.get('goal') ?? s.goalPreset,
-      goalWeights: s.goalWeights,
+      goalWeights: (() => {
+        const wh = params.get('gwh');
+        const decoded = decodeWeightsBase64Url(wh);
+        return decoded ?? s.goalWeights;
+      })(),
     } as const;
     const parsed = FilterStateSchema.safeParse(stateDraft);
     if (!parsed.success) return; // Ignore invalid URL data; keep defaults
@@ -101,7 +106,8 @@ export function useUrlFiltersSync() {
     s.setEnableWeight(st.enableWeight);
     s.setEnableDistortion(st.enableDistortion);
     s.setEnableBreathing(st.enableBreathing);
-    s.setGoalPreset(st.goalPreset);
+    // Prefer explicit preset from URL, else keep weights and allow inference elsewhere
+    if (st.goalPreset) s.setGoalPreset(st.goalPreset);
   }, []);
 
   React.useEffect(() => {
@@ -174,6 +180,8 @@ export function useUrlFiltersSync() {
         p.set('enWeight', next.enableWeight ? '1' : '0');
         p.set('enDist', next.enableDistortion ? '1' : '0');
         p.set('enBreath', next.enableBreathing ? '1' : '0');
+        // Also encode goal weights for deep links
+        p.set('gwh', encodeWeightsBase64Url(next.goalWeights));
         const nextUrl = `${window.location.pathname}?${p.toString()}`;
         window.history.replaceState(null, '', nextUrl);
       }

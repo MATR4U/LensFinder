@@ -8,19 +8,17 @@ export function useStageReset(stageNumber: number) {
   const setIsMacro = useFilterStore(s => s.setIsMacro);
   const isPro = useFilterStore(s => s.isPro);
   const setRequireOIS = useFilterStore(s => s.setProRequireOIS);
+  const setGoalPreset = useFilterStore(s => s.setGoalPreset);
 
   return useCallback(() => {
-    const caps = useFilterStore.getState().availabilityCaps;
-    if (!caps) {
-      resetFilters();
-    } else {
-      resetFilters({ priceBounds: caps.priceBounds, weightBounds: caps.weightBounds });
-    }
+    resetFilters();
+    // Always reset goals to the default preset (centralized)
+    setGoalPreset('Balanced');
     setCameraName('Any');
     setSealed(false);
     setIsMacro(false);
     if (isPro) setRequireOIS(false);
-  }, [resetFilters, setCameraName, setSealed, setIsMacro, isPro, setRequireOIS]);
+  }, [resetFilters, setGoalPreset, setCameraName, setSealed, setIsMacro, isPro, setRequireOIS]);
 }
 
 
