@@ -8,15 +8,16 @@ type Props = {
   continueLabel?: string;
   className?: string;
   canForward?: boolean;
+  backLabel?: string;
 };
 
-export default function StageNav({ onBack, onReset, onContinue, continueLabel = 'Continue', className = '', canForward = true }: Props) {
+export default function StageNav({ onBack, onReset, onContinue, continueLabel = 'Continue', className = '', canForward = true, backLabel = 'Back' }: Props) {
   return (
     <div className={`${ROW_BETWEEN} ${className}`}>
       <div className={ACTION_ROW}>
         {onBack && (
           <button className="px-3 py-1.5 rounded border border-[var(--control-border)] text-sm" onClick={onBack}>
-            Back
+            {backLabel}
           </button>
         )}
         {onReset && (

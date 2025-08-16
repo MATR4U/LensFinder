@@ -176,26 +176,17 @@ function SimpleRequirementsBody(props: Props) {
       onReset={onReset}
       onContinue={onContinue}
     >
-      <StageHeader
-        title="Your requirements"
-        resultsCount={resultsCount}
-        right={(
-          <GoalPresetWeights
-            preset={goalPreset}
-            onChangePreset={setGoalPreset}
-            weights={{}}
-            onChangeWeights={() => { }}
-            presets={PRESETS}
-            showWeights={false}
-            optionSuffixMap={React.useMemo(() => {
-              const map: Record<string, number> = {};
-              Object.keys(PRESETS).forEach((k) => { map[k] = resultsCount; });
-              return map;
-            }, [resultsCount])}
-          />
-        )}
-        className="mb-4"
-      />
+      <StageHeader title="Your requirements" resultsCount={resultsCount} className="mb-2" right={(
+        <GoalPresetWeights
+          preset={goalPreset}
+          onChangePreset={setGoalPreset}
+          weights={{}}
+          onChangeWeights={() => { }}
+          presets={PRESETS}
+          showWeights={false}
+          optionSuffixMap={undefined}
+        />
+      )} />
 
       <div>
         <MetricRange metric="price" />

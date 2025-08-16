@@ -257,7 +257,7 @@ export default function ProRequirements(props: Props) {
       onReset={onReset}
       onContinue={onContinue}
     >
-      <div className="mb-4">
+      <div className="mb-2">
         <GoalPresetWeights
           preset={goalPreset}
           onChangePreset={setGoalPreset}
@@ -265,16 +265,12 @@ export default function ProRequirements(props: Props) {
           onChangeWeights={setGoalWeights}
           presets={PRESETS}
           showWeights={false}
-          optionSuffixMap={React.useMemo(() => {
-            const map: Record<string, number> = {};
-            Object.keys(PRESETS).forEach((k) => { map[k] = resultsCount; });
-            return map;
-          }, [resultsCount])}
+          optionSuffixMap={undefined}
         />
       </div>
       {/** compute foreground arrays from current filtered results */}
       {(() => null)()}
-      <CollapsibleMessage variant="info" title="How to use hard specs" defaultOpen={false}>
+      <CollapsibleMessage variant="neutral" title="Tune your requirements" defaultOpen={false} className="max-w-3xl">
         <ul className="list-disc pl-5 text-sm space-y-1">
           <li><strong>Coverage</strong>: {FIELD_HELP.coverage}</li>
           <li><strong>Focal range</strong>: {FIELD_HELP.focalRange}</li>
