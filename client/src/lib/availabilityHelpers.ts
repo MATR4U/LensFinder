@@ -60,4 +60,25 @@ export function availabilityCapsEqual(x: AvailabilityCaps, y: AvailabilityCaps):
   );
 }
 
+// Compute a stable, order-insensitive fingerprint string for caps
+export function availabilityCapsVersion(c: AvailabilityCaps): string {
+  const sortedNumbers = (arr?: number[]) => (arr ? [...arr].sort((a, b) => a - b) : undefined);
+  const sortedStrings = (arr: string[]) => [...arr].sort();
+  const stable = {
+    brands: sortedStrings(c.brands),
+    lensTypes: sortedStrings(c.lensTypes),
+    coverage: sortedStrings(c.coverage),
+    priceBounds: c.priceBounds,
+    priceTicks: sortedNumbers(c.priceTicks),
+    weightBounds: c.weightBounds,
+    weightTicks: sortedNumbers(c.weightTicks),
+    focalBounds: c.focalBounds,
+    focalTicks: sortedNumbers(c.focalTicks),
+    apertureMaxMax: c.apertureMaxMax,
+    distortionMaxMax: c.distortionMaxMax,
+    breathingMinMin: c.breathingMinMin,
+  } as const;
+  return JSON.stringify(stable);
+}
+
 
