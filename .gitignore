@@ -33,19 +33,23 @@ server/node_modules/
 !env.prod.example
 
 # --- Build / Bundler Artifacts ---
-dist/
-client/dist/
-server/dist/
-build/
+# Anchor ignores to avoid excluding source folders named 'build' or 'dist'
+/client/dist/
+/server/dist/
+/build/
 .cache/
-.vite/
-client/.vite/
+/.vite/
+/client/.vite/
+# Whitelist known source directories named 'build' (keep tracked)
+!client/src/components/flow/build/
+!client/src/components/flow/build/**
 
 # --- TypeScript ---
 *.tsbuildinfo
 tsconfig.tsbuildinfo
 
 # --- Testing / Coverage ---
+/client/coverage/
 coverage/
 .nyc_output/
 test-results/
