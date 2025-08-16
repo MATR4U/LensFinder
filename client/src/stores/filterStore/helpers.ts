@@ -8,7 +8,7 @@ export function scheduleDebouncedRangeUpdate(
   timerKey: keyof FilterState,
   get: () => FilterState,
   set: (partial: Partial<FilterState>) => void,
-  bounds?: Range
+  boundsOrGetter?: Range | (() => Range | undefined)
 ) {
   const anyState = get() as unknown as Record<string, any>;
   const existing = anyState[timerKey as unknown as string];
@@ -16,6 +16,7 @@ export function scheduleDebouncedRangeUpdate(
   const t = setTimeout(() => {
     const min = Math.min(range.min, range.max);
     const max = Math.max(range.min, range.max);
+    const bounds = typeof boundsOrGetter === 'function' ? boundsOrGetter() : boundsOrGetter;
     const clamped = bounds ? { min: Math.max(bounds.min, min), max: Math.min(bounds.max, max) } : { min, max };
     get().pushHistory();
     set({ [stateKey]: clamped } as unknown as Partial<FilterState>);
@@ -86,6 +87,20 @@ export function buildHistorySnapshot(s: FilterState) {
     softDistortion: s.softDistortion,
     softBreathing: s.softBreathing,
   } as const;
+}
+
+// Coalesce multiple field updates into a single history entry
+export function withHistory(
+  get: () => FilterState,
+  set: (partial: Partial<FilterState>) => void,
+  updater: () => void
+) {
+  const before = buildHistorySnapshot(get());
+  updater();
+  const after = buildHistorySnapshot(get());
+  if (JSON.stringify(before) !== JSON.stringify(after)) {
+    get().pushHistory();
+  }
 }
 
 

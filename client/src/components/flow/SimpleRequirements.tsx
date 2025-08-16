@@ -8,8 +8,9 @@ import { SIMPLE_REQ_BINDINGS, useFilterBindings } from '../../hooks/useStoreBind
 import { PRESETS } from '../../lib/recommender';
 import { applyFilters, buildFilterInput } from '../../lib/filters';
 import GoalPresetWeights from '../ui/fields/GoalPresetWeights';
-import { FIELD_HELP } from '../ui/fieldHelp';
-import CollapsibleMessage from '../ui/CollapsibleMessage';
+// import { FIELD_HELP } from '../ui/fieldHelp';
+// import CollapsibleMessage from '../ui/CollapsibleMessage';
+import SimpleHowTo from './simple/HowTo';
 import BaseRequirements from './BaseRequirements';
 import StageHeader from '../ui/StageHeader';
 //
@@ -100,16 +101,7 @@ function SimpleRequirementsBody(props: Props) {
   void priceTrackStyle; // TODO: currently computed for future UI use
   void weightTrackStyle;
 
-  const infoBlock = (
-    <CollapsibleMessage variant="info" title="How to use these filters" defaultOpen={false}>
-      <ul className="list-disc pl-5 text-sm space-y-1">
-        <li><strong>Camera</strong>: {FIELD_HELP.cameraBody}</li>
-        <li><strong>Brand/Type</strong>: Filter by maker and choose Prime (single focal length) or Zoom (range).</li>
-        <li><strong>Price/Weight</strong>: {FIELD_HELP.price} {FIELD_HELP.weight}</li>
-        <li><strong>Priorities</strong>: {FIELD_HELP.goalPreset}</li>
-      </ul>
-    </CollapsibleMessage>
-  );
+  const infoBlock = (<SimpleHowTo />);
 
   const chips = (
     <>

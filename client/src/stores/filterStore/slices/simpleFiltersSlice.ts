@@ -35,13 +35,11 @@ export function createSimpleFiltersSlice(
     setIsMacro: (v: boolean) => { get().pushHistory(); set({ isMacro: v }); },
     setPriceRange: (r: Range) => {
       const timerKey = '__priceRangeTimer__' as unknown as keyof FilterState;
-      const caps = get().availabilityCaps;
-      scheduleDebouncedRangeUpdate('priceRange' as any, r, timerKey, get, set, caps?.priceBounds as any);
+      scheduleDebouncedRangeUpdate('priceRange' as any, r, timerKey, get, set, () => get().availabilityCaps?.priceBounds as any);
     },
     setWeightRange: (r: Range) => {
       const timerKey = '__weightRangeTimer__' as unknown as keyof FilterState;
-      const caps = get().availabilityCaps;
-      scheduleDebouncedRangeUpdate('weightRange' as any, r, timerKey, get, set, caps?.weightBounds as any);
+      scheduleDebouncedRangeUpdate('weightRange' as any, r, timerKey, get, set, () => get().availabilityCaps?.weightBounds as any);
     },
   } satisfies Partial<FilterState>;
 }
