@@ -1,6 +1,7 @@
 import type { FilterState } from '../../filterStore';
 import { PRESETS } from '../../../lib/recommender';
 import { inferPresetWithHysteresis, nudgeWeightsFromFilterDelta } from '../../../lib/presetsMapping';
+import { scheduleHistoryCoalescedPush } from '../helpers';
 
 export function createProFiltersSlice(
   set: (partial: Partial<FilterState>) => void,
@@ -42,11 +43,7 @@ export function createProFiltersSlice(
       if (val > max) val = max;
       const nextWeights = nudgeWeightsFromFilterDelta({ proFocalMin: val }, caps, get().goalWeights);
       const inferred = inferPresetWithHysteresis(get().goalPreset, nextWeights, PRESETS, 0.15, 0.05);
-      const anyState = get() as unknown as Record<string, any>;
-      const timerKey = '__historyTimer__' as unknown as keyof FilterState;
-      if (anyState[timerKey]) clearTimeout(anyState[timerKey]);
-      const t = setTimeout(() => { get().pushHistory(); set({ [timerKey]: undefined } as unknown as Partial<FilterState>); }, 300);
-      set({ [timerKey]: t } as unknown as Partial<FilterState>);
+      scheduleHistoryCoalescedPush(get, set, 300);
       set({ proFocalMin: val, goalWeights: nextWeights, goalPreset: inferred });
     },
     setProFocalMax: (n: number) => {
@@ -58,11 +55,7 @@ export function createProFiltersSlice(
       if (val < min) val = min;
       const nextWeights = nudgeWeightsFromFilterDelta({ proFocalMax: val }, caps, get().goalWeights);
       const inferred = inferPresetWithHysteresis(get().goalPreset, nextWeights, PRESETS, 0.15, 0.05);
-      const anyState = get() as unknown as Record<string, any>;
-      const timerKey = '__historyTimer__' as unknown as keyof FilterState;
-      if (anyState[timerKey]) clearTimeout(anyState[timerKey]);
-      const t = setTimeout(() => { get().pushHistory(); set({ [timerKey]: undefined } as unknown as Partial<FilterState>); }, 300);
-      set({ [timerKey]: t } as unknown as Partial<FilterState>);
+      scheduleHistoryCoalescedPush(get, set, 300);
       set({ proFocalMax: val, goalWeights: nextWeights, goalPreset: inferred });
     },
     setProMaxApertureF: (n: number) => {
@@ -71,11 +64,7 @@ export function createProFiltersSlice(
       const val = Math.min(Math.max(n, 0.7), apMax);
       const nextWeights = nudgeWeightsFromFilterDelta({ proMaxApertureF: val }, caps, get().goalWeights);
       const inferred = inferPresetWithHysteresis(get().goalPreset, nextWeights, PRESETS, 0.15, 0.05);
-      const anyState = get() as unknown as Record<string, any>;
-      const timerKey = '__historyTimer__' as unknown as keyof FilterState;
-      if (anyState[timerKey]) clearTimeout(anyState[timerKey]);
-      const t = setTimeout(() => { get().pushHistory(); set({ [timerKey]: undefined } as unknown as Partial<FilterState>); }, 300);
-      set({ [timerKey]: t } as unknown as Partial<FilterState>);
+      scheduleHistoryCoalescedPush(get, set, 300);
       set({ proMaxApertureF: val, goalWeights: nextWeights, goalPreset: inferred });
     },
     setProRequireOIS: (v: boolean) => { get().pushHistory(); set({ proRequireOIS: v }); },
@@ -87,11 +76,7 @@ export function createProFiltersSlice(
       const val = b ? Math.min(Math.max(n, b.min), b.max) : Math.max(0, n);
       const nextWeights = nudgeWeightsFromFilterDelta({ proPriceMax: val }, caps, get().goalWeights);
       const inferred = inferPresetWithHysteresis(get().goalPreset, nextWeights, PRESETS, 0.15, 0.05);
-      const anyState = get() as unknown as Record<string, any>;
-      const timerKey = '__historyTimer__' as unknown as keyof FilterState;
-      if (anyState[timerKey]) clearTimeout(anyState[timerKey]);
-      const t = setTimeout(() => { get().pushHistory(); set({ [timerKey]: undefined } as unknown as Partial<FilterState>); }, 300);
-      set({ [timerKey]: t } as unknown as Partial<FilterState>);
+      scheduleHistoryCoalescedPush(get, set, 300);
       set({ proPriceMax: val, goalWeights: nextWeights, goalPreset: inferred });
     },
     setProWeightMax: (n: number) => {
@@ -100,11 +85,7 @@ export function createProFiltersSlice(
       const val = b ? Math.min(Math.max(n, b.min), b.max) : Math.max(0, n);
       const nextWeights = nudgeWeightsFromFilterDelta({ proWeightMax: val }, caps, get().goalWeights);
       const inferred = inferPresetWithHysteresis(get().goalPreset, nextWeights, PRESETS, 0.15, 0.05);
-      const anyState = get() as unknown as Record<string, any>;
-      const timerKey = '__historyTimer__' as unknown as keyof FilterState;
-      if (anyState[timerKey]) clearTimeout(anyState[timerKey]);
-      const t = setTimeout(() => { get().pushHistory(); set({ [timerKey]: undefined } as unknown as Partial<FilterState>); }, 300);
-      set({ [timerKey]: t } as unknown as Partial<FilterState>);
+      scheduleHistoryCoalescedPush(get, set, 300);
       set({ proWeightMax: val, goalWeights: nextWeights, goalPreset: inferred });
     },
     setProDistortionMaxPct: (n: number) => {
@@ -113,11 +94,7 @@ export function createProFiltersSlice(
       const val = Math.min(Math.max(n, 0), dmax);
       const nextWeights = nudgeWeightsFromFilterDelta({ proDistortionMaxPct: val }, caps, get().goalWeights);
       const inferred = inferPresetWithHysteresis(get().goalPreset, nextWeights, PRESETS, 0.15, 0.05);
-      const anyState = get() as unknown as Record<string, any>;
-      const timerKey = '__historyTimer__' as unknown as keyof FilterState;
-      if (anyState[timerKey]) clearTimeout(anyState[timerKey]);
-      const t = setTimeout(() => { get().pushHistory(); set({ [timerKey]: undefined } as unknown as Partial<FilterState>); }, 300);
-      set({ [timerKey]: t } as unknown as Partial<FilterState>);
+      scheduleHistoryCoalescedPush(get, set, 300);
       set({ proDistortionMaxPct: val, goalWeights: nextWeights, goalPreset: inferred });
     },
     setProBreathingMinScore: (n: number) => {
@@ -126,11 +103,7 @@ export function createProFiltersSlice(
       const val = Math.min(Math.max(n, bmin), 10);
       const nextWeights = nudgeWeightsFromFilterDelta({ proBreathingMinScore: val }, caps, get().goalWeights);
       const inferred = inferPresetWithHysteresis(get().goalPreset, nextWeights, PRESETS, 0.15, 0.05);
-      const anyState = get() as unknown as Record<string, any>;
-      const timerKey = '__historyTimer__' as unknown as keyof FilterState;
-      if (anyState[timerKey]) clearTimeout(anyState[timerKey]);
-      const t = setTimeout(() => { get().pushHistory(); set({ [timerKey]: undefined } as unknown as Partial<FilterState>); }, 300);
-      set({ [timerKey]: t } as unknown as Partial<FilterState>);
+      scheduleHistoryCoalescedPush(get, set, 300);
       set({ proBreathingMinScore: val, goalWeights: nextWeights, goalPreset: inferred });
     },
     setSoftPrice: (v: boolean) => { get().pushHistory(); set({ softPrice: v }); },

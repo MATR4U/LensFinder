@@ -103,4 +103,17 @@ export function withHistory(
   }
 }
 
+// Centralized coalesced history push used by pro filter setters
+export function scheduleHistoryCoalescedPush(get: () => FilterState, set: (partial: Partial<FilterState>) => void, delayMs = 300) {
+  const anyState = get() as unknown as Record<string, any>;
+  const timerKey = '__historyTimer__' as unknown as keyof FilterState;
+  const existing = anyState[timerKey as unknown as string];
+  if (existing) clearTimeout(existing);
+  const t = setTimeout(() => {
+    get().pushHistory();
+    set({ [timerKey]: undefined } as unknown as Partial<FilterState>);
+  }, delayMs);
+  set({ [timerKey]: t } as unknown as Partial<FilterState>);
+}
+
 
