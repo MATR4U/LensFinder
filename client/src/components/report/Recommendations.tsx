@@ -3,7 +3,15 @@ import LensCard from './LensCard';
 import { GRID_AUTOFILL_4 } from '../ui/styles';
 import type { Camera } from '../../types';
 
-type LensItem = { name: string; score: number; price_chf: number; weight_g: number; rank: number; type?: string };
+type LensItem = {
+  name: string;
+  score: number;
+  price_chf: number;
+  weight_g: number;
+  rank: number;
+  type?: string;
+  why_recommended?: { key: string; label: string; weight: number }[];
+};
 
 type Props = {
   camera?: Camera | null;
