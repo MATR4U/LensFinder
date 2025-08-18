@@ -54,11 +54,29 @@ export function computeResults(params: {
   subject_distance_m?: number;
 }): Result[] {
   const { lenses, camera, goal_weights, focal_choice, isProMode, subject_distance_m = 3.0 } = params;
+  const friendlyLabels: Record<string, string> = {
+    low_light: 'Low light',
+    background_blur: 'Background blur',
+    reach: 'Reach',
+    wide: 'Wide',
+    portability: 'Portability',
+    value: 'Value',
+    distortion_control: 'Distortion control',
+    video_excellence: 'Video excellence',
+  };
   return lenses.map((lens) => {
     const fc = isProMode ? Math.max(lens.focal_min_mm, Math.min(focal_choice, lens.focal_max_mm)) : (lens.focal_min_mm + lens.focal_max_mm) / 2;
     const scores = scoreLens(lens, camera, goal_weights, fc);
     const { h } = optics.fovDeg(camera.sensor, fc);
     const { total } = optics.depthOfFieldMm(fc, maxApertureAt(lens, fc), camera.sensor.coc_mm, subject_distance_m * 1000);
+
+    const contributionsEntries = Object.entries(scores)
+      .filter(([k]) => k !== 'total')
+      .map(([k, v]) => ({ key: k, label: friendlyLabels[k] || k, value: (v || 0) * (goal_weights[k] || 0) }));
+    const positiveContribs = contributionsEntries.filter(c => c.value > 0);
+    positiveContribs.sort((a, b) => b.value - a.value);
+    const topContributions = positiveContribs.slice(0, 3).map(c => ({ key: c.key, label: c.label, weight: c.value }));
+
     return {
       ...lens,
       ...scores,
@@ -68,7 +86,8 @@ export function computeResults(params: {
       fov_h_deg: h,
       dof_total_m: total / 1000,
       stabilization: lens.ois || camera.ibis ? '✅' : '❌',
-      score_total: scores.total
+      score_total: scores.total,
+      why_recommended: topContributions,
     } as Result;
   }).sort((a, b) => b.score_total - a.score_total);
 }

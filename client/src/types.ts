@@ -46,6 +46,7 @@ export type Result = Lens & {
   dof_total_m: number;
   stabilization: string;
   score_total: number;
+  why_recommended?: { key: string; label: string; weight: number }[];
 };
 
 

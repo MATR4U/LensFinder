@@ -68,7 +68,7 @@ export default function PageBase({ title, metaDescription, headerSlot, actionsSl
         )}
         <div className={PAGE_CONTAINER}>
           {(headerSlot || title || actionsSlot) && (
-            <header className={`${ROW_BETWEEN} mb-4`}>
+            <header className={`${ROW_BETWEEN} mb-6`}>
               <div>
                 {title && <h1 className={TITLE_H1}>{title}</h1>}
                 {headerSlot}
@@ -77,7 +77,7 @@ export default function PageBase({ title, metaDescription, headerSlot, actionsSl
             </header>
           )}
           {subheaderSlot && (
-            <div className="mb-4">
+            <div className="mb-6">
               {subheaderSlot}
             </div>
           )}
@@ -89,7 +89,7 @@ export default function PageBase({ title, metaDescription, headerSlot, actionsSl
             </React.Suspense>
           </Boundary>
           {footerSlot && (
-            <footer className="sticky bottom-0 left-0 right-0 border-t border-[var(--control-border)] bg-[var(--app-bg)]/90 backdrop-blur supports-[backdrop-filter]:bg-[color-mix(in_oklab,var(--app-bg),transparent_20%)] mt-6">
+            <footer className="sticky bottom-0 left-0 right-0 border-t border-[var(--control-border)] bg-[var(--app-bg)]/90 backdrop-blur supports-[backdrop-filter]:bg-[color-mix(in_oklab,var(--app-bg),transparent_20%)] mt-8">
               <div className={`${PAGE_CONTAINER} py-3`}>
                 <div className="flex items-center justify-between gap-3">
                   {showHistoryControls ? (

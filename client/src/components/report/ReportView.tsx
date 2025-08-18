@@ -86,6 +86,17 @@ export default function ReportView({ report, camera, selected: _selected, goalWe
     }];
   }));
 
+  const whyByName = new Map<string, { key: string; label: string; weight: number }[]>();
+  (topResults || []).forEach(r => {
+    const why = (r as any).why_recommended as ({ key: string; label: string; weight: number }[] | undefined);
+    if (why && why.length) whyByName.set(r.name, why);
+  });
+
+  const top3ForCards = top3.map(t => ({
+    ...t,
+    why_recommended: whyByName.get(t.name),
+  }));
+
   return (
     <BaseReport title="Your personalized lens report" onExportCSV={() => {
       const csv = buildResultsCSV(items as any);
@@ -105,7 +116,15 @@ export default function ReportView({ report, camera, selected: _selected, goalWe
 
       <Recommendations
         camera={camera}
-        items={top3.map(t => ({ name: t.name, score: t.score, price_chf: t.price_chf, weight_g: t.weight_g, rank: t.rank, type: t.type }))}
+        items={top3ForCards.map(t => ({
+          name: t.name,
+          score: t.score,
+          price_chf: t.price_chf,
+          weight_g: t.weight_g,
+          rank: t.rank,
+          type: t.type,
+          why_recommended: t.why_recommended
+        }))}
         bars={bars}
       />
 
