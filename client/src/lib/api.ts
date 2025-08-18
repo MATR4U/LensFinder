@@ -52,7 +52,11 @@ export type ReportResponse = {
 export async function postReport(payload: { cameraName: string; goal: string; top: Array<{ name: string; total: number; weight_g: number; price_chf: number; type: string }>; }): Promise<ReportResponse> {
   const res = await fetch(joinUrl(API_BASE, '/api/report'), {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...(authHeaders || {}) },
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/vnd.lensfinder.v1+json',
+      ...(authHeaders || {})
+    },
     body: JSON.stringify(payload)
   });
   if (!res.ok) throw new Error('Failed to generate report');
