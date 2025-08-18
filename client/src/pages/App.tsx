@@ -88,7 +88,7 @@ export default function App() {
               left={(
                 <ul className="list-disc pl-5 text-sm space-y-1">
                   <li>Evaluates lenses for your camera and goals</li>
-                  <li>Visualizes trade‑offs (price, weight, performance)</li>
+                  <li>Visualizes trade-offs (price, weight, performance)</li>
                   <li>Helps shortlist and compare up to three picks</li>
                 </ul>
               )}

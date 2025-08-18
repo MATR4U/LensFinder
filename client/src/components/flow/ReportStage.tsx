@@ -15,10 +15,10 @@ export default function ReportStage({ camera, goalWeights, results }: { camera: 
       <CollapsibleMessage variant="info" title="How to make the call" defaultOpen={false}>
         <ul className="list-disc pl-5 text-sm space-y-1">
           <li><strong>Start</strong>: Note Top Performer, Best Value, and Best Portability badges.</li>
-          <li><strong>Chart</strong>: Prefer lenses near the top‑left (more Score for less CHF). Stay within budget.</li>
+          <li><strong>Chart</strong>: Prefer lenses near the top-left (more Score for less CHF). Stay within budget.</li>
           <li><strong>Break ties</strong>: Use Low Light, Video, Portability, and Value bars on each card.</li>
           <li><strong>Total kit</strong>: Check combined price and weight with your camera are acceptable.</li>
-          <li><strong>Refine</strong>: Adjust weights/filters or revisit Compare to inspect candidates side‑by‑side.</li>
+          <li><strong>Refine</strong>: Adjust weights/filters or revisit Compare to inspect candidates side-by-side.</li>
         </ul>
       </CollapsibleMessage>
       <Card title="Report" subtitle="Generated summary">
