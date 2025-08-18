@@ -33,7 +33,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: HUSKY=0 npm ci
 
       - name: Generate contracts (server)
         run: npm --workspace server run openapi && npm --workspace server run graphql:schema
@@ -99,11 +99,11 @@ jobs:
           node-version: 20
           cache: 'npm'
       - name: Install root deps
-        run: npm ci
+        run: HUSKY=0 npm ci
       - name: Install server deps
-        run: npm --workspace server ci
+        run: HUSKY=0 npm --workspace server ci
       - name: Install client deps
-        run: npm --workspace client ci
+        run: HUSKY=0 npm --workspace client ci
       - name: DB migrate
         run: npm run db:migrate
       - name: Build server
@@ -154,7 +154,7 @@ jobs:
           node-version: 20
           cache: 'npm'
       - name: Install deps
-        run: npm ci && npm --workspace server ci && npm --workspace client ci
+        run: HUSKY=0 npm ci && HUSKY=0 npm --workspace server ci && HUSKY=0 npm --workspace client ci
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium firefox webkit
       - name: Start stack
