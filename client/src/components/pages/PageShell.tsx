@@ -1,5 +1,5 @@
 import React from 'react';
-import { APP_BACKGROUND, PAGE_CONTAINER, SECTION_STACK, ROW_BETWEEN, TITLE_H1, VIGNETTE_OVERLAY_BG, FOOTER_BAR_BG, HEADER_BAR_BG, SIDEBAR_BASE, SIDEBAR_OVERLAY, CONTENT_GRID, BREADCRUMB_ROW, FOCUS_RING, OVERLAY_BACKDROP_DARK } from '../ui/styles';
+import { APP_BACKGROUND, PAGE_CONTAINER, SECTION_STACK, ROW_BETWEEN, TITLE_H1, VIGNETTE_OVERLAY_BG, FOOTER_BAR_BG, HEADER_BAR_BG, SIDEBAR_BASE, SIDEBAR_OVERLAY, CONTENT_GRID, BREADCRUMB_ROW, FOCUS_RING, OVERLAY_BACKDROP_DARK, CONTAINER_INLINE } from '../ui/styles';
 import GLBackground from '../ui/GLBackground';
 
 type HistoryControls = {
@@ -20,7 +20,6 @@ type Props = {
   footerSlot?: React.ReactNode;
   errorFallback?: React.ReactNode;
   suspenseFallback?: React.ReactNode;
-  onView?: (path: string) => void;
   historyControls?: HistoryControls;
   topbarSlot?: React.ReactNode;
   sidebarSlot?: React.ReactNode;
@@ -57,7 +56,6 @@ export default function PageShell({
   footerSlot,
   errorFallback,
   suspenseFallback,
-  onView,
   historyControls,
   topbarSlot,
   sidebarSlot,
@@ -83,9 +81,6 @@ export default function PageShell({
     }
   }, [title, metaDescription]);
 
-  React.useEffect(() => {
-    if (onView) onView(window.location.pathname);
-  }, [onView]);
 
   const overlayActive = !!sidebarSlot && sidebarMode === 'overlay' && sidebarOpen;
 
@@ -167,7 +162,7 @@ export default function PageShell({
           </div>
         )}
 
-        <div className={`${PAGE_CONTAINER} ${containerAware ? ' ' + 'container' : ''}`}>
+        <div className={`${PAGE_CONTAINER} ${containerAware ? CONTAINER_INLINE : ''}`}>
           {(headerSlot || title || actionsSlot) && (
             <header className={`${ROW_BETWEEN} mb-3`}>
               <div>
