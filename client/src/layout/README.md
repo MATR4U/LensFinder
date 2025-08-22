@@ -61,3 +61,30 @@ function WithTopbarSidebar() {
     </PageShell>
   );
 }
+Examples (overlay)
+function WithOverlaySidebar() {
+  return (
+    <PageShell
+      title="Overlay"
+      sidebarMode="overlay"
+      topbarSlot={<div>Topbar</div>}
+      sidebarSlot={<nav>Menu</nav>}
+      breadcrumbSlot={<nav aria-label="Breadcrumb">Home / Overlay</nav>}
+    >
+      <Section title="Content">...</Section>
+    </PageShell>
+  );
+}
+
+Examples (container-aware)
+function ContainerAware() {
+  return (
+    <PageShell
+      title="Container"
+      containerAware
+      topbarSlot={<div>Topbar</div>}
+    >
+      <Section title="Content">...</Section>
+    </PageShell>
+  );
+}

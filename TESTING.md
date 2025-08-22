@@ -1,3 +1,19 @@
+Atomic server tests without DB
+
+- Unit/integration tests for the server run without a live database by default.
+- A file-backed repository at server/db/fileRepo.ts reads JSON fixtures (server/tests/fixtures/*.json) and implements the same API as db/provider.ts.
+- Tests switch to the file repo with:
+  - vi.mock('../db/provider.js', async () => await import('../db/fileRepo.js'))
+  - Optional: set FILE_REPO_FIXTURES_DIR to use custom fixtures.
+
+Commands
+- Fast checks without DB:
+  SKIP_DB_TESTS=1 npm run ci:fast
+
+Existing DB-backed suite
+- For schema/SQL validation we keep server/tests/endpoints.db.spec.ts which spins a temp schema. It is skipped when SKIP_DB_TESTS=1.
+
+
 ## Pre-commit test script and checklist
 
 Use this quick sequence before every commit to keep the repo green and predictable. It mirrors our conventions and CI behavior.

@@ -1,6 +1,7 @@
 import request from 'supertest';
 import express from 'express';
 import { createRouter } from '../router.js';
+import { describe, it, expect } from 'vitest';
 
 const app = express();
 app.use(express.json());
@@ -13,11 +14,11 @@ describe('API contract', () => {
   });
 
   it('cameras and lenses support ETag', async () => {
-    const first = await request(app).get('/api/cameras');
+    const first = await request(app).get('/api/cameras').query({ limit: 50, offset: 0 });
     expect([200, 500]).toContain(first.status);
     const etag = first.headers['etag'];
     expect(etag).toBeTruthy();
-    const second = await request(app).get('/api/cameras').set('If-None-Match', etag as string);
+    const second = await request(app).get('/api/cameras').set('If-None-Match', etag as string).query({ limit: 50, offset: 0 });
     expect([200, 304]).toContain(second.status);
   });
 

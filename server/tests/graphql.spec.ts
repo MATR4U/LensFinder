@@ -1,31 +1,27 @@
 import request from 'supertest';
 import express from 'express';
-
-vi.mock('../db/provider.js', () => {
-  return {
-    getAllCameras: vi.fn().mockResolvedValue([
-      {
-        name: 'Alpha 7 IV', brand: 'Sony', mount: 'E',
-        sensor_name: 'Full Frame', sensor_width_mm: 36, sensor_height_mm: 24, sensor_coc_mm: 0.03, sensor_crop: 1.0,
-        ibis: true, price_chf: 2499, weight_g: 659, source_url: 'https://example.com/a7iv'
-      }
-    ]),
-    getAllLenses: vi.fn().mockResolvedValue([
-      {
-        name: 'FE 24-70mm F2.8 GM', brand: 'Sony', mount: 'E', coverage: 'FF', focal_min_mm: 24, focal_max_mm: 70,
-        aperture_min: 2.8, aperture_max: 22, weight_g: 886, ois: false, price_chf: 2199, weather_sealed: true, is_macro: false,
-        distortion_pct: 1.2, focus_breathing_score: 8.5, source_url: 'https://example.com/24-70gm'
-      }
-    ])
-  };
-});
+import { beforeAll, describe, it, expect, vi } from 'vitest';
 
 let app: express.Express;
 
 beforeAll(async () => {
+  process.env.VITEST = '1';
+  process.env.API_KEY = '';
+  vi.doMock('../db/provider.js', async () => await import('../db/fileRepo.js'));
+  vi.doMock('./db/provider.js', async () => await import('../db/fileRepo.js'));
+  vi.doMock('../db/pg.js', async () => ({
+    getPool: () => ({
+      query: async (sql?: string) => {
+        if (!sql || /select\s+1/i.test(sql || '')) return { rows: [{ '?column?': 1 }] } as any;
+        return { rows: [] } as any;
+      }
+    })
+  }));
+
   const { createRouter } = await import('../router.js');
   const { schema } = await import('../graphql.js');
   const { createGraphQLHandler } = await import('../graphqlHandler.js');
+
   app = express();
   app.use(express.json());
   app.use(createRouter({ rootDir: process.cwd() }));

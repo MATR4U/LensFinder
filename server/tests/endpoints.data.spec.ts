@@ -1,60 +1,15 @@
 import request from 'supertest';
 import express from 'express';
-
-// Mock DB providers so tests don't require a real database
-vi.mock('../db/provider.js', () => {
-  return {
-    getAllCameras: vi.fn().mockResolvedValue([
-      {
-        name: 'Alpha 7 IV',
-        brand: 'Sony',
-        mount: 'E',
-        sensor_name: 'Full Frame',
-        sensor_width_mm: 36,
-        sensor_height_mm: 24,
-        sensor_coc_mm: 0.03,
-        sensor_crop: 1.0,
-        ibis: true,
-        price_chf: 2499,
-        weight_g: 659,
-        source_url: 'https://example.com/a7iv'
-      }
-    ]),
-    getAllLenses: vi.fn().mockResolvedValue([
-      {
-        name: 'FE 24-70mm F2.8 GM',
-        brand: 'Sony',
-        mount: 'E',
-        coverage: 'FF',
-        focal_min_mm: 24,
-        focal_max_mm: 70,
-        aperture_min: 2.8,
-        aperture_max: 22,
-        weight_g: 886,
-        ois: false,
-        price_chf: 2199,
-        weather_sealed: true,
-        is_macro: false,
-        distortion_pct: 1.2,
-        focus_breathing_score: 8.5,
-        source_url: 'https://example.com/24-70gm'
-      }
-    ]),
-    getCounts: vi.fn().mockResolvedValue({ cameras: 1, lenses: 1 })
-  };
-});
+import { beforeAll, describe, it, expect, vi } from 'vitest';
 
 let app: express.Express;
 
 beforeAll(async () => {
-  const { createRouter } = await import('../router.js');
-  // Ensure config uses dev defaults during this suite
   process.env.VITEST = '1';
-  app = express();
-  app.use(express.json());
-  // Disable API key enforcement
   process.env.API_KEY = '';
-  // Stub DB pool health check to not require real DB
+
+  vi.doMock('../db/provider.js', async () => await import('../db/fileRepo.js'));
+  vi.doMock('./db/provider.js', async () => await import('../db/fileRepo.js'));
   vi.doMock('../db/pg.js', async () => ({
     getPool: () => ({
       query: async (sql?: string) => {
@@ -63,32 +18,33 @@ beforeAll(async () => {
       }
     })
   }));
-  // Disable API key requirement for tests
-  process.env.API_KEY = '';
+
+  const { createRouter } = await import('../router.js');
+
+  app = express();
+  app.use(express.json());
   app.use(createRouter({ rootDir: process.cwd() }));
-  // Silence error logs during test
+
   app.use((err: any, _req: any, res: any, _next: any) => {
     res.status(500).json({ error: 'error' });
   });
 });
 
-describe('API endpoints provide data (mocked providers)', () => {
-  it('GET /api/cameras returns non-empty array', async () => {
-    const res = await request(app).get('/api/cameras');
+describe('API endpoints provide data (file repo)', () => {
+  it('GET /api/cameras returns non-empty array from fixtures', async () => {
+    const res = await request(app).get('/api/cameras').query({ limit: 50, offset: 0 });
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
     expect(res.body.length).toBeGreaterThan(0);
     expect(res.headers['x-total-count']).toBeDefined();
-    // Link header is present when limit is provided
   });
 
-  it('GET /api/lenses returns non-empty array', async () => {
-    const res = await request(app).get('/api/lenses');
+  it('GET /api/lenses returns non-empty array from fixtures', async () => {
+    const res = await request(app).get('/api/lenses').query({ limit: 50, offset: 0 });
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
     expect(res.body.length).toBeGreaterThan(0);
     expect(res.headers['x-total-count']).toBeDefined();
-    // Link header is present when limit is provided
   });
 
   it('GET /api/price returns a normalized price when upstream contains recognizable markup', async () => {
