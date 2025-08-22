@@ -95,7 +95,7 @@ export default function App() {
               right={(
                 <ol className="list-decimal pl-5 text-sm space-y-1">
                   <li>Choose your mode</li>
-                  <li>Set build & capabilities</li>
+                  <li>Set build &amp; capabilities</li>
                   <li>Refine filters</li>
                   <li>Add up to 3 lenses to compare</li>
                   <li>View the report for a clear recommendation</li>

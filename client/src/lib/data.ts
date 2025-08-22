@@ -17,7 +17,19 @@ async function fetchWithEtag<T>(url: string, cache: Cache<T>): Promise<T> {
   if (res.status === 304 && cache.data) {
     return cache.data;
   }
-  if (!res.ok) throw new Error(`Failed to fetch ${url}`);
+  if (!res.ok) {
+    const allowEmpty =
+      typeof import.meta !== 'undefined' &&
+      (import.meta as any).env &&
+      (((import.meta as any).env.VITE_DEV_EMPTY_DATA === 'true') || ((import.meta as any).env.VITE_DEV_EMPTY_DATA === true));
+    if (allowEmpty) {
+      cache.data = ([] as unknown) as T;
+      cache.etag = null;
+      cache.lastFetched = Date.now();
+      return cache.data;
+    }
+    throw new Error(`Failed to fetch ${url}`);
+  }
   const etag = res.headers.get('ETag');
   const data = (await res.json()) as T;
   cache.data = data;
@@ -28,12 +40,14 @@ async function fetchWithEtag<T>(url: string, cache: Cache<T>): Promise<T> {
 
 export async function getCamerasCached(): Promise<Camera[]> {
   if (camerasCache.data) return camerasCache.data;
-  return fetchWithEtag<Camera[]>('/api/cameras', camerasCache);
+  const base = (clientConfig.apiBaseUrl || '').replace(/\/$/, '');
+  return fetchWithEtag<Camera[]>(base ? `${base}/api/cameras` : '/api/cameras', camerasCache);
 }
 
 export async function getLensesCached(): Promise<Lens[]> {
   if (lensesCache.data) return lensesCache.data;
-  return fetchWithEtag<Lens[]>('/api/lenses', lensesCache);
+  const base = (clientConfig.apiBaseUrl || '').replace(/\/$/, '');
+  return fetchWithEtag<Lens[]>(base ? `${base}/api/lenses` : '/api/lenses', lensesCache);
 }
 
 export function onDataInvalidated(cb: () => void) {
@@ -74,8 +88,9 @@ export function onDataInvalidated(cb: () => void) {
   async function pollTick() {
     if (stopped) return;
     try {
-      await fetchWithEtag('/api/cameras', camerasCache);
-      await fetchWithEtag('/api/lenses', lensesCache);
+      const base = (clientConfig.apiBaseUrl || '').replace(/\/$/, '');
+      await fetchWithEtag(base ? `${base}/api/cameras` : '/api/cameras', camerasCache);
+      await fetchWithEtag(base ? `${base}/api/lenses` : '/api/lenses', lensesCache);
       cb();
     } catch {
     } finally {

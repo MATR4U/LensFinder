@@ -60,14 +60,21 @@ export function useBootstrap() {
       try {
         // Soft readiness check to set degraded banner when dependencies are not ready yet
         try {
-          const ready = await fetch('/ready', { method: 'GET', cache: 'no-store' });
-          if (!ready.ok) {
-            setDegraded('Service unavailable. Dependencies are not ready.');
-            setFatalError('Dependencies unavailable');
-            // Short-circuit to avoid spamming /api when not ready
-            throw new Error('Service not ready');
+          const envRef = typeof import.meta !== 'undefined' ? (import.meta as any).env : undefined;
+          const devEmpty = !!(envRef && ((envRef.VITE_DEV_EMPTY_DATA === 'true') || (envRef.VITE_DEV_EMPTY_DATA === '1') || (envRef.VITE_DEV_EMPTY_DATA === true)));
+          const skipReady =
+            !!(envRef && ((envRef.VITE_SKIP_READY_CHECK === 'true') || (envRef.VITE_SKIP_READY_CHECK === '1') || (envRef.VITE_SKIP_READY_CHECK === true))) || devEmpty;
+          if (!skipReady) {
+            const ready = await fetch('/ready', { method: 'GET', cache: 'no-store' });
+            if (!ready.ok) {
+              setDegraded('Service unavailable. Dependencies are not ready.');
+              setFatalError('Dependencies unavailable');
+              throw new Error('Service not ready');
+            } else {
+              setDegraded(null);
+              setFatalError(null);
+            }
           } else {
-            // Clear any prior outage states immediately on positive readiness
             setDegraded(null);
             setFatalError(null);
           }
@@ -101,14 +108,20 @@ export function useBootstrap() {
       } catch (err: any) {
         // Do not block UI; retry with backoff until ready
         const elapsed = Date.now() - startedAt.current;
+        const envRef = typeof import.meta !== 'undefined' ? (import.meta as any).env : undefined;
+        const devEmpty = !!(envRef && ((envRef.VITE_DEV_EMPTY_DATA === 'true') || (envRef.VITE_DEV_EMPTY_DATA === '1') || (envRef.VITE_DEV_EMPTY_DATA === true)));
         // After 8s, surface a non-blocking message; still keep retrying
         if (elapsed > 8000) {
-          // Only surface the warning if we truly cannot get either cameras or lenses
-          try {
-            const snap = getCachedSnapshot();
-            if (!snap.cameras || !snap.lenses) setFatalError('Service warming up… retrying connection');
-            else setFatalError(null);
-          } catch { setFatalError('Service warming up… retrying connection'); }
+          if (devEmpty) {
+            setFatalError(null);
+          } else {
+            // Only surface the warning if we truly cannot get either cameras or lenses
+            try {
+              const snap = getCachedSnapshot();
+              if (!snap.cameras || !snap.lenses) setFatalError('Service warming up… retrying connection');
+              else setFatalError(null);
+            } catch { setFatalError('Service warming up… retrying connection'); }
+          }
         }
         const nextDelay = Math.min(8000, Math.max(1000, Math.floor(elapsed / 2))); // smoother backoff
         setEtaSeconds(Math.ceil(nextDelay / 1000));
