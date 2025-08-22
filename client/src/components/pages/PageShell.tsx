@@ -1,5 +1,5 @@
 import React from 'react';
-import { APP_BACKGROUND, PAGE_CONTAINER, SECTION_STACK, ROW_BETWEEN, TITLE_H1, VIGNETTE_OVERLAY_BG, FOOTER_BAR_BG, HEADER_BAR_BG, SIDEBAR_BASE, SIDEBAR_OVERLAY, CONTENT_GRID, BREADCRUMB_ROW, FOCUS_RING, OVERLAY_BACKDROP_DARK } from '../ui/styles';
+import { APP_BACKGROUND, PAGE_CONTAINER, SECTION_STACK, ROW_BETWEEN, TITLE_H1, VIGNETTE_OVERLAY_BG, FOOTER_BAR_BG, HEADER_BAR_BG, SIDEBAR_BASE, SIDEBAR_OVERLAY, CONTENT_GRID, BREADCRUMB_ROW, FOCUS_RING, OVERLAY_BACKDROP_DARK, CONTAINER_INLINE } from '../ui/styles';
 import GLBackground from '../ui/GLBackground';
 
 type HistoryControls = {
@@ -167,7 +167,7 @@ export default function PageShell({
           </div>
         )}
 
-        <div className={`${PAGE_CONTAINER} ${containerAware ? ' ' + 'container' : ''}`}>
+        <div className={`${PAGE_CONTAINER} ${containerAware ? CONTAINER_INLINE : ''}`}>
           {(headerSlot || title || actionsSlot) && (
             <header className={`${ROW_BETWEEN} mb-3`}>
               <div>

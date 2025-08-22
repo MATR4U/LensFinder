@@ -57,6 +57,9 @@ New tokens
 - Z_* layer tokens: Z_BASE, Z_HEADER, Z_SIDEBAR, Z_OVERLAY, Z_MODAL, Z_TOAST
 - FOCUS_RING, CONTAINER_INLINE
 
+Note on container-aware mode
+- Pass containerAware to PageShell to enable container queries. This applies the CONTAINER_INLINE token (container-type:inline-size) to the shell’s container so embedded layouts can respond to their parent width.
+
 Examples
 function WithTopbarSidebar() {
   return (

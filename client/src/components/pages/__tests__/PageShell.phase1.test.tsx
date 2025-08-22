@@ -46,12 +46,24 @@ describe('PageShell Phase 1 additions', () => {
     expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 
+  it('marks background content aria-hidden while overlay is open', () => {
+    renderShell(undefined, { sidebarMode: 'overlay', sidebarOpen: true, sidebarSlot: <div>Nav</div> });
+    const contentRoot = document.getElementById('content-root');
+    expect(contentRoot).toHaveAttribute('aria-hidden', 'true');
+  });
+
   it('overlay backdrop click calls onRequestCloseSidebar', async () => {
     const onClose = vi.fn();
     renderShell(undefined, { sidebarMode: 'overlay', sidebarOpen: true, onRequestCloseSidebar: onClose });
     const backdrop = screen.getByTestId('overlay-backdrop');
     await userEvent.click(backdrop);
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it('moves initial focus into the overlay', () => {
+    renderShell(undefined, { sidebarMode: 'overlay', sidebarOpen: true, sidebarSlot: <div>Nav</div> });
+    const closeBtn = screen.getByRole('button', { name: /close sidebar/i });
+    expect(closeBtn).toHaveFocus();
   });
 
   it('overlay close button and Escape call onRequestCloseSidebar', async () => {
@@ -65,7 +77,7 @@ describe('PageShell Phase 1 additions', () => {
 
   it('applies container-aware sizing when containerAware is true', () => {
     const { container } = renderShell(undefined, { containerAware: true });
-    expect(container.querySelector('.container')).toBeTruthy();
+    expect(container.querySelector('[class*="container-type:inline-size"]')).toBeTruthy();
   });
 
   it('preserves error boundary behavior', () => {
