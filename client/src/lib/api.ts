@@ -1,3 +1,4 @@
+
 import type { Camera, Lens } from '../types';
 import type { paths as OpenApiPaths } from '../types/openapi';
 import { clientConfig } from '../config';
@@ -62,6 +63,25 @@ export async function postReport(payload: { cameraName: string; goal: string; to
   if (!res.ok) throw new Error('Failed to generate report');
   const data = await res.json();
   return data as ReportResponse;
+}
+export type RecommendationsRequest = {
+  lensMount: string;
+  budget: { target: number; isFlexible: boolean };
+  useCases: string[];
+  priorities: { portability: number; lowLight: number; zoom: number };
+};
+
+export async function postRecommendations(body: RecommendationsRequest) {
+  const res = await fetch(joinUrl(API_BASE, '/api/v1/lenses/recommendations'), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(authHeaders || {})
+    },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) throw new Error('Failed to load recommendations');
+  return res.json();
 }
 
 

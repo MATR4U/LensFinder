@@ -34,6 +34,7 @@ export type Lens = {
   distortion_pct: number | null;
   focus_breathing_score: number | null;
   source_url: string | null;
+  image_url?: string | null;
 };
 
 export async function getAllCameras(limit?: number, offset?: number): Promise<Camera[]> {

@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS lenses (
   distortion_pct REAL,
   focus_breathing_score REAL,
   source_url TEXT,
+  image_url TEXT,
   UNIQUE(name, brand, mount)
 );
 
@@ -83,6 +84,7 @@ CREATE TABLE IF NOT EXISTS lenses (
   distortion_pct REAL,
   focus_breathing_score REAL,
   source_url TEXT,
+  image_url TEXT,
   UNIQUE(name, brand, mount)
 );
 

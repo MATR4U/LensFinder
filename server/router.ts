@@ -21,6 +21,7 @@ import { mountCameraRoutes } from './routes/cameras.js';
 import { mountLensRoutes } from './routes/lenses.js';
 import { mountPriceRoutes } from './routes/price.js';
 import { mountEventRoutes } from './routes/events.js';
+import { mountRecommendationRoutes } from './routes/recommendations.js'
 import { mountCacheRoutes } from './routes/cache.js';
 
 export function createRouter(options: { rootDir: string }): Router {
@@ -33,6 +34,7 @@ export function createRouter(options: { rootDir: string }): Router {
   mountLensRoutes(router);
   mountPriceRoutes(router);
   mountEventRoutes(router);
+  mountRecommendationRoutes(router);
   mountCacheRoutes(router);
 
   // Service index for discoverability (mirrors server/index.ts variant)
