@@ -8,8 +8,17 @@ beforeAll(() => {
 });
 
 vi.mock('../db/provider.js', async () => await import('../db/fileRepo.js'));
+vi.mock('./db/provider.js', async () => await import('../db/fileRepo.js'));
 
 vi.mock('../db/pg.js', () => ({
+  getPool: () => ({
+    query: async (sql?: string) => {
+      if (!sql || /select\s+1/i.test(String(sql || ''))) return { rows: [{ '?column?': 1 }] } as any;
+      return { rows: [] } as any;
+    }
+  })
+}));
+vi.mock('./db/pg.js', () => ({
   getPool: () => ({
     query: async (sql?: string) => {
       if (!sql || /select\s+1/i.test(String(sql || ''))) return { rows: [{ '?column?': 1 }] } as any;
