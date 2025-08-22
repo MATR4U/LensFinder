@@ -49,7 +49,7 @@ describe('PageShell Phase 1 additions', () => {
   it('overlay backdrop click calls onRequestCloseSidebar', async () => {
     const onClose = vi.fn();
     renderShell(undefined, { sidebarMode: 'overlay', sidebarOpen: true, onRequestCloseSidebar: onClose });
-    const backdrop = screen.getByRole('button', { hidden: true });
+    const backdrop = screen.getByTestId('overlay-backdrop');
     await userEvent.click(backdrop);
     expect(onClose).toHaveBeenCalled();
   });

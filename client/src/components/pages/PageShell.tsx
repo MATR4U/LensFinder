@@ -190,6 +190,7 @@ export default function PageShell({
             </div>
           )}
 
+          {/* Main content wrapper only; sidebar overlay renders as a sibling so it remains accessible */}
           <div id="content-root">
             {sidebarSlot && sidebarMode === 'inline' ? (
               <div className={`${CONTENT_GRID}`}>
@@ -206,36 +207,6 @@ export default function PageShell({
                   </Boundary>
                 </div>
               </div>
-            ) : sidebarSlot && sidebarMode === 'overlay' && sidebarOpen ? (
-              <div className="relative">
-                <button aria-hidden className={`fixed inset-0 ${OVERLAY_BACKDROP_DARK}`} onClick={handleBackdropClick} />
-                <aside
-                  ref={sidebarRef as any}
-                  className={SIDEBAR_OVERLAY}
-                  aria-label="Sidebar"
-                  role="dialog"
-                  aria-modal="true"
-                >
-                  <div className="flex items-center justify-end mb-3">
-                    <button
-                      type="button"
-                      aria-label="Close sidebar"
-                      className={`px-3 py-2 rounded border border-[var(--control-border)] text-sm ${FOCUS_RING}`}
-                      onClick={() => onRequestCloseSidebar?.()}
-                    >
-                      Close
-                    </button>
-                  </div>
-                  {sidebarSlot}
-                </aside>
-                <Boundary fallback={errorFallback}>
-                  <React.Suspense fallback={suspenseFallback ?? null}>
-                    <div id="content" className={SECTION_STACK}>
-                      {children}
-                    </div>
-                  </React.Suspense>
-                </Boundary>
-              </div>
             ) : (
               <Boundary fallback={errorFallback}>
                 <React.Suspense fallback={suspenseFallback ?? null}>
@@ -246,6 +217,37 @@ export default function PageShell({
               </Boundary>
             )}
           </div>
+
+          {/* Overlay sidebar renders outside content-root so aria-hidden doesn't hide it */}
+          {sidebarSlot && sidebarMode === 'overlay' && sidebarOpen && (
+            <div className="relative">
+              <button
+                data-testid="overlay-backdrop"
+                className={`fixed inset-0 ${OVERLAY_BACKDROP_DARK}`}
+                onClick={handleBackdropClick}
+                aria-label="Close sidebar"
+              />
+              <aside
+                ref={sidebarRef as any}
+                className={SIDEBAR_OVERLAY}
+                aria-label="Sidebar"
+                role="dialog"
+                aria-modal="true"
+              >
+                <div className="flex items-center justify-end mb-3">
+                  <button
+                    type="button"
+                    aria-label="Close sidebar"
+                    className={`px-3 py-2 rounded border border-[var(--control-border)] text-sm ${FOCUS_RING}`}
+                    onClick={() => onRequestCloseSidebar?.()}
+                  >
+                    Close
+                  </button>
+                </div>
+                {sidebarSlot}
+              </aside>
+            </div>
+          )}
 
           {(footerSlot || historyControls) && (
             <footer className={`${FOOTER_BAR_BG} mt-8`}>
