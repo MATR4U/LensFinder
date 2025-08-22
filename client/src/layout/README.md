@@ -42,6 +42,15 @@ New PageShell slots
 - breadcrumbSlot: Compact breadcrumb row under the header
 - sidebarMode: 'inline' | 'overlay' (default 'inline')
 - containerAware: boolean to opt in to container-based sizing
+- sidebarOpen: boolean to control overlay visibility; defaults to true when using overlay
+- onRequestCloseSidebar: handler invoked on overlay backdrop click, Close button, or Escape
+
+Overlay accessibility
+- role="dialog" and aria-modal="true" applied in overlay mode
+- Backdrop click, Escape key, and Close button dismiss the overlay
+- Focus is trapped within the overlay while open; initial focus moves inside
+- Background content is aria-hidden and page scroll is locked while overlay is open
+- Focus returns to the element that was focused before opening when overlay closes
 
 New tokens
 - HEADER_BAR_BG, SIDEBAR_BASE, SIDEBAR_OVERLAY, CONTENT_GRID, BREADCRUMB_ROW
