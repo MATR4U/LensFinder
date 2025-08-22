@@ -225,7 +225,7 @@ export default function PageShell({
                 data-testid="overlay-backdrop"
                 className={`fixed inset-0 ${OVERLAY_BACKDROP_DARK}`}
                 onClick={handleBackdropClick}
-                aria-label="Close sidebar"
+                aria-hidden="true"
               />
               <aside
                 ref={sidebarRef as any}
