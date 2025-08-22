@@ -5,9 +5,24 @@ import { beforeAll, describe, it, expect } from 'vitest';
 let app: express.Express;
 
 beforeAll(async () => {
+  process.env.VITEST = '1';
+  process.env.FILE_REPO_FIXTURES_DIR = `${process.cwd()}/server/tests/fixtures`;
+  process.env.API_KEY = '';
+  vi.doMock('../db/provider.js', async () => await import('../db/fileRepo.js'));
+  vi.doMock('./db/provider.js', async () => await import('../db/fileRepo.js'));
+  vi.doMock('../db/pg.js', async () => ({
+    getPool: () => ({
+      query: async (sql?: string) => {
+        if (!sql || /select\s+1/i.test(sql || '')) return { rows: [{ '?column?': 1 }] } as any;
+        return { rows: [] } as any;
+      }
+    })
+  }));
+
   const { createRouter } = await import('../router.js');
   const { schema } = await import('../graphql.js');
   const { createGraphQLHandler } = await import('../graphqlHandler.js');
+
   app = express();
   app.use(express.json());
   app.use(createRouter({ rootDir: process.cwd() }));
