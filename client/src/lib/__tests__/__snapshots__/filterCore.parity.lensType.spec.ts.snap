@@ -1,0 +1,9 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`parity: lens type gating > snapshot: Prime 1`] = `[]`;
+
+exports[`parity: lens type gating > snapshot: Zoom 1`] = `
+[
+  "https://example.com/24-70gm",
+]
+`;
