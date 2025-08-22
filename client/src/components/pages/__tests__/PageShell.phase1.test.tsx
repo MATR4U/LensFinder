@@ -2,6 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import PageShell from '../PageShell';
 
 vi.mock('../../ui/GLBackground', () => ({ default: () => null }));
@@ -41,8 +42,25 @@ describe('PageShell Phase 1 additions', () => {
   });
 
   it('renders sidebar as overlay when sidebarMode="overlay"', () => {
-    renderShell(undefined, { sidebarMode: 'overlay' });
-    expect(screen.getByRole('complementary', { name: 'Sidebar' })).toBeInTheDocument();
+    renderShell(undefined, { sidebarMode: 'overlay', sidebarOpen: true });
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+
+  it('overlay backdrop click calls onRequestCloseSidebar', async () => {
+    const onClose = vi.fn();
+    renderShell(undefined, { sidebarMode: 'overlay', sidebarOpen: true, onRequestCloseSidebar: onClose });
+    const backdrop = screen.getByRole('button', { hidden: true });
+    await userEvent.click(backdrop);
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('overlay close button and Escape call onRequestCloseSidebar', async () => {
+    const onClose = vi.fn();
+    renderShell(undefined, { sidebarMode: 'overlay', sidebarOpen: true, onRequestCloseSidebar: onClose });
+    await userEvent.click(screen.getByRole('button', { name: /close sidebar/i }));
+    expect(onClose).toHaveBeenCalledTimes(1);
+    await userEvent.keyboard('{Escape}');
+    expect(onClose).toHaveBeenCalledTimes(2);
   });
 
   it('applies container-aware sizing when containerAware is true', () => {

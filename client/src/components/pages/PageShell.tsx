@@ -27,6 +27,8 @@ type Props = {
   breadcrumbSlot?: React.ReactNode;
   sidebarMode?: 'inline' | 'overlay';
   containerAware?: boolean;
+  sidebarOpen?: boolean;
+  onRequestCloseSidebar?: () => void;
 };
 
 type BoundaryProps = { fallback?: React.ReactNode; children?: React.ReactNode };
@@ -62,11 +64,15 @@ export default function PageShell({
   breadcrumbSlot,
   sidebarMode = 'inline',
   containerAware = false,
+  sidebarOpen = true,
+  onRequestCloseSidebar,
 }: Props) {
   const canUndo = !!historyControls?.canUndo;
   const canRedo = !!historyControls?.canRedo;
   const onUndo = historyControls?.onUndo;
   const onRedo = historyControls?.onRedo;
+
+  const openerRef = React.useRef<Element | null>(null);
 
   React.useEffect(() => {
     if (title) document.title = `LensFinder – ${title}`;
@@ -80,6 +86,63 @@ export default function PageShell({
   React.useEffect(() => {
     if (onView) onView(window.location.pathname);
   }, [onView]);
+
+  const overlayActive = !!sidebarSlot && sidebarMode === 'overlay' && sidebarOpen;
+
+  React.useEffect(() => {
+    if (!overlayActive) return;
+    openerRef.current = document.activeElement as Element | null;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const main = document.getElementById('content-root');
+    if (main) {
+      main.setAttribute('aria-hidden', 'true');
+    }
+    return () => {
+      document.body.style.overflow = prev;
+      if (main) {
+        main.removeAttribute('aria-hidden');
+      }
+      const el = openerRef.current as HTMLElement | null;
+      if (el && typeof el.focus === 'function') el.focus();
+    };
+  }, [overlayActive]);
+
+  const sidebarRef = React.useRef<HTMLElement | null>(null);
+  React.useEffect(() => {
+    if (!overlayActive || !sidebarRef.current) return;
+    const container = sidebarRef.current;
+    const focusable = container.querySelectorAll<HTMLElement>(
+      'a[href], button, textarea, input, select, [tabindex]:not([tabindex="-1"])'
+    );
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onRequestCloseSidebar?.();
+        e.stopPropagation();
+      } else if (e.key === 'Tab' && focusable.length > 0) {
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last?.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first?.focus();
+          }
+        }
+      }
+    };
+    document.addEventListener('keydown', handleKey, true);
+    first?.focus();
+    return () => document.removeEventListener('keydown', handleKey, true);
+  }, [overlayActive, onRequestCloseSidebar]);
+
+  const handleBackdropClick = React.useCallback(() => {
+    onRequestCloseSidebar?.();
+  }, [onRequestCloseSidebar]);
 
   return (
     <main className={APP_BACKGROUND}>
@@ -127,12 +190,44 @@ export default function PageShell({
             </div>
           )}
 
-          {sidebarSlot && sidebarMode === 'inline' ? (
-            <div className={`${CONTENT_GRID}`}>
-              <aside className={SIDEBAR_BASE} aria-label="Sidebar">
-                {sidebarSlot}
-              </aside>
-              <div>
+          <div id="content-root">
+            {sidebarSlot && sidebarMode === 'inline' ? (
+              <div className={`${CONTENT_GRID}`}>
+                <aside className={SIDEBAR_BASE} aria-label="Sidebar">
+                  {sidebarSlot}
+                </aside>
+                <div>
+                  <Boundary fallback={errorFallback}>
+                    <React.Suspense fallback={suspenseFallback ?? null}>
+                      <div id="content" className={SECTION_STACK}>
+                        {children}
+                      </div>
+                    </React.Suspense>
+                  </Boundary>
+                </div>
+              </div>
+            ) : sidebarSlot && sidebarMode === 'overlay' && sidebarOpen ? (
+              <div className="relative">
+                <button aria-hidden className={`fixed inset-0 ${OVERLAY_BACKDROP_DARK}`} onClick={handleBackdropClick} />
+                <aside
+                  ref={sidebarRef as any}
+                  className={SIDEBAR_OVERLAY}
+                  aria-label="Sidebar"
+                  role="dialog"
+                  aria-modal="true"
+                >
+                  <div className="flex items-center justify-end mb-3">
+                    <button
+                      type="button"
+                      aria-label="Close sidebar"
+                      className={`px-3 py-2 rounded border border-[var(--control-border)] text-sm ${FOCUS_RING}`}
+                      onClick={() => onRequestCloseSidebar?.()}
+                    >
+                      Close
+                    </button>
+                  </div>
+                  {sidebarSlot}
+                </aside>
                 <Boundary fallback={errorFallback}>
                   <React.Suspense fallback={suspenseFallback ?? null}>
                     <div id="content" className={SECTION_STACK}>
@@ -141,13 +236,7 @@ export default function PageShell({
                   </React.Suspense>
                 </Boundary>
               </div>
-            </div>
-          ) : sidebarSlot && sidebarMode === 'overlay' ? (
-            <div className="relative">
-              <div className={`fixed inset-0 ${OVERLAY_BACKDROP_DARK}`} aria-hidden />
-              <aside className={SIDEBAR_OVERLAY} aria-label="Sidebar">
-                {sidebarSlot}
-              </aside>
+            ) : (
               <Boundary fallback={errorFallback}>
                 <React.Suspense fallback={suspenseFallback ?? null}>
                   <div id="content" className={SECTION_STACK}>
@@ -155,16 +244,8 @@ export default function PageShell({
                   </div>
                 </React.Suspense>
               </Boundary>
-            </div>
-          ) : (
-            <Boundary fallback={errorFallback}>
-              <React.Suspense fallback={suspenseFallback ?? null}>
-                <div id="content" className={SECTION_STACK}>
-                  {children}
-                </div>
-              </React.Suspense>
-            </Boundary>
-          )}
+            )}
+          </div>
 
           {(footerSlot || historyControls) && (
             <footer className={`${FOOTER_BAR_BG} mt-8`}>

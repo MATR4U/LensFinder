@@ -3,6 +3,8 @@ export { default as Section } from '../components/ui/Section';
 export { default as StageHeader } from '../components/ui/StageHeader';
 export { default as StageNav } from '../components/ui/StageNav';
 export { default as Modal } from '../components/ui/Modal';
+export { ThemeProvider, useTheme } from './ThemeProvider';
+
 
 export {
   APP_BACKGROUND,
