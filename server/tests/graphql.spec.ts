@@ -1,6 +1,6 @@
 import request from 'supertest';
 import express from 'express';
-import { beforeAll, describe, it, expect } from 'vitest';
+import { beforeAll, describe, it, expect, vi } from 'vitest';
 
 let app: express.Express;
 
