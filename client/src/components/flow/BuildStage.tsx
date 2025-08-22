@@ -1,5 +1,5 @@
 import React from 'react';
-import Section from '../ui/Section';
+import { Section } from '../../layout';
 import BuildCapabilities from './BuildCapabilities';
 import { BUILD_STAGE_BINDINGS, useFilterBindings } from '../../hooks/useStoreBindings';
 import type { Camera } from '../../types';

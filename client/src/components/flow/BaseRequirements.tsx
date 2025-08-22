@@ -1,7 +1,7 @@
 import React from 'react';
 import type { Camera } from '../../types';
-import { CARD_PADDED, GRID_TWO_GAP3, INLINE_CHIPS_ROW, BADGE_COUNT } from '../ui/styles';
-import PageBase from '../pages/PageBase';
+import { CARD_PADDED, GRID_TWO_GAP3, INLINE_CHIPS_ROW } from '../ui/styles';
+import { PageShell, BADGE_COUNT } from '../../layout';
 // TODO: If we re-introduce Button or LabeledSelect here, wire them into the layout
 import { useStageLifecycle } from '../../hooks/useStageLifecycle';
 import AvailabilitySelect from '../ui/AvailabilitySelect';
@@ -65,7 +65,7 @@ export default function BaseRequirements(props: Props) {
   React.useEffect(() => { onEnter(); }, [onEnter]);
   const continueText = stageNumber === 2 ? 'See results' : 'Continue';
   return (
-    <PageBase
+    <PageShell
       title={title || COPY.stages.requirements.title}
       actionsSlot={<span className={BADGE_COUNT}>{resultsCount} matches</span>}
     >
@@ -117,7 +117,7 @@ export default function BaseRequirements(props: Props) {
 
         <StageNav className="mt-2" onBack={onBack} onReset={onReset} onContinue={onContinue} continueLabel={continueText} />
       </div>
-    </PageBase>
+    </PageShell>
   );
 }
 

@@ -1,7 +1,13 @@
 import React from 'react';
 import { APP_BACKGROUND, PAGE_CONTAINER, SECTION_STACK, ROW_BETWEEN, TITLE_H1 } from '../ui/styles';
 import GLBackground from '../ui/GLBackground';
-import { PAGE_BASE_BINDINGS, useFilterBindings } from '../../hooks/useStoreBindings';
+
+type HistoryControls = {
+  canUndo?: boolean;
+  canRedo?: boolean;
+  onUndo?: () => void;
+  onRedo?: () => void;
+};
 
 type Props = {
   title?: string;
@@ -9,15 +15,13 @@ type Props = {
   headerSlot?: React.ReactNode;
   actionsSlot?: React.ReactNode;
   bannerSlot?: React.ReactNode;
-  subheaderSlot?: React.ReactNode; // full-width block rendered below the header
+  subheaderSlot?: React.ReactNode;
   children: React.ReactNode;
   footerSlot?: React.ReactNode;
-  // Optional UX/telemetry utilities
   errorFallback?: React.ReactNode;
   suspenseFallback?: React.ReactNode;
   onView?: (path: string) => void;
-  // Show global history controls (Undo/Redo) in the footer. Defaults to false for staged screens.
-  showHistoryControls?: boolean;
+  historyControls?: HistoryControls;
 };
 
 type BoundaryProps = { fallback?: React.ReactNode; children?: React.ReactNode };
@@ -28,17 +32,32 @@ class Boundary extends React.Component<BoundaryProps, { hasError: boolean }> {
     this.state = { hasError: false };
   }
   static getDerivedStateFromError() { return { hasError: true }; }
-  componentDidCatch() { /* no-op; could hook telemetry here */ }
+  componentDidCatch() {}
   render() {
     if (this.state.hasError) return this.props.fallback ?? null;
     return this.props.children as React.ReactElement;
   }
 }
 
-export default function PageBase({ title, metaDescription, headerSlot, actionsSlot, bannerSlot, subheaderSlot, children, footerSlot, errorFallback, suspenseFallback, onView, showHistoryControls = false }: Props) {
-  const { historyLength, redoLength, undo, redo } = useFilterBindings(PAGE_BASE_BINDINGS);
-  const canUndo = historyLength > 0;
-  const canRedo = redoLength > 0;
+export default function PageShell({
+  title,
+  metaDescription,
+  headerSlot,
+  actionsSlot,
+  bannerSlot,
+  subheaderSlot,
+  children,
+  footerSlot,
+  errorFallback,
+  suspenseFallback,
+  onView,
+  historyControls,
+}: Props) {
+  const canUndo = !!historyControls?.canUndo;
+  const canRedo = !!historyControls?.canRedo;
+  const onUndo = historyControls?.onUndo;
+  const onRedo = historyControls?.onRedo;
+
   React.useEffect(() => {
     if (title) document.title = `LensFinder – ${title}`;
     if (metaDescription) {
@@ -55,7 +74,6 @@ export default function PageBase({ title, metaDescription, headerSlot, actionsSl
   return (
     <main className={APP_BACKGROUND}>
       <GLBackground />
-      {/* Global readability overlay sits above canvas (z-1) and below content (z-10) */}
       <div aria-hidden className="pointer-events-none fixed inset-0 z-1 bg-[radial-gradient(ellipse_at_center,rgba(0,0,0,0.22)_0%,rgba(0,0,0,0.33)_40%,rgba(0,0,0,0.46)_100%)]" />
       <div className="relative z-10">
         <a href="#content" className="sr-only focus:not-sr-only">Skip to content</a>
@@ -88,14 +106,14 @@ export default function PageBase({ title, metaDescription, headerSlot, actionsSl
               </div>
             </React.Suspense>
           </Boundary>
-          {footerSlot && (
+          {(footerSlot || historyControls) && (
             <footer className="sticky bottom-0 left-0 right-0 border-t border-[var(--control-border)] bg-[var(--app-bg)]/90 backdrop-blur supports-[backdrop-filter]:bg-[color-mix(in_oklab,var(--app-bg),transparent_20%)] mt-8">
               <div className={`${PAGE_CONTAINER} py-3`}>
                 <div className="flex items-center justify-between gap-3">
-                  {showHistoryControls ? (
+                  {historyControls ? (
                     <div className="flex items-center gap-2">
-                      <button className={`px-3 py-2 rounded border border-[var(--control-border)] text-sm ${!canUndo ? 'opacity-50 cursor-not-allowed' : ''}`} onClick={() => canUndo && undo()} aria-disabled={!canUndo}>Undo</button>
-                      <button className={`px-3 py-2 rounded border border-[var(--control-border)] text-sm ${!canRedo ? 'opacity-50 cursor-not-allowed' : ''}`} onClick={() => canRedo && redo()} aria-disabled={!canRedo}>Redo</button>
+                      <button className={`px-3 py-2 rounded border border-[var(--control-border)] text-sm ${!canUndo ? 'opacity-50 cursor-not-allowed' : ''}`} onClick={() => canUndo && onUndo && onUndo()} aria-disabled={!canUndo}>Undo</button>
+                      <button className={`px-3 py-2 rounded border border-[var(--control-border)] text-sm ${!canRedo ? 'opacity-50 cursor-not-allowed' : ''}`} onClick={() => canRedo && onRedo && onRedo()} aria-disabled={!canRedo}>Redo</button>
                     </div>
                   ) : <span />}
                   <div>
@@ -110,5 +128,3 @@ export default function PageBase({ title, metaDescription, headerSlot, actionsSl
     </main>
   );
 }
-
-

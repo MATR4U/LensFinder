@@ -178,7 +178,7 @@ What to add
 - ModalBase/PopoverBase: focus trap, escape-to-close, aria-* wired.
 - Benefit: consistent look/feel and interaction; one place to tweak theme/density.
 
-4) PageBase [Status: In Progress → partial]
+4) PageShell [Status: Implemented]
 
 ## UI/Layout TODO
 
@@ -186,7 +186,7 @@ What to add
   - Use `components/ui/Section.tsx` for page sections (title + spacing)
   - Use `components/ui/Card.tsx` for content blocks inside sections
 - Remove redundant inline headers
-  - Route top-level page title/CTA/result count via `PageBase` `headerSlot`/`actionsSlot`
+  - Route top-level page title/CTA/result count via `PageShell` `headerSlot`/`actionsSlot`
 - Spacing
   - Section vertical rhythm via `SECTION_STACK` / `STACK_Y`
   - Grid gaps via tokens (`GRID_*`); avoid ad-hoc margins
@@ -195,9 +195,9 @@ What to add
 - Future
   - Add `HeroSection` pattern for marketing/landing pages when needed
 
-- Implemented: page shell, head/meta, keyboard "skip to content", ErrorBoundary + Suspense wrapper, optional `onView` analytics hook in `client/src/components/pages/PageBase.tsx`.
+- Implemented: page shell `PageShell` (with head/meta, keyboard "skip to content", ErrorBoundary + Suspense wrapper, optional `onView` analytics hook) in `client/src/components/pages/PageShell.tsx`.
 - Next: consider stage guard hook (no auto-advance already enforced at store/flow level), expose `actionsSlot` patterns where needed, and migrate any additional pages if introduced later.
-- Current migration: `pages/App.tsx` uses `PageBase`.
+- Current migration: `pages/App.tsx` uses `PageShell` via `client/src/layout`.
 - Benefit: uniform navigation semantics and accessibility; centralized place to extend page-level behavior.
 
 Cross-cutting utilities [Status: Open]
@@ -212,7 +212,7 @@ Migration plan (incremental)
 
 - Phase 1: Extend FieldBase with validation/disabled/readOnly/testId; no visual changes.
 - Phase 2: Introduce UIProvider, CardBase, MessageBase; migrate callers opportunistically.
-- Phase 3: Add PageBase; migrate flow pages.
+- Phase 3: Add PageShell; migrate flow pages.
 - Phase 4: Add BaseReport; migrate `Report.tsx` and `report/*`.
 - Tests: snapshot bases; integration tests for representative field/page/report covering a11y roles, IDs, focus behavior.
 
