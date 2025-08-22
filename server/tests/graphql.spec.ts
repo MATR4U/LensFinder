@@ -6,7 +6,6 @@ let app: express.Express;
 
 beforeAll(async () => {
   process.env.VITEST = '1';
-  process.env.FILE_REPO_FIXTURES_DIR = `${process.cwd()}/server/tests/fixtures`;
   process.env.API_KEY = '';
   vi.doMock('../db/provider.js', async () => await import('../db/fileRepo.js'));
   vi.doMock('./db/provider.js', async () => await import('../db/fileRepo.js'));
