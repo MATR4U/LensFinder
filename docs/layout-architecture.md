@@ -57,8 +57,7 @@ export default function Example() {
 
 ## Migration guide
 
-- For current app pages using `PageBase`, nothing changes.
-- For reuse in other apps, prefer `PageShell`:
+- Use `PageShell` as the only page wrapper.
   - Provide your own `historyControls` if you need Undo/Redo in footer.
   - Provide any header/banner/subheader/footer content via the corresponding slots.
 - Keep business logic out of the layout module. Compose with your app store/actions outside and inject via props.

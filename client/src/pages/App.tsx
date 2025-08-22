@@ -10,7 +10,7 @@ import { useBootstrap } from '../hooks/useBootstrap';
 // import { resultId } from '../lib/ids';
 import { useFilterStore } from '../stores/filterStore';
 import { SECTION_STACK, TEXT_XS_MUTED, STACK_Y } from '../components/ui/styles';
-import PageBase from '../components/pages/PageBase';
+import { PageShell } from '../layout';
 // import Loading from '../components/ui/Loading';
 import CollapsibleMessage from '../components/ui/CollapsibleMessage';
 import OutageScreen from '../components/ui/OutageScreen';
@@ -70,7 +70,7 @@ export default function App() {
 
   return (
     <PlotProvider>
-      <PageBase
+      <PageShell
         title="Camera System Builder"
         metaDescription="Find your perfect lens setup—fast."
         headerSlot={(
@@ -172,7 +172,7 @@ export default function App() {
 
           {(stage === 3 || stage === 4) && <CompareTray />}
         </div>
-      </PageBase>
+      </PageShell>
     </PlotProvider>
   );
 }
