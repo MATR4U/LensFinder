@@ -1,5 +1,5 @@
 import React from 'react';
-import { GLASS_PANEL, AURA_ACCENT, SPINNER_SM, TEXT_MUTED, TEXT_SM, ACTION_ROW } from './styles';
+import { GLASS_PANEL, AURA_ACCENT, SPINNER_SM, TEXT_MUTED, TEXT_SM, ACTION_ROW, OVERLAY_BACKDROP_DARK } from './styles';
 
 type Props = {
   title?: string;
@@ -18,7 +18,7 @@ export default function OutageScreen({ title = 'Service temporarily unavailable'
   return (
     <div className="fixed inset-0 z-[1000] grid place-items-center pointer-events-auto" aria-modal="true" role="dialog" aria-live="polite">
       {/* Backdrop: use subtle on-brand tint over existing app background (keeps theme) */}
-      <div className="absolute inset-0 bg-[color-mix(in_oklab,var(--bg-from),black_20%)]/60 backdrop-blur-sm pointer-events-auto" />
+      <div className={`absolute inset-0 ${OVERLAY_BACKDROP_DARK} pointer-events-auto`} />
       <div className="relative max-w-xl w-[min(92vw,40rem)] pointer-events-auto">
         <div className={AURA_ACCENT} />
         <div className={`${GLASS_PANEL} p-8 text-center select-none`} role="document">
