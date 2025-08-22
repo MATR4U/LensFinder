@@ -1,5 +1,5 @@
 import React from 'react';
-import { APP_BACKGROUND, PAGE_CONTAINER, SECTION_STACK, ROW_BETWEEN, TITLE_H1, VIGNETTE_OVERLAY_BG, FOOTER_BAR_BG, HEADER_BAR_BG, SIDEBAR_BASE, CONTENT_GRID, BREADCRUMB_ROW, FOCUS_RING } from '../ui/styles';
+import { APP_BACKGROUND, PAGE_CONTAINER, SECTION_STACK, ROW_BETWEEN, TITLE_H1, VIGNETTE_OVERLAY_BG, FOOTER_BAR_BG, HEADER_BAR_BG, SIDEBAR_BASE, SIDEBAR_OVERLAY, CONTENT_GRID, BREADCRUMB_ROW, FOCUS_RING, OVERLAY_BACKDROP_DARK } from '../ui/styles';
 import GLBackground from '../ui/GLBackground';
 
 type HistoryControls = {
@@ -141,6 +141,20 @@ export default function PageShell({
                   </React.Suspense>
                 </Boundary>
               </div>
+            </div>
+          ) : sidebarSlot && sidebarMode === 'overlay' ? (
+            <div className="relative">
+              <div className={`fixed inset-0 ${OVERLAY_BACKDROP_DARK}`} aria-hidden />
+              <aside className={SIDEBAR_OVERLAY} aria-label="Sidebar">
+                {sidebarSlot}
+              </aside>
+              <Boundary fallback={errorFallback}>
+                <React.Suspense fallback={suspenseFallback ?? null}>
+                  <div id="content" className={SECTION_STACK}>
+                    {children}
+                  </div>
+                </React.Suspense>
+              </Boundary>
             </div>
           ) : (
             <Boundary fallback={errorFallback}>

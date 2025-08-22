@@ -40,6 +40,16 @@ describe('PageShell Phase 1 additions', () => {
     expect(screen.queryByTestId('sidebar')).not.toBeInTheDocument();
   });
 
+  it('renders sidebar as overlay when sidebarMode="overlay"', () => {
+    renderShell(undefined, { sidebarMode: 'overlay' });
+    expect(screen.getByRole('complementary', { name: 'Sidebar' })).toBeInTheDocument();
+  });
+
+  it('applies container-aware sizing when containerAware is true', () => {
+    const { container } = renderShell(undefined, { containerAware: true });
+    expect(container.querySelector('.container')).toBeTruthy();
+  });
+
   it('preserves error boundary behavior', () => {
     const Boom: React.FC = () => {
       throw new Error('boom');
