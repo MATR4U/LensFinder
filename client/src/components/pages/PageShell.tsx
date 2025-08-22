@@ -1,5 +1,5 @@
 import React from 'react';
-import { APP_BACKGROUND, PAGE_CONTAINER, SECTION_STACK, ROW_BETWEEN, TITLE_H1 } from '../ui/styles';
+import { APP_BACKGROUND, PAGE_CONTAINER, SECTION_STACK, ROW_BETWEEN, TITLE_H1, VIGNETTE_OVERLAY_BG, FOOTER_BAR_BG } from '../ui/styles';
 import GLBackground from '../ui/GLBackground';
 
 type HistoryControls = {
@@ -74,7 +74,7 @@ export default function PageShell({
   return (
     <main className={APP_BACKGROUND}>
       <GLBackground />
-      <div aria-hidden className="pointer-events-none fixed inset-0 z-1 bg-[radial-gradient(ellipse_at_center,rgba(0,0,0,0.22)_0%,rgba(0,0,0,0.33)_40%,rgba(0,0,0,0.46)_100%)]" />
+      <div aria-hidden className={VIGNETTE_OVERLAY_BG} />
       <div className="relative z-10">
         <a href="#content" className="sr-only focus:not-sr-only">Skip to content</a>
         {bannerSlot && (
@@ -107,7 +107,7 @@ export default function PageShell({
             </React.Suspense>
           </Boundary>
           {(footerSlot || historyControls) && (
-            <footer className="sticky bottom-0 left-0 right-0 border-t border-[var(--control-border)] bg-[var(--app-bg)]/90 backdrop-blur supports-[backdrop-filter]:bg-[color-mix(in_oklab,var(--app-bg),transparent_20%)] mt-8">
+            <footer className={`${FOOTER_BAR_BG} mt-8`}>
               <div className={`${PAGE_CONTAINER} py-3`}>
                 <div className="flex items-center justify-between gap-3">
                   {historyControls ? (

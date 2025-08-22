@@ -123,4 +123,8 @@ export const SPINNER_SM = 'h-6 w-6 rounded-full border-2 border-[var(--accent)] 
 export const COLLAPSE_TOGGLE = 'inline-flex items-center gap-1 text-xs text-[var(--text-muted)] hover:text-[var(--text-color)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] rounded px-1 py-0.5';
 export const ICON_CHEVRON_SM = 'h-3 w-3 transition-transform';
 
+export const VIGNETTE_OVERLAY_BG = 'pointer-events-none fixed inset-0 z-1 bg-[radial-gradient(ellipse_at_center,rgba(0,0,0,0.22)_0%,rgba(0,0,0,0.33)_40%,rgba(0,0,0,0.46)_100%)]';
+export const FOOTER_BAR_BG = 'sticky bottom-0 left-0 right-0 border-t border-[var(--control-border)] bg-[var(--app-bg)]/90 backdrop-blur supports-[backdrop-filter]:bg-[color-mix(in_oklab,var(--app-bg),transparent_20%)]';
+export const OVERLAY_BACKDROP_DARK = 'bg-[color-mix(in_oklab,var(--bg-from),black_20%)]/60 backdrop-blur-sm';
+
 
