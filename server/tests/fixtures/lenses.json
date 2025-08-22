@@ -1,0 +1,21 @@
+[
+  {
+    "id": 1,
+    "name": "FE 24-70mm F2.8 GM",
+    "brand": "Sony",
+    "mount": "E",
+    "coverage": "FF",
+    "focal_min_mm": 24,
+    "focal_max_mm": 70,
+    "aperture_min": 2.8,
+    "aperture_max": 22,
+    "weight_g": 886,
+    "ois": false,
+    "price_chf": 2199,
+    "weather_sealed": true,
+    "is_macro": false,
+    "distortion_pct": 1.2,
+    "focus_breathing_score": 8.5,
+    "source_url": "https://example.com/24-70gm"
+  }
+]

@@ -1,0 +1,17 @@
+[
+  {
+    "id": 1,
+    "name": "Alpha 7 IV",
+    "brand": "Sony",
+    "mount": "E",
+    "sensor_name": "Full Frame",
+    "sensor_width_mm": 36,
+    "sensor_height_mm": 24,
+    "sensor_coc_mm": 0.03,
+    "sensor_crop": 1,
+    "ibis": true,
+    "price_chf": 2499,
+    "weight_g": 659,
+    "source_url": "https://example.com/a7iv"
+  }
+]
