@@ -63,6 +63,8 @@ Environment (centralized):
 ### Filter workflow and features
 A detailed explanation of the two-stage filter (brand/capabilities first, then fine selection with sliders) and the full list of filter features is available at docs/filter-workflow.md.
 ## Overview
+### Layout architecture
+Reusable layout shell, stage components, and design tokens are documented in docs/layout-architecture.md and exported via client/src/layout for consumption in other apps.
 
 Lean tool to explore camera and lens options and generate reports. Frontend is Vite + React + TypeScript; backend is Express. Database is Postgres in all environments.
 

@@ -1,10 +1,8 @@
 import React from 'react';
-import Section from '../ui/Section';
+import { Section, Modal, BADGE_COUNT } from '../../layout';
 import ModeCard from './ModeCard';
 import Button from '../ui/Button';
 import Loading from '../ui/Loading';
-import Modal from '../ui/Modal';
-import { BADGE_COUNT } from '../ui/styles';
 import { useFilterStore } from '../../stores/filterStore';
 import { REQ_STAGE_BINDINGS, useFilterBindings } from '../../hooks/useStoreBindings';
 import type { Camera, Lens } from '../../types';

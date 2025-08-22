@@ -12,7 +12,7 @@ import GoalPresetWeights from '../ui/fields/GoalPresetWeights';
 // import CollapsibleMessage from '../ui/CollapsibleMessage';
 import SimpleHowTo from './simple/HowTo';
 import BaseRequirements from './BaseRequirements';
-import StageHeader from '../ui/StageHeader';
+import { StageHeader } from '../../layout';
 //
 import { AvailabilityProvider, useAvailability } from '../../context/AvailabilityContext';
 import { computeNormalizedHistogram, gradientStyleFromNormalized } from '../../lib/hist';
