@@ -1,7 +1,6 @@
 import request from 'supertest';
 import express from 'express';
-
-vi.mock('../db/provider.js', async () => await import('../db/fileRepo.js'));
+import { vi } from 'vitest';
 
 let app: express.Express;
 
@@ -9,9 +8,7 @@ beforeAll(async () => {
   const { createRouter } = await import('../router.js');
   process.env.VITEST = '1';
   process.env.FILE_REPO_FIXTURES_DIR = `${process.cwd()}/server/tests/fixtures`;
-  // Disable API key enforcement
   process.env.API_KEY = '';
-
   app = express();
   app.use(express.json());
 
@@ -35,7 +32,7 @@ beforeAll(async () => {
 
 describe('API endpoints provide data (file repo)', () => {
   it('GET /api/cameras returns non-empty array from fixtures', async () => {
-    const res = await request(app).get('/api/cameras');
+    const res = await request(app).get('/api/cameras').query({ limit: 50, offset: 0 });
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
     expect(res.body.length).toBeGreaterThan(0);
@@ -43,7 +40,7 @@ describe('API endpoints provide data (file repo)', () => {
   });
 
   it('GET /api/lenses returns non-empty array from fixtures', async () => {
-    const res = await request(app).get('/api/lenses');
+    const res = await request(app).get('/api/lenses').query({ limit: 50, offset: 0 });
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
     expect(res.body.length).toBeGreaterThan(0);

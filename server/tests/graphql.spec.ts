@@ -17,8 +17,8 @@ beforeAll(async () => {
 describe('GraphQL API', () => {
   it('queries cameras and lenses', async () => {
     const query = `{
-      cameras { name brand mount sensor { name width_mm height_mm coc_mm crop } }
-      lenses { name brand mount coverage focal_min_mm focal_max_mm ois }
+      cameras(limit: 50, offset: 0) { name brand mount sensor { name width_mm height_mm coc_mm crop } }
+      lenses(limit: 50, offset: 0) { name brand mount coverage focal_min_mm focal_max_mm ois }
     }`;
     const res = await request(app).post('/graphql').send({ query });
     expect(res.status).toBe(200);
