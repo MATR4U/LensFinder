@@ -78,4 +78,7 @@ export {
   INLINE_CHIPS_ROW,
   LOADING_TEXT_SM,
   TEXT_2XS_MUTED,
+  VIGNETTE_OVERLAY_BG,
+  FOOTER_BAR_BG,
+  OVERLAY_BACKDROP_DARK,
 } from '../components/ui/styles';
