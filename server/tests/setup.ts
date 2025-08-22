@@ -1,11 +1,9 @@
-import { beforeAll, vi } from 'vitest';
+import { vi } from 'vitest';
 
-beforeAll(() => {
-  process.env.VITEST = '1';
-  process.env.NODE_ENV = 'test';
-  process.env.API_KEY = '';
-  process.env.FILE_REPO_FIXTURES_DIR = `${process.cwd()}/server/tests/fixtures`;
-});
+process.env.VITEST = '1';
+process.env.NODE_ENV = 'test';
+process.env.API_KEY = '';
+process.env.FILE_REPO_FIXTURES_DIR = `${process.cwd()}/server/tests/fixtures`;
 
 vi.mock('../db/provider.js', async () => await import('../db/fileRepo.js'));
 vi.mock('./db/provider.js', async () => await import('../db/fileRepo.js'));
