@@ -57,7 +57,8 @@ export default defineConfig(({ mode }) => {
       }
     },
     define: {
-      'window.__FORCE_OUTAGE__': JSON.stringify(forceOutage)
+      'window.__FORCE_OUTAGE__': JSON.stringify(forceOutage),
+      'window.__VITE_DEV_EMPTY_DATA__': JSON.stringify(rootEnv.VITE_DEV_EMPTY_DATA === 'true' || rootEnv.VITE_DEV_EMPTY_DATA === '1'),
     },
     test: {
       environment: 'jsdom',
