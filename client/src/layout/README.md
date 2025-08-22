@@ -36,3 +36,28 @@ function MyPage() {
 Notes
 - This is a facade; components live under components/ui and components/pages. Re-exports keep source stable while enabling re-use in other apps.
 - Keep feature-agnostic. Do not export feature components here (filters, cards, etc.).
+New PageShell slots
+- topbarSlot: Renders a sticky header bar above the banner
+- sidebarSlot: Optional left sidebar; inline on md+ by default
+- breadcrumbSlot: Compact breadcrumb row under the header
+- sidebarMode: 'inline' | 'overlay' (default 'inline')
+- containerAware: boolean to opt in to container-based sizing
+
+New tokens
+- HEADER_BAR_BG, SIDEBAR_BASE, SIDEBAR_OVERLAY, CONTENT_GRID, BREADCRUMB_ROW
+- Z_* layer tokens: Z_BASE, Z_HEADER, Z_SIDEBAR, Z_OVERLAY, Z_MODAL, Z_TOAST
+- FOCUS_RING, CONTAINER_INLINE
+
+Examples
+function WithTopbarSidebar() {
+  return (
+    <PageShell
+      title="Dashboard"
+      topbarSlot={<div>Topbar</div>}
+      sidebarSlot={<nav>Menu</nav>}
+      breadcrumbSlot={<nav aria-label="Breadcrumb">Home / Dashboard</nav>}
+    >
+      <Section title="Content">...</Section>
+    </PageShell>
+  );
+}

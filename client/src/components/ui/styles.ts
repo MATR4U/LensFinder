@@ -126,5 +126,18 @@ export const ICON_CHEVRON_SM = 'h-3 w-3 transition-transform';
 export const VIGNETTE_OVERLAY_BG = 'pointer-events-none fixed inset-0 z-1 bg-[radial-gradient(ellipse_at_center,rgba(0,0,0,0.22)_0%,rgba(0,0,0,0.33)_40%,rgba(0,0,0,0.46)_100%)]';
 export const FOOTER_BAR_BG = 'sticky bottom-0 left-0 right-0 border-t border-[var(--control-border)] bg-[var(--app-bg)]/90 backdrop-blur supports-[backdrop-filter]:bg-[color-mix(in_oklab,var(--app-bg),transparent_20%)]';
 export const OVERLAY_BACKDROP_DARK = 'bg-[color-mix(in_oklab,var(--bg-from),black_20%)]/60 backdrop-blur-sm';
+export const HEADER_BAR_BG = 'sticky top-0 z-40 border-b border-[var(--control-border)] bg-[color-mix(in_oklab,var(--card-bg),white_6%)]/80 backdrop-blur supports-[backdrop-filter]:bg-[color-mix(in_oklab,var(--card-bg),transparent_20%)]';
+export const SIDEBAR_BASE = 'hidden md:block md:sticky md:top-16 md:h-[calc(100vh-4rem)] md:overflow-auto md:border-r md:border-[var(--control-border)] md:bg-[color-mix(in_oklab,var(--card-bg),white_4%)]/70';
+export const SIDEBAR_OVERLAY = 'fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-[var(--card-bg)] border-r border-[var(--control-border)] shadow-xl';
+export const CONTENT_GRID = 'grid grid-cols-1 md:grid-cols-[16rem_1fr] gap-6';
+export const BREADCRUMB_ROW = 'flex items-center gap-2 text-sm text-[var(--text-muted)] whitespace-nowrap overflow-hidden';
+export const Z_BASE = 'z-0';
+export const Z_HEADER = 'z-40';
+export const Z_SIDEBAR = 'z-30';
+export const Z_OVERLAY = 'z-50';
+export const Z_MODAL = 'z-[1000]';
+export const Z_TOAST = 'z-[1100]';
+export const FOCUS_RING = 'focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)] focus:ring-offset-2 focus:ring-offset-transparent';
+export const CONTAINER_INLINE = '[container-type:inline-size]';
 
 
