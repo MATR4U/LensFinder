@@ -60,6 +60,8 @@ Environment (centralized):
 - `REDIS_URL` should point to `redis://redis:6379` for Compose.
 - Client uses same-origin by default. Set `VITE_API_BASE_URL` in env to override.
 
+### Filter workflow and features
+A detailed explanation of the two-stage filter (brand/capabilities first, then fine selection with sliders) and the full list of filter features is available at docs/filter-workflow.md.
 ## Overview
 
 Lean tool to explore camera and lens options and generate reports. Frontend is Vite + React + TypeScript; backend is Express. Database is Postgres in all environments.

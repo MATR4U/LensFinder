@@ -30,7 +30,7 @@ export default function RequirementsStage({
   const [helpOpen, setHelpOpen] = React.useState(false);
   const { isPro, continueTo } = useFilterBindings(REQ_STAGE_BINDINGS);
   return (
-    <Section title="Set your filters" actions={(
+    <Section title="Your requirements" actions={(
       <div className="flex items-center gap-2">
         <span className={BADGE_COUNT}>Showing {resultsCount} matches</span>
         <Button variant="secondary" size="sm" onClick={() => { useFilterStore.getState().resetToStageBaseline(2); }}>Reset filters</Button>
