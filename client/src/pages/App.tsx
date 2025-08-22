@@ -19,8 +19,8 @@ import MessageTwoColumn from '../components/ui/MessageTwoColumn';
 import { useUrlFiltersSync } from '../hooks/useUrlFiltersSync';
 import { useAppData } from '../hooks/useAppData';
 import ModeStage from '../components/flow/ModeStage';
-import BuildStage from '../components/flow/BuildStage';
-import RequirementsStage from '../components/flow/RequirementsStage';
+import EssentialsStep from '../components/flow/EssentialsStep';
+import PrioritiesStep from '../components/flow/PrioritiesStep';
 import CompareStage from '../components/flow/CompareStage';
 import ReportStage from '../components/flow/ReportStage';
 import CompareTray from '../components/flow/CompareTray';
@@ -28,7 +28,6 @@ import CompareTray from '../components/flow/CompareTray';
 export default function App() {
   useUrlFiltersSync();
   const { cameras, lenses, fatalError } = useBootstrap();
-  const cameraName = useFilterStore(s => s.cameraName);
   const isPro = useFilterStore(s => s.isPro);
   const goalPreset = useFilterStore(s => s.goalPreset);
   const goalWeights = useFilterStore(s => s.goalWeights, shallow);
@@ -46,14 +45,12 @@ export default function App() {
   // const captureStageBaseline = useFilterStore(s => s.captureStageBaseline);
   // const resetToStageBaseline = useFilterStore(s => s.resetToStageBaseline);
   const modeRef = React.useRef<HTMLDivElement | null>(null);
-  const reqRef = React.useRef<HTMLDivElement | null>(null);
   const compareRef = React.useRef<HTMLDivElement | null>(null);
   const reportRef = React.useRef<HTMLDivElement | null>(null);
   const prefersReducedMotion = useReducedMotion();
 
-  const { camera: cam2, brandsForCamera: brands2, buildResultsCount, resultsCount, results, resultsForGrid, debugCounts, debugDist, debugPerCam } = useAppData(cameras, lenses);
+  const { camera: cam2, results, resultsForGrid, debugCounts, debugDist, debugPerCam } = useAppData(cameras, lenses);
   const camera = cam2;
-  const brandsForCamera = brands2;
 
   const [showDebug, setShowDebug] = useState<boolean>(() => {
     const params = new URLSearchParams(window.location.search);
@@ -139,21 +136,14 @@ export default function App() {
             )}
 
             {stage === 1 && (
-              <motion.div key="build-capabilities" initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }} transition={{ duration: 0.18, ease: 'easeOut' }}>
-                <BuildStage cameras={cameras} brandsForCamera={brandsForCamera} resultsCount={buildResultsCount} />
+              <motion.div key="essentials-step" initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }} transition={{ duration: 0.18, ease: 'easeOut' }}>
+                <EssentialsStep />
               </motion.div>
             )}
 
             {stage === 2 && (
-              <motion.div key="requirements-section" ref={reqRef} initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }} transition={{ duration: 0.18, ease: 'easeOut' }}>
-                <RequirementsStage
-                  cameras={cameras}
-                  brandsForCamera={brandsForCamera}
-                  camera={camera}
-                  cameraName={cameraName}
-                  lenses={lenses}
-                  resultsCount={resultsCount}
-                />
+              <motion.div key="priorities-step" initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={prefersReducedMotion ? undefined : { opacity: 0, y: -8 }} transition={{ duration: 0.18, ease: 'easeOut' }}>
+                <PrioritiesStep />
               </motion.div>
             )}
 

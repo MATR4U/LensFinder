@@ -7,6 +7,7 @@ import { createSimpleFiltersSlice } from './filterStore/slices/simpleFiltersSlic
 import { createProFiltersSlice } from './filterStore/slices/proFiltersSlice';
 import { createGoalsSlice } from './filterStore/slices/goalsSlice';
 import { createAvailabilitySlice } from './filterStore/slices/availabilitySlice';
+import { createEssentialsSlice } from './filterStore/slices/essentialsSlice';
 import { createHistorySlice } from './filterStore/slices/historySlice';
 import { createResetsSlice } from './filterStore/slices/resetsSlice';
 import { createCompareSlice } from './filterStore/slices/compareSlice';
@@ -34,6 +35,15 @@ export interface FilterState {
   isMacro: boolean;
   priceRange: Range;
   weightRange: Range;
+
+  useCases: string[];
+  budgetTarget: number;
+  budgetFlexible: boolean;
+  cameraMount: string;
+  setUseCases: (v: string[]) => void;
+  setBudgetTarget: (n: number) => void;
+  setBudgetFlexible: (v: boolean) => void;
+  setCameraMount: (v: string) => void;
 
   // Pro filters
   proCoverage: string;
@@ -164,6 +174,7 @@ export const useFilterStore = createWithEqualityFn<FilterState>()(persist((set, 
   ...createCompareSlice(set, get),
   ...createReportSlice(set),
   ...createPricingSlice(set),
+  ...createEssentialsSlice(set, get),
 }), {
   name: 'camera-filter-storage',
   version: 3,
@@ -205,6 +216,10 @@ export const useFilterStore = createWithEqualityFn<FilterState>()(persist((set, 
     goalWeights: state.goalWeights,
     focalChoice: state.focalChoice,
     subjectDistanceM: state.subjectDistanceM,
+    useCases: state.useCases,
+    budgetTarget: state.budgetTarget,
+    budgetFlexible: state.budgetFlexible,
+    cameraMount: state.cameraMount,
     // Intentionally do not persist compare selections or current selection
     // Do not persist availability caps, history, or report
   }),
