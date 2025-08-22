@@ -20,7 +20,6 @@ type Props = {
   footerSlot?: React.ReactNode;
   errorFallback?: React.ReactNode;
   suspenseFallback?: React.ReactNode;
-  onView?: (path: string) => void;
   historyControls?: HistoryControls;
   topbarSlot?: React.ReactNode;
   sidebarSlot?: React.ReactNode;
@@ -57,7 +56,6 @@ export default function PageShell({
   footerSlot,
   errorFallback,
   suspenseFallback,
-  onView,
   historyControls,
   topbarSlot,
   sidebarSlot,
@@ -83,9 +81,6 @@ export default function PageShell({
     }
   }, [title, metaDescription]);
 
-  React.useEffect(() => {
-    if (onView) onView(window.location.pathname);
-  }, [onView]);
 
   const overlayActive = !!sidebarSlot && sidebarMode === 'overlay' && sidebarOpen;
 
