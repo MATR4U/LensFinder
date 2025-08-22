@@ -1,5 +1,3 @@
-import { pgFindAllCameras, pgFindAllLenses, pgCountCameras, pgCountLenses } from './pg.js';
-
 export type Camera = {
   id: number;
   name: string;
@@ -36,17 +34,43 @@ export type Lens = {
   source_url: string | null;
 };
 
+const useFileRepo = (process.env.VITEST === '1' || process.env.VITEST === 'true' || process.env.NODE_ENV === 'test');
+
+let implPromise: Promise<{
+  getAllCameras: (limit?: number, offset?: number) => Promise<Camera[]>;
+  getAllLenses: (limit?: number, offset?: number) => Promise<Lens[]>;
+  getCounts: () => Promise<{ cameras: number; lenses: number }>;
+}>;
+
+if (useFileRepo) {
+  implPromise = import('./fileRepo.js') as any;
+} else {
+  implPromise = (async () => {
+    const { pgFindAllCameras, pgFindAllLenses, pgCountCameras, pgCountLenses } = await import('./pg.js');
+    return {
+      getAllCameras: (limit?: number, offset?: number) => pgFindAllCameras(limit, offset),
+      getAllLenses: (limit?: number, offset?: number) => pgFindAllLenses(limit, offset),
+      getCounts: async () => {
+        const [cameras, lenses] = await Promise.all([pgCountCameras(), pgCountLenses()]);
+        return { cameras, lenses };
+      }
+    };
+  })();
+}
+
 export async function getAllCameras(limit?: number, offset?: number): Promise<Camera[]> {
-  return pgFindAllCameras(limit, offset);
+  const impl = await implPromise;
+  return impl.getAllCameras(limit, offset);
 }
 
 export async function getAllLenses(limit?: number, offset?: number): Promise<Lens[]> {
-  return pgFindAllLenses(limit, offset);
+  const impl = await implPromise;
+  return impl.getAllLenses(limit, offset);
 }
 
 export async function getCounts(): Promise<{ cameras: number; lenses: number }> {
-  const [cameras, lenses] = await Promise.all([pgCountCameras(), pgCountLenses()]);
-  return { cameras, lenses };
+  const impl = await implPromise;
+  return impl.getCounts();
 }
 
 
