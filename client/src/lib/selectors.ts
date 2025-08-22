@@ -1,7 +1,9 @@
 import type { Camera, Lens, Result } from '../types';
 import { computeAvailability, type Availability } from './availability';
-import { applyFilters } from './filters';
+import { applyFilters, type FiltersInput } from './filters';
 import { computeResults } from './recommender';
+import { compile, filter as fcFilter } from '@lensfinder/filter-core';
+import { buildSpecFromFilters } from './filterCoreAdapter';
 
 export const makeBrandsForCamera = () =>
   (lenses: Lens[], camera?: Camera): string[] => {
@@ -37,32 +39,77 @@ export const makeAvailabilitySelector = () =>
 
 export const makeResultsSelector = () =>
   (lenses: Lens[], camera: Camera | undefined, f: any): Result[] => {
-    const filtered = applyFilters({
-      lenses,
-      cameraName: f.cameraName,
-      cameraMount: camera?.mount,
-      brand: f.brand,
-      lensType: f.lensType,
-      sealed: f.sealed,
-      isMacro: f.isMacro,
-      priceRange: f.priceRange,
-      weightRange: f.weightRange,
-      proCoverage: f.proCoverage,
-      proFocalMin: f.proFocalMin,
-      proFocalMax: f.proFocalMax,
-      proMaxApertureF: f.proMaxApertureF,
-      proRequireOIS: f.proRequireOIS,
-      proRequireSealed: f.proRequireSealed,
-      proRequireMacro: f.proRequireMacro,
-      proPriceMax: f.proPriceMax,
-      proWeightMax: f.proWeightMax,
-      proDistortionMaxPct: f.proDistortionMaxPct,
-      proBreathingMinScore: f.proBreathingMinScore,
-      softPrice: f.softPrice,
-      softWeight: f.softWeight,
-      softDistortion: f.softDistortion,
-      softBreathing: f.softBreathing,
-    });
+    const useFilterCore = (import.meta as any).env?.VITE_FILTER_CORE_ENABLE === 'true';
+
+    let filtered: Lens[];
+    if (useFilterCore) {
+      const base = (camera && f.cameraName !== 'Any') ? lenses.filter(l => l.mount === camera.mount) : lenses.slice();
+      const preLensType = base.filter(l => {
+        const type = l.focal_min_mm === l.focal_max_mm ? 'Prime' : 'Zoom';
+        return f.lensType === 'Any' ? true : type === f.lensType;
+      });
+      const input: FiltersInput = {
+        lenses: preLensType,
+        cameraName: f.cameraName,
+        cameraMount: camera?.mount,
+        brand: f.brand,
+        lensType: f.lensType,
+        sealed: f.sealed,
+        isMacro: f.isMacro,
+        priceRange: f.priceRange,
+        weightRange: f.weightRange,
+        proCoverage: f.proCoverage,
+        proFocalMin: f.proFocalMin,
+        proFocalMax: f.proFocalMax,
+        proMaxApertureF: f.proMaxApertureF,
+        proRequireOIS: f.proRequireOIS,
+        proRequireSealed: f.proRequireSealed,
+        proRequireMacro: f.proRequireMacro,
+        proPriceMax: f.proPriceMax,
+        proWeightMax: f.proWeightMax,
+        proDistortionMaxPct: f.proDistortionMaxPct,
+        proBreathingMinScore: f.proBreathingMinScore,
+        softPrice: f.softPrice,
+        softWeight: f.softWeight,
+        softDistortion: f.softDistortion,
+        softBreathing: f.softBreathing,
+        enablePrice: f.enablePrice,
+        enableWeight: f.enableWeight,
+        enableDistortion: f.enableDistortion,
+        enableBreathing: f.enableBreathing,
+      };
+      const { spec } = buildSpecFromFilters(input);
+      const exec = compile(spec);
+      filtered = (fcFilter(preLensType, exec) as Lens[]);
+    } else {
+      filtered = applyFilters({
+        lenses,
+        cameraName: f.cameraName,
+        cameraMount: camera?.mount,
+        brand: f.brand,
+        lensType: f.lensType,
+        sealed: f.sealed,
+        isMacro: f.isMacro,
+        priceRange: f.priceRange,
+        weightRange: f.weightRange,
+        proCoverage: f.proCoverage,
+        proFocalMin: f.proFocalMin,
+        proFocalMax: f.proFocalMax,
+        proMaxApertureF: f.proMaxApertureF,
+        proRequireOIS: f.proRequireOIS,
+        proRequireSealed: f.proRequireSealed,
+        proRequireMacro: f.proRequireMacro,
+        proPriceMax: f.proPriceMax,
+        proWeightMax: f.proWeightMax,
+        proDistortionMaxPct: f.proDistortionMaxPct,
+        proBreathingMinScore: f.proBreathingMinScore,
+        softPrice: f.softPrice,
+        softWeight: f.softWeight,
+        softDistortion: f.softDistortion,
+        softBreathing: f.softBreathing,
+      });
+    }
+
     const effectiveCamera = camera ?? {
       name: 'Any', brand: 'Any', mount: 'Any', ibis: false, price_chf: 0, weight_g: 0, source_url: '',
       sensor: { name: 'FF', width_mm: 36, height_mm: 24, coc_mm: 0.03, crop: 1 },
