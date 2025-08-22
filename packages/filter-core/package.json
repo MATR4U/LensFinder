@@ -1,0 +1,36 @@
+{
+  "name": "@lensfinder/filter-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/cjs/index.cjs",
+  "module": "dist/esm/index.js",
+  "types": "dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.cjs"
+    }
+  },
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "npm run clean && npm run build:types && npm run build:esm && npm run build:cjs",
+    "build:esm": "tsc -p tsconfig.build.json --module ESNext --outDir dist/esm",
+    "build:cjs": "tsc -p tsconfig.build.cjs.json && node scripts/cjs-post.cjs",
+    "build:types": "tsc -p tsconfig.types.json",
+    "clean": "rimraf dist",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.12",
+    "ajv": "^8.17.1",
+    "fast-check": "^3.18.0",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0"
+  }
+}
