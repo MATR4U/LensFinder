@@ -6,5 +6,8 @@ export { explain } from './engine/explain';
 export { fetchPaged, schemaToDataset, paramsToSpec } from './providers/httpOpenApi';
 export { fromStore } from './adapters/zustand';
 export { fromQueryParams, toQueryParams } from './adapters/router';
+export { buildSpecFromState, applyWithPrefilters } from './adapters/app';
+export type { Mapping, PreFilter } from './adapters/app';
+export { toURLSearchParams } from './adapters/next';
 export { validateSpec } from './openapi/validate';
 export { HNSWIndex } from './ann/hnsw';

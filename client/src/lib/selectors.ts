@@ -1,9 +1,9 @@
 import type { Camera, Lens, Result } from '../types';
 import { computeAvailability, type Availability } from './availability';
-import { applyFilters, type FiltersInput } from './filters';
+import { applyFilters } from './filters';
 import { computeResults } from './recommender';
 import { compile, filter as fcFilter } from '@lensfinder/filter-core';
-import { buildSpecFromFilters } from './filterCoreAdapter';
+import { buildSpecFromState, type Mapping } from '@lensfinder/filter-core';
 
 export const makeBrandsForCamera = () =>
   (lenses: Lens[], camera?: Camera): string[] => {
@@ -48,37 +48,35 @@ export const makeResultsSelector = () =>
         const type = l.focal_min_mm === l.focal_max_mm ? 'Prime' : 'Zoom';
         return f.lensType === 'Any' ? true : type === f.lensType;
       });
-      const input: FiltersInput = {
-        lenses: preLensType,
-        cameraName: f.cameraName,
-        cameraMount: camera?.mount,
-        brand: f.brand,
-        lensType: f.lensType,
-        sealed: f.sealed,
-        isMacro: f.isMacro,
-        priceRange: f.priceRange,
-        weightRange: f.weightRange,
-        proCoverage: f.proCoverage,
-        proFocalMin: f.proFocalMin,
-        proFocalMax: f.proFocalMax,
-        proMaxApertureF: f.proMaxApertureF,
-        proRequireOIS: f.proRequireOIS,
-        proRequireSealed: f.proRequireSealed,
-        proRequireMacro: f.proRequireMacro,
-        proPriceMax: f.proPriceMax,
-        proWeightMax: f.proWeightMax,
-        proDistortionMaxPct: f.proDistortionMaxPct,
-        proBreathingMinScore: f.proBreathingMinScore,
-        softPrice: f.softPrice,
-        softWeight: f.softWeight,
-        softDistortion: f.softDistortion,
-        softBreathing: f.softBreathing,
-        enablePrice: f.enablePrice,
-        enableWeight: f.enableWeight,
-        enableDistortion: f.enableDistortion,
-        enableBreathing: f.enableBreathing,
-      };
-      const { spec } = buildSpecFromFilters(input);
+      const mapping: Mapping = [
+        { from: 'brand', to: 'brand', op: 'eq', when: (s: any) => s.brand && s.brand !== 'Any' },
+        { from: 'sealed', to: 'weather_sealed', op: 'isTrue', when: (s: any) => s.sealed === true },
+        { from: 'isMacro', to: 'is_macro', op: 'isTrue', when: (s: any) => s.isMacro === true },
+        { from: 'priceRange', to: 'price_chf', op: 'between', mode: (st: any) => (st.softPrice ? 'soft' : 'hard'), transform: (v: any) => [ v.min, v.max ], weight: (st: any) => (st.softPrice ? 1 : undefined) },
+        { from: 'weightRange', to: 'weight_g', op: 'between', mode: (st: any) => (st.softWeight ? 'soft' : 'hard'), transform: (v: any) => [ v.min, v.max ], weight: (st: any) => (st.softWeight ? 1 : undefined) },
+        { from: 'proMaxApertureF', to: 'aperture_min', op: 'lte' },
+        { from: 'proPriceMax', to: 'price_chf', op: 'lte' },
+        { from: 'proWeightMax', to: 'weight_g', op: 'lte' },
+        { from: 'proRequireOIS', to: 'ois', op: 'isTrue', when: (s: any) => s.proRequireOIS === true },
+        { from: 'proRequireSealed', to: 'weather_sealed', op: 'isTrue', when: (s: any) => s.proRequireSealed === true },
+        { from: 'proRequireMacro', to: 'is_macro', op: 'isTrue', when: (s: any) => s.proRequireMacro === true },
+        { from: 'proDistortionMaxPct', to: 'distortion_pct', op: 'lte', mode: (st: any) => (st.softDistortion ? 'soft' : 'hard'), weight: (st: any) => (st.softDistortion ? 1 : undefined) },
+        { from: 'proBreathingMinScore', to: 'focus_breathing_score', op: 'gte', mode: (st: any) => (st.softBreathing ? 'soft' : 'hard'), weight: (st: any) => (st.softBreathing ? 1 : undefined) },
+      ];
+      function withCoverageAnyOf(spec: any, state: any) {
+        const val = state.proCoverage;
+        if (!val || val === 'Any') return spec;
+        const lc = String(val).toLowerCase();
+        let syns: string[] = [];
+        if (lc.includes('medium')) syns = ['Medium Format', 'MF'];
+        else if (lc.includes('mft') || lc.includes('micro')) syns = ['MFT', 'Micro Four Thirds'];
+        else if (lc.includes('aps')) syns = ['APS-C', 'APS C', 'APS'];
+        else syns = ['Full Frame', 'FF'];
+        const anyOf = syns.map(s => ({ path: 'coverage', op: 'includes', value: s, mode: 'hard' as const }));
+        return { allOf: [ ...(spec.allOf ?? []), { anyOf } ] };
+      }
+      const spec0 = buildSpecFromState(f, mapping);
+      const spec = withCoverageAnyOf(spec0, f);
       const exec = compile(spec);
       filtered = (fcFilter(preLensType, exec) as Lens[]);
     } else {
