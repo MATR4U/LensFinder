@@ -18,7 +18,7 @@
     "build:client": "npm --workspace client run build",
     "build:server": "npm --workspace server run build",
     "build": "npm run build:client && npm run build:server",
-    "test:client": "npm --workspace client run test",
+    "test:client": "npm --workspace packages/filter-core run build && npm --workspace client run test",
     "test:server": "if [ \"$SKIP_DB_TESTS\" = \"1\" ] || [ \"$SKIP_DB_TESTS\" = \"true\" ]; then npm --workspace server run test; else npm run db:up && npm run db:migrate && npm --workspace server run test; fi",
     "test": "npm run test:server && npm run test:client",
     "test:e2e": "docker info >/dev/null 2>&1 || { echo 'Docker daemon not running; skipping e2e tests.'; exit 0; }; playwright test",
