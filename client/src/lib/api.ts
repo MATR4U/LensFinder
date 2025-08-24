@@ -64,14 +64,12 @@ export async function postReport(payload: { cameraName: string; goal: string; to
   const data = await res.json();
   return data as ReportResponse;
 }
-export type RecommendationsRequest = {
-  lensMount: string;
-  budget: { target: number; isFlexible: boolean };
-  useCases: string[];
-  priorities: { portability: number; lowLight: number; zoom: number };
-};
+import type { components as DomainComponents } from '@lensfinder/domain';
 
-export async function postRecommendations(body: RecommendationsRequest) {
+type RecommendationsRequest = DomainComponents['schemas']['RecommendationRequest'];
+type RecommendationItem = DomainComponents['schemas']['ScoredLens'];
+
+export async function postRecommendations(body: RecommendationsRequest): Promise<RecommendationItem[]> {
   const res = await fetch(joinUrl(API_BASE, '/api/v1/lenses/recommendations'), {
     method: 'POST',
     headers: {
@@ -81,7 +79,7 @@ export async function postRecommendations(body: RecommendationsRequest) {
     body: JSON.stringify(body)
   });
   if (!res.ok) throw new Error('Failed to load recommendations');
-  return res.json();
+  return res.json() as Promise<RecommendationItem[]>;
 }
 
 
