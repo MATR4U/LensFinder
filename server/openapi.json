@@ -140,7 +140,58 @@
                   "type": "array",
                   "items": {
                     "type": "object",
-                    "additionalProperties": true
+                    "properties": {
+                      "id": {
+                        "type": "number"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "brand": {
+                        "type": "string"
+                      },
+                      "mount": {
+                        "type": "string"
+                      },
+                      "ibis": {
+                        "type": "boolean"
+                      },
+                      "price_chf": {
+                        "type": "number"
+                      },
+                      "weight_g": {
+                        "type": "number"
+                      },
+                      "source_url": {
+                        "type": "string"
+                      },
+                      "sensor": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "width_mm": {
+                            "type": "number"
+                          },
+                          "height_mm": {
+                            "type": "number"
+                          },
+                          "coc_mm": {
+                            "type": "number"
+                          },
+                          "crop": {
+                            "type": "number"
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      "_links": {
+                        "type": "object",
+                        "additionalProperties": true
+                      }
+                    },
+                    "additionalProperties": false
                   }
                 }
               }
@@ -214,7 +265,67 @@
                   "type": "array",
                   "items": {
                     "type": "object",
-                    "additionalProperties": true
+                    "properties": {
+                      "id": {
+                        "type": "number"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "brand": {
+                        "type": "string"
+                      },
+                      "mount": {
+                        "type": "string"
+                      },
+                      "coverage": {
+                        "type": "string"
+                      },
+                      "focal_min_mm": {
+                        "type": "number"
+                      },
+                      "focal_max_mm": {
+                        "type": "number"
+                      },
+                      "aperture_min": {
+                        "type": "number"
+                      },
+                      "aperture_max": {
+                        "type": "number"
+                      },
+                      "weight_g": {
+                        "type": "number"
+                      },
+                      "ois": {
+                        "type": "boolean"
+                      },
+                      "price_chf": {
+                        "type": "number"
+                      },
+                      "weather_sealed": {
+                        "type": "boolean"
+                      },
+                      "is_macro": {
+                        "type": "boolean"
+                      },
+                      "distortion_pct": {
+                        "type": "number"
+                      },
+                      "focus_breathing_score": {
+                        "type": "number"
+                      },
+                      "source_url": {
+                        "type": "string"
+                      },
+                      "image_url": {
+                        "type": "string"
+                      },
+                      "_links": {
+                        "type": "object",
+                        "additionalProperties": true
+                      }
+                    },
+                    "additionalProperties": false
                   }
                 }
               }

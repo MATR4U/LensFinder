@@ -1,15 +1,17 @@
-import { Pool } from 'pg'
+import type { Pool as PoolType } from 'pg'
+import pg from 'pg'
+const { Pool: PoolCtor } = pg
 
-let pool: Pool | null = null
+let pool: PoolType | null = null
 
-export function getPool(): Pool {
+export function getPool(): PoolType {
   if (!pool) {
     const connectionString = process.env.DATABASE_URL || ''
-    pool = new Pool({
+    pool = new PoolCtor({
       connectionString,
       max: 10,
       idleTimeoutMillis: 30_000
-    })
+    }) as unknown as PoolType
   }
   return pool
 }
