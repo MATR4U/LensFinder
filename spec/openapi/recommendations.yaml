@@ -1,0 +1,151 @@
+openapi: 3.0.3
+info:
+  title: LensFinder Recommendations API
+  version: 1.0.0
+servers:
+  - url: /api/v1
+paths:
+  /lenses/recommendations:
+    post:
+      summary: Get recommended lenses ranked by overall score
+      operationId: postRecommendations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecommendationRequest'
+      responses:
+        '200':
+          description: Ranked recommendations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ScoredLens'
+        '400':
+          description: Invalid request
+components:
+  schemas:
+    Budget:
+      type: object
+      required: [target, isFlexible]
+      properties:
+        target:
+          type: number
+          format: float
+          minimum: 0
+        isFlexible:
+          type: boolean
+    Priorities:
+      type: object
+      required: [portability, lowLight, zoom]
+      properties:
+        portability:
+          type: integer
+          minimum: 1
+          maximum: 5
+        lowLight:
+          type: integer
+          minimum: 1
+          maximum: 5
+        zoom:
+          type: integer
+          minimum: 1
+          maximum: 5
+    RecommendationRequest:
+      type: object
+      required: [lensMount, budget, useCases, priorities]
+      properties:
+        lensMount:
+          type: string
+        budget:
+          $ref: '#/components/schemas/Budget'
+        useCases:
+          type: array
+          items:
+            type: string
+        priorities:
+          $ref: '#/components/schemas/Priorities'
+    Lens:
+      type: object
+      required:
+        - id
+        - name
+        - brand
+        - lensMount
+        - price
+        - weight
+        - minFocalLength
+        - maxFocalLength
+        - maxAperture
+        - isWeatherSealed
+        - hasImageStabilization
+        - isMacro
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        brand:
+          type: string
+        lensMount:
+          type: string
+        price:
+          type: number
+          format: float
+        weight:
+          type: number
+          format: float
+        minFocalLength:
+          type: number
+          format: float
+        maxFocalLength:
+          type: number
+          format: float
+        maxAperture:
+          type: number
+          format: float
+        isWeatherSealed:
+          type: boolean
+        hasImageStabilization:
+          type: boolean
+        isMacro:
+          type: boolean
+        imageUrl:
+          type: string
+          nullable: true
+    ScoredLens:
+      allOf:
+        - $ref: '#/components/schemas/Lens'
+        - type: object
+          required: [overallScore, portabilityScore, lowLightScore, zoomScore, valueScore]
+          properties:
+            overallScore:
+              type: number
+              format: float
+            portabilityScore:
+              type: number
+              format: float
+            lowLightScore:
+              type: number
+              format: float
+            zoomScore:
+              type: number
+              format: float
+            valueScore:
+              type: number
+              format: float
+            tags:
+              type: array
+              items:
+                type: string
+    RecommendationResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScoredLens'
