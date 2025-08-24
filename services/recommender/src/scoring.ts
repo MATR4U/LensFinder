@@ -1,4 +1,7 @@
-import type { RecommendationRequest, ScoredLens } from '@lensfinder/domain'
+import type { components } from '@lensfinder/domain'
+type Lens = components['schemas']['Lens']
+type RecommendationRequest = components['schemas']['RecommendationRequest']
+type ScoredLens = components['schemas']['ScoredLens']
 import { getPool } from './db.js'
 
 type LensRow = {

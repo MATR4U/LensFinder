@@ -1,6 +1,8 @@
 import express from 'express'
-import type { RecommendationRequest } from '@lensfinder/domain'
+import type { components } from '@lensfinder/domain'
 import { getRecommendations } from './scoring.js'
+
+type RecommendationRequest = components['schemas']['RecommendationRequest']
 
 const app = express()
 app.use(express.json())

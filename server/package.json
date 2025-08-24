@@ -13,6 +13,7 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
+    "@lensfinder/domain": "file:../packages/domain",
     "graphql": "16.9.0",
     "graphql-http": "1.22.1",
     "cheerio": "1.0.0",

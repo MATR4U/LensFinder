@@ -12,7 +12,7 @@
   "dependencies": {
     "express": "^4.19.2",
     "pg": "^8.11.3",
-    "@lensfinder/domain": "workspace:*"
+    "@lensfinder/domain": "file:../../packages/domain"
   },
   "devDependencies": {
     "ts-node": "^10.9.2",

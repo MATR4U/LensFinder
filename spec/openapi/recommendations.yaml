@@ -141,11 +141,3 @@ components:
               type: array
               items:
                 type: string
-    RecommendationResponse:
-      type: object
-      required: [items]
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/ScoredLens'

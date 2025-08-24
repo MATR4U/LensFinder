@@ -5,7 +5,10 @@
   "type": "module",
   "workspaces": [
     "client",
-    "server"
+    "server",
+    "packages/*",
+    "services/*",
+    "apps/*"
   ],
   "scripts": {
     "predev": "kill-port 3001 || true && kill-port 3000 || true",
@@ -56,7 +59,8 @@
     "data:lenses:fetch": "node db/data/scripts/fetch-lens-specs.mjs",
     "data:lenses:update": "node db/data/scripts/fetch-lens-specs.mjs --write",
     "prepare": "husky install",
-    "watch:lint:file": "onchange -i -k --await-write-finish 2000 \"client/src/**/*.{ts,tsx}\" -- bash -lc 'ABS=\"$PWD/$(echo \"${1}\" | sed s#^./##)\"; echo Lint: $ABS; npm --workspace client exec -- eslint --quiet \"$ABS\"'"
+    "watch:lint:file": "onchange -i -k --await-write-finish 2000 \"client/src/**/*.{ts,tsx}\" -- bash -lc 'ABS=\"$PWD/$(echo \"${1}\" | sed s#^./##)\"; echo Lint: $ABS; npm --workspace client exec -- eslint --quiet \"$ABS\"'",
+    "openapi:gen": "openapi-typescript spec/openapi/recommendations.yaml -o packages/domain/src/gen/openapi.ts"
   },
   "devDependencies": {
     "@playwright/test": "1.46.1",
@@ -65,7 +69,8 @@
     "kill-port": "2.0.1",
     "wait-on": "7.2.0",
     "husky": "9.0.11",
-    "onchange": "7.1.0"
+    "onchange": "7.1.0",
+    "openapi-typescript": "^7.4.1"
   },
   "overrides": {
     "graphql": "16.9.0"
