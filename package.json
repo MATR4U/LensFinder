@@ -60,7 +60,7 @@
     "watch:lint:file": "onchange -i -k --await-write-finish 2000 \"client/src/**/*.{ts,tsx}\" -- bash -lc 'ABS=\"$PWD/$(echo \"${1}\" | sed s#^./##)\"; echo Lint: $ABS; npm --workspace client exec -- eslint --quiet \"$ABS\"'"
   },
   "devDependencies": {
-    "@playwright/test": "1.46.1",
+    "@playwright/test": "1.60.0",
     "concurrently": "8.2.2",
     "cross-env": "7.0.3",
     "kill-port": "2.0.1",
